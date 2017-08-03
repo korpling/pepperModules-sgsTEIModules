@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="schema/standoff-proposal.rnc" type="application/relax-ng-compact-syntax"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0"
+     xmlns:so="http://standoff.proposal">
+   <teiHeader>
+	  <so:standOff type="morphosyntax">
+      <teiHeader>
+         <!-- TODO -->
+      </teiHeader>
+      <so:listAnnotation type="markables">
+      <!-- contains word forms in span elements, @target points to corresponding tokens in the transcription, @ana to the feature structure with the pos/lemma information -->
+         <annotationBlock xmlns="http://www.tei-c.org/ns/1.0" xml:id="u_252_morph">
+            <spanGrp type="wordForm">
+               <span xml:id="span-morph_1693" target="#tok_2079" ana="#fs-morph_1693"/>
+               <span xml:id="span-morph_1694" target="#tok_2081" ana="#fs-morph_1694"/>
+               <span xml:id="span-morph_1695" target="#tok_2082" ana="#fs-morph_1695"/>
+               <span xml:id="span-morph_1696" target="#tok_2083" ana="#fs-morph_1696"/>
+               <span xml:id="span-morph_1696.5"/>
+               <span xml:id="span-morph_1697" target="#tok_2084" ana="#fs-morph_1697"/>
+               <span xml:id="span-morph_1698" target="#tok_2085" ana="#fs-morph_1698"/>
+               <span xml:id="span-morph_1699" target="#tok_2086" ana="#fs-morph_1699"/>
+               <span xml:id="span-morph_1700" target="#tok_2087" ana="#fs-morph_1700"/>
+            </spanGrp>
+            <fs xml:id="fs-morph_1693">
+               <f name="lemma">
+                  <string>bueno</string>
+               </f>
+               <f name="pos">
+                  <symbol value="ADJ"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1694">
+               <f name="lemma">
+                  <string>pues</string>
+               </f>
+               <f name="pos">
+                  <symbol value="CSUBF"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1695">
+               <f name="lemma">
+                  <string>haber</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VHfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1696">
+               <f name="lemma">
+                  <string>ver</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLadj"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1697">
+               <f name="lemma">
+                  <string>subir</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLinf"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1698">
+               <f name="lemma">
+                  <string>con</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PREP"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1699">
+               <f name="lemma">
+                  <string>hombretones</string>
+               </f>
+               <f name="pos">
+                  <symbol value="NC"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1700">
+               <f name="lemma">
+                  <string>joven</string>
+               </f>
+               <f name="pos">
+                  <symbol value="ADJ"/>
+               </f>
+            </fs>
+         </annotationBlock>
+         <annotationBlock xmlns="http://www.tei-c.org/ns/1.0" xml:id="u_253_morph">
+            <spanGrp type="wordForm">
+               <span xml:id="span-morph_1701" target="#tok_2089" ana="#fs-morph_1701"/>
+               <span xml:id="span-morph_1701.5"/>
+               <span xml:id="span-morph_1702" target="#tok_2090" ana="#fs-morph_1702"/>
+               <span xml:id="span-morph_1703" target="#tok_2091" ana="#fs-morph_1703"/>
+               <span xml:id="span-morph_1704" target="#tok_2092" ana="#fs-morph_1704"/>
+            </spanGrp>
+            <fs xml:id="fs-morph_1701">
+               <f name="lemma">
+                  <string>que</string>
+               </f>
+               <f name="pos">
+                  <symbol value="CQUE"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1702">
+               <f name="lemma">
+                  <string>subir</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1703">
+               <f name="lemma">
+                  <string>a</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PREP"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1704">
+               <f name="lemma">
+                  <string>medianoche</string>
+               </f>
+               <f name="pos">
+                  <symbol value="NC"/>
+               </f>
+            </fs>
+         </annotationBlock>
+         <annotationBlock xmlns="http://www.tei-c.org/ns/1.0" xml:id="u_254_morph">
+            <spanGrp type="wordForm">
+               <span xml:id="span-morph_1705" target="#tok_2094" ana="#fs-morph_1705"/>
+               <span xml:id="span-morph_1705.5"/>
+               <span xml:id="span-morph_1706" target="#tok_2095" ana="#fs-morph_1706"/>
+               <span xml:id="span-morph_1707" target="#tok_2096" ana="#fs-morph_1707"/>
+               <span xml:id="span-morph_1708" target="#tok_2097" ana="#fs-morph_1708"/>
+               <span xml:id="span-morph_1709" target="#tok_2098" ana="#fs-morph_1709"/>
+               <span xml:id="span-morph_1710" target="#tok_2099" ana="#fs-morph_1710"/>
+               <span xml:id="span-morph_1711" target="#tok_2100" ana="#fs-morph_1711"/>
+               <span xml:id="span-morph_1712" target="#tok_2101" ana="#fs-morph_1712"/>
+            </spanGrp>
+            <fs xml:id="fs-morph_1705">
+               <f name="lemma">
+                  <string>y</string>
+               </f>
+               <f name="pos">
+                  <symbol value="CC"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1706">
+               <f name="lemma">
+                  <string>bajar</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1707">
+               <f name="lemma">
+                  <string>a</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PREP"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1708">
+               <f name="lemma">
+                  <string>alto</string>
+               </f>
+               <f name="pos">
+                  <symbol value="ADJ"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1709">
+               <f name="lemma">
+                  <string>hora</string>
+               </f>
+               <f name="pos">
+                  <symbol value="NC"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1710">
+               <f name="lemma">
+                  <string>de</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PREP"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1711">
+               <f name="lemma">
+                  <string>el</string>
+               </f>
+               <f name="pos">
+                  <symbol value="ART"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1712">
+               <f name="lemma">
+                  <string>madrugada</string>
+               </f>
+               <f name="pos">
+                  <symbol value="NC"/>
+               </f>
+            </fs>
+         </annotationBlock>
+         <annotationBlock xmlns="http://www.tei-c.org/ns/1.0" xml:id="u_255_morph">
+            <spanGrp type="wordForm">
+               <span xml:id="span-morph_1713" target="#tok_2104" ana="#fs-morph_1713"/>
+               <span xml:id="span-morph_1714" target="#tok_2105" ana="#fs-morph_1714"/>
+               <span xml:id="span-morph_1714.5"/>
+               <span xml:id="span-morph_1715" target="#tok_2106" ana="#fs-morph_1715"/>
+               <span xml:id="span-morph_1716" target="#tok_2107" ana="#fs-morph_1716"/>
+               <span xml:id="span-morph_1717" target="#tok_2108" ana="#fs-morph_1717"/>
+               <span xml:id="span-morph_1718" target="#tok_2109" ana="#fs-morph_1718"/>
+               <span xml:id="span-morph_1719" target="#tok_2110" ana="#fs-morph_1719"/>
+            </spanGrp>
+            <fs xml:id="fs-morph_1713">
+               <f name="lemma">
+                  <string>crear|creer</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1714">
+               <f name="lemma">
+                  <string>que</string>
+               </f>
+               <f name="pos">
+                  <symbol value="CQUE"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1715">
+               <f name="lemma">
+                  <string>poder</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VMfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1716">
+               <f name="lemma">
+                  <string>mantener</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLinf"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1717">
+               <f name="lemma">
+                  <string>alguno</string>
+               </f>
+               <f name="pos">
+                  <symbol value="QU"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1718">
+               <f name="lemma">
+                  <string>relación</string>
+               </f>
+               <f name="pos">
+                  <symbol value="NC"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1719">
+               <f name="lemma">
+                  <string>amoroso</string>
+               </f>
+               <f name="pos">
+                  <symbol value="ADJ"/>
+               </f>
+            </fs>
+         </annotationBlock>
+         <annotationBlock xmlns="http://www.tei-c.org/ns/1.0" xml:id="u_256_morph">
+            <spanGrp type="wordForm">
+               <span xml:id="span-morph_1720" target="#tok_2112" ana="#fs-morph_1720"/>
+               <span xml:id="span-morph_1721" target="#tok_2114" ana="#fs-morph_1721"/>
+               <span xml:id="span-morph_1722" target="#tok_2115" ana="#fs-morph_1722"/>
+               <span xml:id="span-morph_1723" target="#tok_2116" ana="#fs-morph_1723"/>
+               <span xml:id="span-morph_1724" target="#tok_2117" ana="#fs-morph_1724"/>
+               <span xml:id="span-morph_1725" target="#tok_2118" ana="#fs-morph_1725"/>
+               <span xml:id="span-morph_1726" target="#tok_2119" ana="#fs-morph_1726"/>
+               <span xml:id="span-morph_1726.5"/>
+               <span xml:id="span-morph_1727" target="#tok_2120" ana="#fs-morph_1727"/>
+               <span xml:id="span-morph_1728" target="#tok_2121" ana="#fs-morph_1728"/>
+               <span xml:id="span-morph_1729" target="#tok_2122" ana="#fs-morph_1729"/>
+               <span xml:id="span-morph_1730" target="#tok_2123" ana="#fs-morph_1730"/>
+               <span xml:id="span-morph_1731" target="#tok_2124" ana="#fs-morph_1731"/>
+            </spanGrp>
+            <fs xml:id="fs-morph_1720">
+               <f name="lemma">
+                  <string>bueno</string>
+               </f>
+               <f name="pos">
+                  <symbol value="ADJ"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1721">
+               <f name="lemma">
+                  <string>yo</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PPX"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1722">
+               <f name="lemma">
+                  <string>no</string>
+               </f>
+               <f name="pos">
+                  <symbol value="NEG"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1723">
+               <f name="lemma">
+                  <string>yo</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PPX"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1724">
+               <f name="lemma">
+                  <string>cre</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1725">
+               <f name="lemma">
+                  <string>mirar</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1726">
+               <f name="lemma">
+                  <string>tú</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PPX"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1727">
+               <f name="lemma">
+                  <string>ir</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLfin"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1728">
+               <f name="lemma">
+                  <string>a</string>
+               </f>
+               <f name="pos">
+                  <symbol value="PREP"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1729">
+               <f name="lemma">
+                  <string>decir</string>
+               </f>
+               <f name="pos">
+                  <symbol value="VLinf"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1730">
+               <f name="lemma">
+                  <string>el</string>
+               </f>
+               <f name="pos">
+                  <symbol value="ART"/>
+               </f>
+            </fs>
+            <fs xml:id="fs-morph_1731">
+               <f name="lemma">
+                  <string>verdad</string>
+               </f>
+               <f name="pos">
+                  <symbol value="NC"/>
+               </f>
+            </fs>
+         </annotationBlock>
+      </so:listAnnotation>
+   </so:standOff>
+   <text>
+      <front>
+         <timeline unit="s">
+            <when xml:id="interv_det02_631290" absolute="00:00:00.631290"/>
+            <when xml:id="interv_det02_640009" absolute="00:00:00.640009"/>
+            <when xml:id="interv_det02_640171" absolute="00:00:00.640171"/>
+            <when xml:id="interv_det02_641500" absolute="00:00:00.641500"/>
+            <when xml:id="interv_det02_643840" absolute="00:00:00.643840"/>
+            <when xml:id="interv_det02_644102" absolute="00:00:00.644102"/>
+            <when xml:id="interv_det02_648723" absolute="00:00:00.648723"/>
+            <when xml:id="interv_det02_649752" absolute="00:00:00.649752"/>
+            <when xml:id="interv_det02_653308" absolute="00:00:00.653308"/>
+         </timeline>
+      </front>
+      <body>
+         <u xml:id="u_252"
+            who="#ANT"
+            start="#interv_det02_631290"
+            end="#interv_det02_640009">
+            <seg xml:id="seg_342">
+               <w xml:id="tok_2079">bueno</w>
+               <pause type="long"/>
+               <pc xml:id="tok_2080">,</pc>
+               <w xml:id="tok_2081">pues</w>
+               <w xml:id="tok_2082">había</w>
+               <w xml:id="tok_2083">visto</w>
+               <seg xml:id="seg_343">
+                  <w xml:id="tok_2084">subir</w>
+                  <w xml:id="tok_2085">con</w>
+                  <choice>
+					<sic>hombrnoes</sic>
+					<corr>
+						<w xml:id="tok_2086">hombretones</w>
+					</corr>
+                  </choice>                  
+                  <w xml:id="tok_2087">jóvenes</w>
+               </seg>
+               <pc xml:id="tok_2088">.</pc>
+            </seg>
+         </u>
+         <u xml:id="u_253"
+            who="#ANT"
+            start="#interv_det02_640171"
+            end="#interv_det02_641500">
+            <seg xml:id="seg_344">
+               <w xml:id="tok_2089">que</w>
+               <w xml:id="tok_2090">subían</w>
+               <vocal>
+                  <desc>mm</desc>
+               </vocal>
+               <w xml:id="tok_2091">a</w>
+               <w xml:id="tok_2092">medianoche</w>
+               <pc xml:id="tok_2093">.</pc>
+            </seg>
+         </u>
+         <u xml:id="u_254"
+            who="#ANT"
+            start="#interv_det02_641500"
+            end="#interv_det02_643840"
+            trans="latching">
+            <seg xml:id="seg_345">
+               <shift feature="tempo" new="slow"/>
+               <w xml:id="tok_2094">y</w>
+               <shift feature="tempo" new="normal"/>
+               <w xml:id="tok_2095">bajaban</w>
+               <w xml:id="tok_2096">a</w>
+               <w xml:id="tok_2097">altas</w>
+               <w xml:id="tok_2098">horas</w>
+               <w xml:id="tok_2099">de</w>
+               <w xml:id="tok_2100">la</w>
+               <w xml:id="tok_2101">madrugada</w>
+               <pc xml:id="tok_2102">.</pc>
+            </seg>
+         </u>
+         <u xml:id="u_255"
+            who="#S02"
+            start="#interv_det02_644102"
+            end="#interv_det02_648723">
+            <seg xml:id="seg_346">
+               <pc xml:id="tok_2103">¿</pc>
+               <w xml:id="tok_2104">crees</w>
+               <seg xml:id="seg_347">
+                  <w xml:id="tok_2105">que</w>
+                  <w xml:id="tok_2106">podrían</w>
+                  <w xml:id="tok_2107">mantener</w>
+                  <w xml:id="tok_2108">alguna</w>
+                  <w xml:id="tok_2109">relación</w>
+                  <pause type="long"/>
+                  <w xml:id="tok_2110">amorosa</w>
+               </seg>
+               <pc xml:id="tok_2111">?</pc>
+            </seg>
+         </u>
+         <u xml:id="u_256"
+            who="#ANT"
+            start="#interv_det02_649752"
+            end="#interv_det02_653308">
+            <seg xml:id="seg_348">
+               <w xml:id="tok_2112">bueno</w>
+               <pc xml:id="tok_2113">,</pc>
+               <w xml:id="tok_2114">yo</w>
+               <shift feature="tempo" new="slow"/>
+               <w xml:id="tok_2115">no</w>
+               <shift feature="tempo" new="normal"/>
+               <w xml:id="tok_2116">yo</w>
+               <w xml:id="tok_2117">cre<add>o</add></w>
+               <w xml:id="tok_2118">mira</w>
+               <w xml:id="tok_2119">te</w>
+               <w xml:id="tok_2120">voy</w>
+               <w xml:id="tok_2121">a</w>
+               <w xml:id="tok_2122">decir</w>
+               <w xml:id="tok_2123">la</w>
+               <w xml:id="tok_2124">verdad</w>
+               <pc xml:id="tok_2125">.</pc>
+            </seg>
+         </u>
+      </body>
+   </text>
+   </teiHeader>
+</TEI>
+
