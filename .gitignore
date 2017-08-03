@@ -1,1 +1,6 @@
-target/
+./META-INF/
+./OSGI-INF/
+./target/
+./nbactions.xml
+./.classpath
+./.project
