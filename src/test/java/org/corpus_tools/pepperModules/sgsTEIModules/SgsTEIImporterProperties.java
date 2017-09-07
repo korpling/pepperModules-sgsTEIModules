@@ -7,6 +7,8 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	private static final String PROP_DIPL_NAME = "dipl.name";
 	/** This property determines the normed layer's name. */
 	private static final String PROP_NORM_NAME = "norm.name";
+	/** */
+//	private static final String PROP_NORM_
 	
 	public SgsTEIImporterProperties() {
 		addProperty(new PepperModuleProperty<String>(PROP_DIPL_NAME, String.class, "This property determines the diplomatic layer's name.", "dipl", false));

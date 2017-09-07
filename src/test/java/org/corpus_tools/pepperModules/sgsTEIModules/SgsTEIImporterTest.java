@@ -21,7 +21,7 @@ import org.junit.Test;
 
 /**
  * This is a dummy implementation of a JUnit test for testing the
- * {@link sgsTEIImporter} class. Feel free to adapt and enhance this test class
+ * {@link SgsTEIImporter} class. Feel free to adapt and enhance this test class
  * for real tests to check the work of your importer. If you are not confirm
  * with JUnit, please have a look at <a
  * href="http://www.vogella.com/tutorials/JUnit/article.html">
@@ -32,7 +32,7 @@ import org.junit.Test;
  * 
  * @author Martin Klotz
  */
-public class sgsTEIImporterTest implements SgsTEIDictionary {
+public class SgsTEIImporterTest implements SgsTEIDictionary {
 	private static final String PRIMARY_DATA_DIPL = 
 			"bueno, pues había visto subir con hombrnoes jóvenes. "
 			+ "que subían mm a medianoche. "
@@ -71,7 +71,7 @@ public class sgsTEIImporterTest implements SgsTEIDictionary {
 		return (SgsTEIImporterProperties) getFixture().getProperties();
 	}
 	
-	private SDocumentGraph getGoalDocumentGraph(Set features) {
+	private SDocumentGraph getGoalDocumentGraph(Set<String> features) {
 		SDocumentGraph graph = SaltFactory.createSDocument()
 				.createDocumentGraph();
 		/* primary data */

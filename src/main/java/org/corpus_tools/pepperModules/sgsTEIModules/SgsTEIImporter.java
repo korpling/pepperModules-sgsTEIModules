@@ -73,9 +73,9 @@ import org.slf4j.LoggerFactory;
  * @author Martin Klotz
  */
 @Component(name = "sgsTEIImporterComponent", factory = "PepperImporterComponentFactory")
-public class sgsTEIImporter extends PepperImporterImpl implements PepperImporter{
+public class SgsTEIImporter extends PepperImporterImpl implements PepperImporter{
 	/** this is a logger, for recording messages during program process, like debug messages**/
-	private static final Logger logger = LoggerFactory.getLogger(sgsTEIImporter.class);
+	private static final Logger logger = LoggerFactory.getLogger(SgsTEIImporter.class);
 
 	/**
 	 * <strong>OVERRIDE THIS METHOD FOR CUSTOMIZATION</strong> <br/>
@@ -84,7 +84,7 @@ public class sgsTEIImporter extends PepperImporterImpl implements PepperImporter
 	 * supported formats) are a kind of a fingerprint, which should make your
 	 * module unique.
 	 */
-	public sgsTEIImporter() {
+	public SgsTEIImporter() {
 		super();
 		setName("sgsTEIImporter");
 		// TODO change suppliers e-mail address
