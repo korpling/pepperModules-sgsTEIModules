@@ -165,7 +165,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		 * from the collected information.
 		 */
 		private void buildGraph() {
-			// first obtain order
+			/* first obtain order */
 			HashMap<Long, LinguisticParent> start2utterance = new HashMap<Long, LinguisticParent>();
 			long[] orderedTimes = new long[corpusData.size()];
 			for (int i = 0; i < corpusData.size(); i++) { //FIXME Dangerous, when people start exactly the same time

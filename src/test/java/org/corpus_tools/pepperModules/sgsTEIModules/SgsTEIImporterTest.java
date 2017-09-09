@@ -61,6 +61,7 @@ public class SgsTEIImporterTest implements SgsTEIDictionary {
 	
 	public void setFixture(SgsTEI2SaltMapper mapper) {
 		this.fixture = mapper;
+		fixture.setProperties(new SgsTEIImporterProperties());
 	}
 	
 	public SgsTEI2SaltMapper getFixture( ) {
