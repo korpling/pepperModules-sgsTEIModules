@@ -5,10 +5,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Stack;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
@@ -19,7 +21,6 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
-import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.core.SRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -260,11 +261,22 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			Arrays.sort(orderedTimes);
 			// build document utterance by utterance
 			/* collect and build base texts */
-			StringBuilder dipl = new StringBuilder();
-			StringBuilder norm = new StringBuilder();
+			StringBuilder dipl = null;
+			StringBuilder norm = null;
+			HashMap<String, Pair<StringBuilder, StringBuilder>> baseTexts = new HashMap<>();
+			Pair<StringBuilder, StringBuilder> basePair = null;
 			String space = " ";
-			for (int i = 0; i < orderedTimes.length; i++) {
+			String speaker = null;
+			for (int i = 0; i < orderedTimes.length; i++) {				
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
+				speaker = ((LinguisticParent) e).getSpeaker();
+				basePair = baseTexts.get(speaker);
+				if (basePair == null) {
+					basePair = Pair.of(new StringBuilder(), new StringBuilder());
+					baseTexts.put(speaker, basePair);
+				}
+				dipl = basePair.getLeft();
+				norm = basePair.getRight();
 				Stack<Iterator<SequenceElement>> iteratorStack = new Stack<>();				
 				iteratorStack.push(e.getElements().iterator());
 				while (!iteratorStack.isEmpty() && iteratorStack.peek().hasNext()) { // FIXME the second condition should not be necessary
@@ -291,15 +303,31 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			STimeline timeline = docGraph.createTimeline();
-			STextualDS diplDS = docGraph.createTextualDS(dipl.toString().trim());
-			STextualDS normDS = docGraph.createTextualDS(norm.toString().trim());			
+			HashMap<String, Pair<STextualDS, STextualDS>> dataSources = new HashMap<>();
+			HashMap<String, Pair<Integer, Integer>> positions = new HashMap<>();
+			HashMap<String, Pair<ArrayList<SToken>, ArrayList<SToken>>> tokenLists = new HashMap<>();
+			for (Entry<String, Pair<StringBuilder, StringBuilder>> entry : baseTexts.entrySet()) {
+				speaker = entry.getKey();
+				basePair = entry.getValue();
+				dataSources.put(speaker, Pair.of(docGraph.createTextualDS(basePair.getLeft().toString().trim()), docGraph.createTextualDS(basePair.getRight().toString().trim())));
+				positions.put(speaker, Pair.of(0, 0));
+				tokenLists.put(speaker, Pair.of(new ArrayList<SToken>(), new ArrayList<SToken>()));
+			}
+			STextualDS diplDS = null;
+			STextualDS normDS = null;			
 			int d = 0;
 			int n = 0;
 			int nv = 0;
-			List<SToken> diplTokens = new ArrayList<SToken>();
-			List<SToken> normTokens = new ArrayList<SToken>();
+			List<SToken> diplTokens = null;
+			List<SToken> normTokens = null;
 			for (int i = 0; i < orderedTimes.length; i++) {
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
+				speaker = ((LinguisticParent) e).getSpeaker();
+				Pair<ArrayList<SToken>, ArrayList<SToken>> tlPair = tokenLists.get(speaker);
+				diplTokens = tlPair.getLeft();
+				normTokens = tlPair.getRight();
+				d = positions.get(speaker).getLeft();
+				n = positions.get(speaker).getRight();
 				Stack<Iterator<SequenceElement>> iteratorStack = new Stack<>();				
 				iteratorStack.push(e.getElements().iterator());
 				while (!iteratorStack.isEmpty() && iteratorStack.peek().hasNext()) { //FIXME get rid of second condition
@@ -351,23 +379,29 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						}
 					}
 				}
-			}			
-			SOrderRelation orderRel = null;
-			List<List<SToken>> tokenSources = new ArrayList<>();
-			tokenSources.add(diplTokens);
-			tokenSources.add(normTokens);
-			String[] names = {"dipl", "norm"};  //FIXME obtain from properties
-			for (int j = 0; j < tokenSources.size(); j++) {
-				List<SToken> tokenSource = tokenSources.get(j);
-				String name = names[j];
-				for (int i = 1; i < tokenSource.size(); i++) {
-					orderRel = SaltFactory.createSOrderRelation();
-					orderRel.setSource(tokenSource.get(i-1));
-					orderRel.setTarget(tokenSource.get(i));
-					orderRel.setType(name);
-					docGraph.addRelation(orderRel);
-				}
-			}		
+				positions.put(speaker, Pair.of(d, n));
+			}
+			for (Entry<String, Pair<ArrayList<SToken>, ArrayList<SToken>>> entry : tokenLists.entrySet()) {
+				speaker = entry.getKey();
+				diplTokens = entry.getValue().getLeft();
+				normTokens = entry.getValue().getRight();
+				SOrderRelation orderRel = null;
+				List<List<SToken>> tokenSources = new ArrayList<>();
+				tokenSources.add(diplTokens);
+				tokenSources.add(normTokens);
+				String[] names = {speaker + ".dipl", speaker + ".norm"};  //FIXME obtain from properties
+				for (int j = 0; j < tokenSources.size(); j++) {
+					List<SToken> tokenSource = tokenSources.get(j);
+					String name = names[j];
+					for (int i = 1; i < tokenSource.size(); i++) {
+						orderRel = SaltFactory.createSOrderRelation();
+						orderRel.setSource(tokenSource.get(i-1));
+						orderRel.setTarget(tokenSource.get(i));
+						orderRel.setType(name);
+						docGraph.addRelation(orderRel);
+					}
+				}	
+			}
 		}
 	}
 }
