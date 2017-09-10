@@ -19,6 +19,8 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.core.SNode;
+import org.corpus_tools.salt.core.SRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -39,7 +41,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		SgsTEIReader reader = new SgsTEIReader();
 		this.readXMLResource(reader, getResourceURI());
 		return (DOCUMENT_STATUS.COMPLETED);
-	}	
+	}
+	
+	private SgsTEIImporterProperties getModuleProperties() {
+		return (SgsTEIImporterProperties) getProperties();
+	}
 	
 	/**
 	 * This sub class is the mapper's callback handler processing the input xml.
@@ -318,6 +324,26 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 									addTimelineRelation(timeline, tok, false);
 									n = nv + 1;										
 								}
+								if (ov == null) {
+									if (ElementType.DIPL.equals(etype)) {
+										Iterator<SRelation> relations = normTokens.get(normTokens.size() - 1).getOutRelations().iterator();
+										SRelation rel = null;
+										while (!(rel instanceof STimelineRelation)) {
+											rel = relations.next();
+										}
+										STimelineRelation tRel = (STimelineRelation) rel;
+										tRel.setEnd(tRel.getEnd() + 1);
+									}
+									else if (ElementType.NORM.equals(etype)) {
+										Iterator<SRelation> relations = diplTokens.get(normTokens.size() - 1).getOutRelations().iterator();
+										SRelation rel = null;
+										while (!(rel instanceof STimelineRelation)) {
+											rel = relations.next();
+										}
+										STimelineRelation tRel = (STimelineRelation) rel;
+										tRel.setEnd(tRel.getEnd() + 1);
+									}
+								}
 							}
 						}
 						if (!iteratorStack.peek().hasNext()) {
@@ -330,7 +356,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			List<List<SToken>> tokenSources = new ArrayList<>();
 			tokenSources.add(diplTokens);
 			tokenSources.add(normTokens);
-			String[] names = {((SgsTEIImporterProperties) getProperties()).getDiplName(), ((SgsTEIImporterProperties) getProperties()).getNormName()};
+			String[] names = {"dipl", "norm"};  //FIXME obtain from properties
 			for (int j = 0; j < tokenSources.size(); j++) {
 				List<SToken> tokenSource = tokenSources.get(j);
 				String name = names[j];
