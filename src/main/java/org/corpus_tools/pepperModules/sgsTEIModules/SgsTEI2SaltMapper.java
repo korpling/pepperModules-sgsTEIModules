@@ -12,10 +12,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
-import org.corpus_tools.pepperModules.sgsTEIModules.lib.ElementType;
-import org.corpus_tools.pepperModules.sgsTEIModules.lib.LinguisticParent;
-import org.corpus_tools.pepperModules.sgsTEIModules.lib.SequenceElement;
-import org.corpus_tools.pepperModules.sgsTEIModules.lib.TokenLike;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SOrderRelation;
@@ -29,7 +25,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.DefaultHandler2;
 
-public class SgsTEI2SaltMapper extends PepperMapperImpl{
+public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDictionary{
 	
 	/**
 	 * {@inheritDoc}
@@ -50,7 +46,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 	 * @author klotzmaz
 	 *
 	 */
-	private class SgsTEIReader extends DefaultHandler2 implements SgsTEIDictionary {
+	private class SgsTEIReader extends DefaultHandler2 {
 		
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
 		
@@ -61,8 +57,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		private String textBuffer;
 		/** This mapping represents the timeline provided with the TEI file to preserve order as given. */
 		private HashMap<String, Long> internalOrder;
-		/** This represents the current time frame the utterance takes place in. */
-		private long[] currentFrame;
 		
 		/** This collects the utterances ordered by appearance, not by temporal annotation */
 		private List<LinguisticParent> corpusData;
@@ -79,7 +73,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			stack = new Stack<String>();
 			textBuffer = "";
 			internalOrder = new HashMap<String, Long>();
-			currentFrame = new long[2];
 			corpusData = new ArrayList<LinguisticParent>();
 			id2Object = new HashMap<String, SequenceElement>();
 		}

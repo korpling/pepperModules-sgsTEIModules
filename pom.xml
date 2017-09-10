@@ -13,6 +13,9 @@
 		<artifactId>pepper-parentModule</artifactId>
 		<version>3.1.0</version>
 	</parent>
+	<!--properties>
+	<maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
+	</properties-->
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>

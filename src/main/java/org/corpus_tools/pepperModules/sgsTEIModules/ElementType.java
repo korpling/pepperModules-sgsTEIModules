@@ -1,4 +1,4 @@
-package org.corpus_tools.pepperModules.sgsTEIModules.lib;
+package org.corpus_tools.pepperModules.sgsTEIModules;
 
 /**
  * PARENT is used for elements like u and seg, which can have children

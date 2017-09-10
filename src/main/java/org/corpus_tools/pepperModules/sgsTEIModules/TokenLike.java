@@ -1,4 +1,4 @@
-package org.corpus_tools.pepperModules.sgsTEIModules.lib;
+package org.corpus_tools.pepperModules.sgsTEIModules;
 
 import java.util.Collections;
 import java.util.List;
