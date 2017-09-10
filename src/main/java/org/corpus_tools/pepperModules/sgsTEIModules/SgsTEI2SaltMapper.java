@@ -269,7 +269,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			String speaker = null;
 			for (int i = 0; i < orderedTimes.length; i++) {				
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
-				speaker = ((LinguisticParent) e).getSpeaker();
+				speaker = ((LinguisticParent) e).getSpeaker().replace("#", "");
 				basePair = baseTexts.get(speaker);
 				if (basePair == null) {
 					basePair = Pair.of(new StringBuilder(), new StringBuilder());
@@ -322,10 +322,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			List<SToken> normTokens = null;
 			for (int i = 0; i < orderedTimes.length; i++) {
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
-				speaker = ((LinguisticParent) e).getSpeaker();
+				speaker = ((LinguisticParent) e).getSpeaker().replace("#", "");
 				Pair<ArrayList<SToken>, ArrayList<SToken>> tlPair = tokenLists.get(speaker);
 				diplTokens = tlPair.getLeft();
 				normTokens = tlPair.getRight();
+				diplDS = dataSources.get(speaker).getLeft();
+				normDS = dataSources.get(speaker).getRight();
 				d = positions.get(speaker).getLeft();
 				n = positions.get(speaker).getRight();
 				Stack<Iterator<SequenceElement>> iteratorStack = new Stack<>();				
@@ -389,7 +391,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				List<List<SToken>> tokenSources = new ArrayList<>();
 				tokenSources.add(diplTokens);
 				tokenSources.add(normTokens);
-				String[] names = {speaker + ".dipl", speaker + ".norm"};  //FIXME obtain from properties
+				String[] names = {speaker + "_dipl", speaker + "_norm"};  //FIXME obtain from properties
 				for (int j = 0; j < tokenSources.size(); j++) {
 					List<SToken> tokenSource = tokenSources.get(j);
 					String name = names[j];
