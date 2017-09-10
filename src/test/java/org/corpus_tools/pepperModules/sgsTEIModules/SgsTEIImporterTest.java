@@ -34,7 +34,7 @@ import org.junit.Test;
  * 
  * @author Martin Klotz
  */
-public class SgsTEIImporterTest implements SgsTEIDictionary {
+public class SgsTEIImporterTest {
 	private static final String PRIMARY_DATA_DIPL = 
 			"bueno , pues había visto subir con hombrnoes jóvenes . "
 			+ "que subían mm a medianoche . "
@@ -143,7 +143,7 @@ public class SgsTEIImporterTest implements SgsTEIDictionary {
 		}
 		
 		/* morphosyntax if desired */
-		if (features.contains(TYPE_MORPHOSYNTAX)) {
+		if (features.contains("morphosyntax")) {
 			// TODO
 		}		
 		

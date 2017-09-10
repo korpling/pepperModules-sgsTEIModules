@@ -101,55 +101,6 @@ public class SgsTEIImporter extends PepperImporterImpl implements PepperImporter
 		getDocumentEndings().add("xml");
 	}
 	
-
-	/**
-	 * <strong>OVERRIDE THIS METHOD FOR CUSTOMIZATION</strong> <br/>
-	 * This method is called by the pepper framework to import the
-	 * corpus-structure for the passed {@link SCorpusGraph} object. In Pepper
-	 * each import step gets an own {@link SCorpusGraph} to work on. This graph
-	 * has to be filled with {@link SCorpus} and {@link SDocument} objects
-	 * representing the corpus-structure of the corpus to be imported. <br/>
-	 * In many cases, the corpus-structure can be retrieved from the
-	 * file-structure of the source files. Therefore Pepper provides a default
-	 * mechanism to map the file-structure to corpus-structure. This default
-	 * mechanism can be configured. To adapt the default behavior to your needs,
-	 * we recommend, to take a look into the 'Developer's Guide for Pepper
-	 * modules', you will find on
-	 * <a href="https://u.hu-berlin.de/saltnpepper/">https
-	 * ://u.hu-berlin.de/saltnpepper/</a>. <br/>
-	 * Just to show the creation of a corpus-structure for our sample purpose,
-	 * we here create a simple corpus-structure manually. The simple contains a
-	 * root-corpus <i>c1</i> having two sub-corpora <i>c2</i> and <i>c3</i>.
-	 * Each sub-corpus contains two documents <i>d1</i> and <i>d2</i> for
-	 * <i>d3</i> and <i>d4</i> and <i>c1</i> for <i>c3</i>.
-	 * 
-	 * <pre>
-	 *       c1
-	 *    /      \
-	 *   c2      c3
-	 *  /  \    /  \
-	 * d1  d2  d3  d4
-	 * </pre>
-	 * 
-	 * The URIs of the corpora and documents would be:
-	 * <ul>
-	 * <li>salt:/c1</li>
-	 * <li>salt:/c1/c2</li>
-	 * <li>salt:/c1/c2/d1</li>
-	 * <li>salt:/c1/c2/d2</li>
-	 * <li>salt:/c1/c3</li>
-	 * <li>salt:/c1/c3/d3</li>
-	 * <li>salt:/c1/c3/d4</li>
-	 * </ul>
-	 * 
-	 * @param corpusGraph
-	 *            the CorpusGraph object, which has to be filled.
-	 */
-	@Override
-	public void importCorpusStructure(SCorpusGraph sCorpusGraph) throws PepperModuleException {
-		
-	}
-
 	/**
 	 * <strong>OVERRIDE THIS METHOD FOR CUSTOMIZATION</strong> <br/>
 	 * This method creates a customized {@link PepperMapper} object and returns
@@ -176,14 +127,7 @@ public class SgsTEIImporter extends PepperImporterImpl implements PepperImporter
 	 */
 	public PepperMapper createPepperMapper(Identifier Identifier) {
 		SgsTEI2SaltMapper mapper = new SgsTEI2SaltMapper();
-		/**
-		 * TODO Set the exact resource, which should be processed by the created
-		 * mapper object, if the default mechanism of importCorpusStructure()
-		 * was used, the resource could be retrieved by
-		 * getIdentifier2ResourceTable().get(Identifier), just uncomment this
-		 * line
-		 */
-		// mapper.setResourceURI(getIdentifier2ResourceTable().get(Identifier));
+		mapper.setResourceURI(getIdentifier2ResourceTable().get(Identifier));
 		return (mapper);
 	}
 }
