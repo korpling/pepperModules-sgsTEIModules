@@ -58,4 +58,9 @@ public class LinguisticParent extends AbstractSequenceElement{
 	public List<SequenceElement> getElements() {
 		return elements;
 	}
+	
+	@Override
+	public String toString() {
+		return String.join(":", super.toString(), Long.toString(getStart()), Long.toString(getEnd()));
+	}
 }

@@ -4,6 +4,7 @@ public interface SgsTEIDictionary {
 	/* Name spaces */
 	public static final String NS_XML = "xml";
 	/* Tags */
+	public static final String TAG_ADD = "add";
 	public static final String TAG_CHOICE = "choice";
 	public static final String TAG_CORR = "corr";
 	public static final String TAG_DESC = "desc";

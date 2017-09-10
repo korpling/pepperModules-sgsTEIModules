@@ -3,11 +3,13 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
+import org.corpus_tools.pepper.testFramework.PepperTestUtil;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SOrderRelation;
@@ -34,19 +36,21 @@ import org.junit.Test;
  */
 public class SgsTEIImporterTest implements SgsTEIDictionary {
 	private static final String PRIMARY_DATA_DIPL = 
-			"bueno, pues había visto subir con hombrnoes jóvenes. "
-			+ "que subían mm a medianoche. "
-			+ "y bajaban a altas horas de la madrugada. "
-			+ "¿crees que podrían mantener alguna relación amorosa? "
-			+ "bueno, yo no yo cre mira te voy a decir la verdad.";
+			"bueno , pues había visto subir con hombrnoes jóvenes . "
+			+ "que subían mm a medianoche . "
+			+ "y bajaban a altas horas de la madrugada . "
+			+ "¿ crees que podrían mantener alguna relación amorosa ? "
+			+ "bueno , yo no yo cre mira te voy a decir la verdad .";
 	private static final String PRIMARY_DATA_NORM = 
-			"bueno, pues había visto subir con hombretones jóvenes. "
-			+ "que subían a medianoche. "
-			+ "y bajaban a altas horas de la madrugada. "
-			+ "¿crees que podrían mantener alguna relación amorosa? "
-			+ "bueno, yo no yo creo mira te voy a decir la verdad.";
+			"bueno , pues había visto subir con hombretones jóvenes . "
+			+ "que subían a medianoche . "
+			+ "y bajaban a altas horas de la madrugada . "
+			+ "¿ crees que podrían mantener alguna relación amorosa ? "
+			+ "bueno , yo no yo creo mira te voy a decir la verdad .";
 	
 	private SgsTEI2SaltMapper fixture = null;
+	
+	private static final String EXAMPLE_FILE = "example.xml";
 	
 	/**
 	 * This method is called by the JUnit environment each time before a test
@@ -149,17 +153,29 @@ public class SgsTEIImporterTest implements SgsTEIDictionary {
 	@Test
 	public void testPrimaryData() {
 		SDocumentGraph docGraph = getGoalDocumentGraph(null);
-		getFixture().setResourceURI(URI.createFileURI("example.xml"));
+		File resourceDir = new File(PepperTestUtil.getTestResources());
+		File example = new File(resourceDir, EXAMPLE_FILE);
+		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
 		getFixture().mapSDocument();
 		SDocumentGraph createdGraph = getFixture().getDocument().getDocumentGraph();
 		
 		// compare graphs
 		assertEquals(docGraph.getTextualDSs().size(), createdGraph.getTextualDSs().size());
-		assertEquals(docGraph.getRelations().size(), createdGraph.getTextualDSs().size());
+		assertEquals(docGraph.getTextualDSs().get(0).getText(), createdGraph.getTextualDSs().get(0).getText());
+		assertEquals(docGraph.getTextualDSs().get(1).getText(), createdGraph.getTextualDSs().get(1).getText());
+		System.out.println("--------------------------");
+		for (int i = 0; i < 95; i++) {
+			System.out.println(docGraph.getText(docGraph.getTokens().get(i)) + " <> " + createdGraph.getText(createdGraph.getTokens().get(i)));
+			if (i > 92) {
+				System.out.println(docGraph.getText(docGraph.getTokens().get(i)));
+			}
+		}
+		System.out.println("--------------------------");
 		assertEquals(docGraph.getTokens().size(), createdGraph.getTokens().size());		
 		for (int i = 0; i < docGraph.getTokens().size(); i++) {
 			assertEquals(docGraph.getText(docGraph.getTokens().get(i)), createdGraph.getText(createdGraph.getTokens().get(i)));
-		}		
+		}
+		assertEquals(docGraph.getRelations().size(), createdGraph.getTextualDSs().size());
 	}
 	
 	@Test

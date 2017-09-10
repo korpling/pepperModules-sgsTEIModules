@@ -8,6 +8,7 @@ public class TokenLike extends AbstractSequenceElement {
 	
 	public TokenLike(ElementType type, String value) {
 		this.type = type;
+		setValue(value);
 	}
 	
 	public ElementType getElementType() {

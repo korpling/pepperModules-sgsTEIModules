@@ -11,4 +11,5 @@ public interface SequenceElement {
 	public List<Pair<String, String>> getAnnotations();
 	public void addAnnotation(String key, String value);
 	public void setOverlap(SequenceElement elem);
+	public SequenceElement getOverlap();
 }
