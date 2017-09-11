@@ -3,25 +3,30 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
+import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
+import org.corpus_tools.salt.common.SDominanceRelation;
 import org.corpus_tools.salt.common.SOrderRelation;
+import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SRelation;
+import org.corpus_tools.salt.semantics.SCatAnnotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -248,8 +253,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		 * This method is called after the whole document has been read and the graph can be built 
 		 * from the collected information.
 		 */
-		private void buildGraph() {
-			debugMessage("Building graph ...");
+		private void buildGraph() {			
 			/* first obtain order */
 			HashMap<Long, LinguisticParent> start2utterance = new HashMap<Long, LinguisticParent>();
 			long[] orderedTimes = new long[corpusData.size()];
@@ -267,6 +271,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			Pair<StringBuilder, StringBuilder> basePair = null;
 			String space = " ";
 			String speaker = null;
+			debugMessage("Collecting base texts ....");
 			for (int i = 0; i < orderedTimes.length; i++) {				
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
 				speaker = ((LinguisticParent) e).getSpeaker().replace("#", "");
@@ -319,7 +324,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			int n = 0;
 			int nv = 0;
 			List<SToken> diplTokens = null;
-			List<SToken> normTokens = null;
+			List<SToken> normTokens = null;			 
+			debugMessage("Building graph ...");			
 			for (int i = 0; i < orderedTimes.length; i++) {
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
 				speaker = ((LinguisticParent) e).getSpeaker().replace("#", "");
@@ -332,11 +338,32 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				n = positions.get(speaker).getRight();
 				Stack<Iterator<SequenceElement>> iteratorStack = new Stack<>();				
 				iteratorStack.push(e.getElements().iterator());
+				/*syntax*/
+				Stack<SStructure> treeNodeStack = new Stack<>();
+				SStructure child = SaltFactory.createSStructure();
+				SCatAnnotation anno = SaltFactory.createSCatAnnotation();
+				anno.setValue("u");
+				child.addAnnotation(anno);
+				treeNodeStack.push(child);
+				SDominanceRelation domRel = null;
+				Set<SDominanceRelation> domRels = new HashSet<SDominanceRelation>();
+				/*end of syntax*/
 				while (!iteratorStack.isEmpty() && iteratorStack.peek().hasNext()) { //FIXME get rid of second condition
 					e = iteratorStack.peek().next();
 					ElementType etype = e.getElementType();
 					if (ElementType.PARENT.equals(etype)) {
 						iteratorStack.push(e.getElements().iterator());
+						{/*Syntax*/
+							child = SaltFactory.createSStructure();
+							anno = SaltFactory.createSCatAnnotation();
+							anno.setValue("seg");
+							child.addAnnotation(anno);
+							domRel = SaltFactory.createSDominanceRelation();
+							domRel.setSource(treeNodeStack.peek());
+							domRel.setTarget(child);
+							domRels.add(domRel);
+							treeNodeStack.push(child);
+						}
 					}
 					else {
 						if (ElementType.ALL.equals(etype) || ElementType.DIPL.equals(etype)) {
@@ -352,7 +379,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 									tok = docGraph.createToken(normDS, n, nv);
 									normTokens.add(tok);
 									addTimelineRelation(timeline, tok, false);
-									n = nv + 1;										
+									n = nv + 1;
+									{/*Syntax*/
+										child = treeNodeStack.peek();
+										domRel = SaltFactory.createSDominanceRelation();
+										domRel.setSource(child);
+										domRel.setTarget(tok);
+										domRels.add(domRel);
+									}
 								}
 								if (ov == null) {
 									if (ElementType.DIPL.equals(etype)) {
@@ -378,10 +412,19 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						}
 						if (!iteratorStack.peek().hasNext()) {
 							iteratorStack.pop();
+							{/*Syntax*/
+								docGraph.addNode(treeNodeStack.pop());
+							}
 						}
 					}
 				}
 				positions.put(speaker, Pair.of(d, n));
+				{/*Syntax*/
+					docGraph.addNode(treeNodeStack.pop());
+					for (SDominanceRelation drl : domRels) {
+						docGraph.addRelation(drl);
+					}	
+				}				
 			}
 			for (Entry<String, Pair<ArrayList<SToken>, ArrayList<SToken>>> entry : tokenLists.entrySet()) {
 				speaker = entry.getKey();
