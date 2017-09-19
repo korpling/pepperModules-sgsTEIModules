@@ -1,5 +1,6 @@
 package org.corpus_tools.pepperModules.sgsTEIModules;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,12 +11,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
-import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SDominanceRelation;
@@ -25,15 +27,21 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.core.SAnnotation;
+import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.core.SRelation;
+import org.corpus_tools.salt.exceptions.SaltException;
 import org.corpus_tools.salt.semantics.SCatAnnotation;
+import org.corpus_tools.salt.util.ExportFilter;
+import org.corpus_tools.salt.util.VisJsVisualizer;
+import org.eclipse.emf.common.util.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.DefaultHandler2;
 
-public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDictionary{
+public class SgsTEI2SaltMapper extends PepperMapperImpl{
 	
 	/**
 	 * {@inheritDoc}
@@ -58,9 +66,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 * @author klotzmaz
 	 *
 	 */
-	private class SgsTEIReader extends DefaultHandler2 {
+	private class SgsTEIReader extends DefaultHandler2 implements SgsTEIDictionary{
 		
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
+		
+		private static final String PAUSE_TEXT_VALUE = "";
+		
+		private static final String PAUSE_LAYER_NAME = "pause";
 		
 		private static final String ERR_MSG_STACK_INCONSISTENCY_EXCEPTION = "Opening and closing element do not match!";
 		/** This is the element stack representing the hierarchy of elements to be closed. */
@@ -74,19 +86,28 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private List<LinguisticParent> corpusData;
 		/** This keeps track of the currently edited linguistic parent */
 		private Stack<LinguisticParent> parentStack;
-		/** This is a global mapping of Ids to internal objects */
-		private HashMap<String, SequenceElement> id2Object;
 		/** Since the current token value will be known after the closing tag, we need to keep track of the object */
 		private TokenLike currentT;
 		/** This is used to record overlapping elements as in choice elements */
 		private Pair<TokenLike, TokenLike> overlap;
+		/** This variable keeps track of the currently read spanGrp */
+		private String currentSpanGroupType;
+		/** This variable stores the mapping from tokens to list of annotations given in spans for each spangroup type FIXME maybe there is only on type*/
+		private HashMap<String, HashMap<String, List<String>>> group2AnnotationMapping;
+		/** This variable collects the stand-off annotations */
+		private HashMap<String, Pair<String, String>> annoId2FreeAnnotation; 
+		/** This variable stores the id of currently read annotation */
+		private String currentAnnoId;
+		/** This variable keeps track of the currently active annotation name in the f-tag's environment */
+		private String currentAnnoLayer;
 		
 		public SgsTEIReader() {
 			stack = new Stack<String>();
 			textBuffer = "";
 			internalOrder = new HashMap<String, Long>();
 			corpusData = new ArrayList<LinguisticParent>();
-			id2Object = new HashMap<String, SequenceElement>();
+			group2AnnotationMapping = new HashMap<String, HashMap<String, List<String>>>();
+			annoId2FreeAnnotation = new HashMap<String, Pair<String, String>>();
 		}
 		
 		private void debugMessage(String... elements) {
@@ -100,22 +121,33 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				throws SAXException {
 			localName = qName.substring(qName.lastIndexOf(":") + 1);
 			if (debugEnabled && !stack.isEmpty()) {
-				debugMessage("OPENING", localName, stack.peek(), parentStack != null && !parentStack.isEmpty()? parentStack.peek().toString() : "");
+//				debugMessage("OPENING", localName, stack.peek(), parentStack != null && !parentStack.isEmpty()? parentStack.peek().toString() : "");
 			}
 			if (TAG_W.equals(localName) || TAG_PC.equals(localName)) {
 				if (TAG_SEG.equals(stack.peek())) {
-					currentT = new TokenLike(ElementType.ALL, null);					
-					id2Object.put(attributes.getValue(NS_XML, ATT_ID), currentT);
+					currentT = new TokenLike(ElementType.ALL, null);
+					currentT.setId(attributes.getValue(NS_XML, ATT_ID));
 				}
 				else if (TAG_CORR.equals(stack.peek())) {
-					id2Object.put(attributes.getValue(NS_XML, ATT_ID), overlap.getRight());
+					overlap.getRight().setId(attributes.getValue(NS_XML, ATT_ID));
+				}
+			}
+			else if (TAG_FS.equals(localName)) {
+				currentAnnoId = attributes.getValue(NS_XML, ATT_ID);
+			}
+			else if (TAG_F.equals(localName)) {
+				currentAnnoLayer = attributes.getValue(ATT_NAME);
+			}
+			else if (TAG_SYMBOL.equals(localName)) {
+				if (TAG_F.equals(stack.peek())) {
+					annoId2FreeAnnotation.put(currentAnnoId, Pair.of(currentAnnoLayer, attributes.getValue(ATT_VALUE)));
 				}
 			}
 			else if (TAG_PAUSE.equals(localName)) {
 				LinguisticParent parent = parentStack.peek();
-				TokenLike pause = new TokenLike(ElementType.DIPL, null);
+				TokenLike pause = new TokenLike(ElementType.DIPL, PAUSE_TEXT_VALUE);
 				parent.addElement(pause);
-				pause.addAnnotation(ATT_TYPE, attributes.getValue(ATT_TYPE));
+				pause.addAnnotation(PAUSE_LAYER_NAME, attributes.getValue(ATT_TYPE));
 			}
 			else if (TAG_CHOICE.equals(localName)) {
 				overlap = Pair.of(new TokenLike(ElementType.DIPL, null), new TokenLike(ElementType.NORM, null));
@@ -133,7 +165,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				LinguisticParent seg = new LinguisticParent(parent.getSpeaker(), -1, -1);
 				parent.addElement(seg);
 				parentStack.push(seg);
-				id2Object.put(attributes.getValue(NS_XML, ATT_ID), seg);
+				seg.setId(attributes.getValue(NS_XML, ATT_ID));
 			}
 			else if (TAG_U.equals(localName)) {
 				debugEnabled = true;
@@ -144,7 +176,26 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				corpusData.add(currentUtterance);
 				parentStack = new Stack<LinguisticParent>();
 				parentStack.push(currentUtterance);
-				id2Object.put(attributes.getValue(NS_XML, ATT_ID), currentUtterance);
+				currentUtterance.setId(attributes.getValue(NS_XML, ATT_ID));
+			}
+			else if (TAG_SPAN.equals(localName)) {
+				if (!group2AnnotationMapping.containsKey(currentSpanGroupType)) {
+					group2AnnotationMapping.put(currentSpanGroupType, new HashMap<String, List<String>>());
+				}
+				HashMap<String, List<String>> annoMapping = group2AnnotationMapping.get(currentSpanGroupType);				
+				String ana = attributes.getValue(ATT_ANA);
+				String target = attributes.getValue(ATT_TARGET);
+				if (ana != null && target != null) {
+					String a = ana.replace("#", "");
+					String tgt = target.replace("#", "");
+					if (!annoMapping.containsKey(tgt)) {
+						annoMapping.put(tgt, new ArrayList<String>());
+					}
+					annoMapping.get(tgt).add(a);
+				}
+			}
+			else if (TAG_SPANGRP.equals(localName)) {
+				currentSpanGroupType = attributes.getValue(ATT_TYPE);
 			}
 			else if (TAG_WHEN.equals(localName) && TAG_TIMELINE.equals(stack.peek())) {
 				String timeValue = attributes.getValue(ATT_ABSOLUTE).replaceAll("\\.|:", "");
@@ -163,7 +214,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			localName = qName.substring(qName.lastIndexOf(":") + 1);			
 			String stackTop = stack.pop();
 			if (debugEnabled && !stack.isEmpty()) {
-				debugMessage("CLOSURE", localName, stack.peek(), parentStack != null && !parentStack.isEmpty()? parentStack.peek().toString() : "");				
+//				debugMessage("CLOSURE", localName, stack.peek(), parentStack != null && !parentStack.isEmpty()? parentStack.peek().toString() : "");				
 			}
 			if (!localName.equals(stackTop)) {
 				throw new PepperModuleDataException(SgsTEI2SaltMapper.this, ERR_MSG_STACK_INCONSISTENCY_EXCEPTION);
@@ -188,6 +239,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SEG.equals(localName)) {
 				parentStack.pop();
+			}
+			else if (TAG_STRING.equals(localName)) {
+				if (TAG_F.equals(stack.peek())) {
+					annoId2FreeAnnotation.put(currentAnnoId, Pair.of(currentAnnoLayer, textBuffer));
+				}
 			}
 			else if (TAG_SIC.equals(localName)) {
 				postassignTextValue(overlap.getLeft(), textBuffer);
@@ -218,8 +274,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private void debugPrintCollectedData() {
 			for (LinguisticParent u : corpusData) {
-				debugMessage("utterance", u.toString());
-				debugMessage(debugRecPrint(u, 0));
+//				debugMessage("utterance", u.toString());
+//				debugMessage(debugRecPrint(u, 0));
 			}
 		}
 		
@@ -247,6 +303,32 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			timeRel.setStart(pointInTime - 1);
 			timeRel.setEnd(pointInTime);
 			getDocument().getDocumentGraph().addRelation(timeRel);
+		}
+		
+		private void addAnnotations(SequenceElement e, SToken token) {
+			SAnnotation a = null;			
+			for (Entry<String, String> akv : e.getAnnotations().entrySet()) {
+				a = SaltFactory.createSAnnotation();
+				a.setName(akv.getKey());
+				a.setValue(akv.getValue());
+				token.addAnnotation(a);
+			}
+			String tokenId = e.getId();
+			debugMessage("id", tokenId);
+			if (tokenId != null) {				
+				Pair<String, String> freeKVPair = null;
+				for (Entry<String, HashMap<String, List<String>>> g2m : group2AnnotationMapping.entrySet()) {
+					List<String> freeAnnotationIds = g2m.getValue().get(tokenId);
+					debugMessage(Integer.toString(freeAnnotationIds.size()), "free annotations for token", e.getId());
+					for (String annoId : freeAnnotationIds) {
+						a = SaltFactory.createSAnnotation();
+						freeKVPair = annoId2FreeAnnotation.get(annoId);
+						a.setName(freeKVPair.getLeft());
+						a.setValue(freeKVPair.getRight());
+						token.addAnnotation(a);
+					}
+				}				
+			}
 		}
 		
 		/**
@@ -325,7 +407,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			int nv = 0;
 			List<SToken> diplTokens = null;
 			List<SToken> normTokens = null;			 
-			debugMessage("Building graph ...");			
+			debugMessage("Building graph ...");
 			for (int i = 0; i < orderedTimes.length; i++) {
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
 				speaker = ((LinguisticParent) e).getSpeaker().replace("#", "");
@@ -370,15 +452,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 							if (e.getValue() != null) {
 								nv = d + e.getValue().length();			
 								SToken tok = docGraph.createToken(diplDS, d, nv);
-								diplTokens.add(tok);
+								diplTokens.add(tok);								
 								d = nv + 1;
 								addTimelineRelation(timeline, tok, true);
+								addAnnotations(e, tok);
 								SequenceElement ov = ElementType.ALL.equals(etype)? e : e.getOverlap();
 								if (ov != null && ov.getValue() != null) {
 									nv = n + ov.getValue().length();
 									tok = docGraph.createToken(normDS, n, nv);
 									normTokens.add(tok);
 									addTimelineRelation(timeline, tok, false);
+									addAnnotations(ov, tok);
 									n = nv + 1;
 									{/*Syntax*/
 										child = treeNodeStack.peek();
@@ -422,7 +506,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				{/*Syntax*/
 					docGraph.addNode(treeNodeStack.pop());
 					for (SDominanceRelation drl : domRels) {
-						docGraph.addRelation(drl);
+						docGraph.addRelation(drl);						
 					}	
 				}				
 			}
@@ -447,6 +531,40 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					}
 				}	
 			}
+			/*DEBUG*/
+			ExportFilter exportFilter = new ExportFilter() {				
+				@Override
+				public boolean includeRelation(SRelation relation) {
+					return (relation instanceof SDominanceRelation);
+				}
+				
+				@Override
+				public boolean includeNode(SNode node) {
+					for (SRelation r : node.getInRelations()) {
+						if (r instanceof SDominanceRelation) {
+							return true;
+						}
+					}
+					for (SRelation r : node.getOutRelations()) {
+						if (r instanceof SDominanceRelation) {
+							return true;
+						}
+					}
+					return false;
+				}
+			};
+			debugVis(exportFilter);
+			debugMessage(Integer.toString(annoId2FreeAnnotation.size()));
 		}
-	}
+		
+		private void debugVis(ExportFilter exportFilter) {
+			VisJsVisualizer vis;
+			try {				
+				vis = new VisJsVisualizer(getDocument(), exportFilter, null);				
+				vis.visualize(URI.createFileURI("./vis/"));
+			} catch (IOException | SaltException | XMLStreamException e) {
+				e.printStackTrace();
+			}			
+		}
+	}	
 }

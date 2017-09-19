@@ -1,17 +1,16 @@
 package org.corpus_tools.pepperModules.sgsTEIModules;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.tuple.Pair;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractSequenceElement implements SequenceElement{
 	private String value;
-	private List<Pair<String, String>> annotations;
+	private HashMap<String, String> annotations;
 	private SequenceElement overlaps;
+	private String id;
 	
 	public AbstractSequenceElement (){
-		annotations = new ArrayList<>();
+		annotations = new HashMap<String, String>();
 	}
 	
 	public String getValue() {
@@ -23,13 +22,13 @@ public abstract class AbstractSequenceElement implements SequenceElement{
 	}
 
 	@Override
-	public List<Pair<String, String>> getAnnotations() {
+	public Map<String, String> getAnnotations() {
 		return this.annotations;
 	}
 
 	@Override
 	public void addAnnotation(String key, String val) {
-		annotations.add(Pair.of(key, val));
+		annotations.put(key, val);
 	}
 	
 	@Override
@@ -52,5 +51,14 @@ public abstract class AbstractSequenceElement implements SequenceElement{
 			elements[3] = overlaps.getValue();
 		}
 		return String.join(":", elements);
+	}
+	
+	@Override
+	public String getId() {
+		return this.id;
+	}
+	
+	public void setId(String id) {
+		this.id = id;
 	}
 }
