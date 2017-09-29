@@ -58,6 +58,7 @@ public abstract class AbstractSequenceElement implements SequenceElement{
 		return this.id;
 	}
 	
+	@Override
 	public void setId(String id) {
 		this.id = id;
 	}

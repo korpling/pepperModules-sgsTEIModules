@@ -12,4 +12,5 @@ public interface SequenceElement {
 	public void setOverlap(SequenceElement elem);
 	public SequenceElement getOverlap();
 	public String getId();
+	public void setId(String id);
 }

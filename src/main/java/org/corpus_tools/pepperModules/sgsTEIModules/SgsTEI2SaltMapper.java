@@ -95,11 +95,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		/** This variable stores the mapping from tokens to list of annotations given in spans for each spangroup type FIXME maybe there is only on type*/
 		private HashMap<String, HashMap<String, List<String>>> group2AnnotationMapping;
 		/** This variable collects the stand-off annotations */
-		private HashMap<String, Pair<String, String>> annoId2FreeAnnotation; 
+		private HashMap<String, HashMap<String, String>> annoId2FreeAnnotations; 
 		/** This variable stores the id of currently read annotation */
 		private String currentAnnoId;
 		/** This variable keeps track of the currently active annotation name in the f-tag's environment */
 		private String currentAnnoLayer;
+		/** */
 		
 		public SgsTEIReader() {
 			stack = new Stack<String>();
@@ -107,7 +108,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			internalOrder = new HashMap<String, Long>();
 			corpusData = new ArrayList<LinguisticParent>();
 			group2AnnotationMapping = new HashMap<String, HashMap<String, List<String>>>();
-			annoId2FreeAnnotation = new HashMap<String, Pair<String, String>>();
+			annoId2FreeAnnotations = new HashMap<String, HashMap<String, String>>();
 		}
 		
 		private void debugMessage(String... elements) {
@@ -125,22 +126,23 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			}
 			if (TAG_W.equals(localName) || TAG_PC.equals(localName)) {
 				if (TAG_SEG.equals(stack.peek())) {
-					currentT = new TokenLike(ElementType.ALL, null);
-					currentT.setId(attributes.getValue(NS_XML, ATT_ID));
+					currentT = new TokenLike(ElementType.ALL, null, attributes.getValue(String.join(":", NS_XML, ATT_ID)));
 				}
 				else if (TAG_CORR.equals(stack.peek())) {
-					overlap.getRight().setId(attributes.getValue(NS_XML, ATT_ID));
+					debugMessage("ID is set");
+					overlap.getRight().setId(attributes.getValue(String.join(":", NS_XML, ATT_ID)));
 				}
 			}
 			else if (TAG_FS.equals(localName)) {
-				currentAnnoId = attributes.getValue(NS_XML, ATT_ID);
+				currentAnnoId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
+				annoId2FreeAnnotations.put(currentAnnoId, new HashMap<String, String>());	
 			}
 			else if (TAG_F.equals(localName)) {
-				currentAnnoLayer = attributes.getValue(ATT_NAME);
+				currentAnnoLayer = attributes.getValue(ATT_NAME);			
 			}
 			else if (TAG_SYMBOL.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					annoId2FreeAnnotation.put(currentAnnoId, Pair.of(currentAnnoLayer, attributes.getValue(ATT_VALUE)));
+					annoId2FreeAnnotations.get(currentAnnoId).put(currentAnnoLayer, attributes.getValue(ATT_VALUE));
 				}
 			}
 			else if (TAG_PAUSE.equals(localName)) {
@@ -155,7 +157,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				overlap.getRight().setOverlap(overlap.getLeft());
 			}
 			else if (TAG_ADD.equals(localName)) {
-				overlap = Pair.of(new TokenLike(ElementType.DIPL, textBuffer), new TokenLike(ElementType.NORM, textBuffer));
+				overlap = Pair.of(new TokenLike(ElementType.DIPL, textBuffer), new TokenLike(ElementType.NORM, textBuffer, currentT.getId()));
 				overlap.getLeft().setOverlap(overlap.getRight());
 				overlap.getRight().setOverlap(overlap.getLeft());
 				currentT = null;
@@ -165,7 +167,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				LinguisticParent seg = new LinguisticParent(parent.getSpeaker(), -1, -1);
 				parent.addElement(seg);
 				parentStack.push(seg);
-				seg.setId(attributes.getValue(NS_XML, ATT_ID));
+				seg.setId(attributes.getValue(String.join(":", NS_XML, ATT_ID)));
 			}
 			else if (TAG_U.equals(localName)) {
 				debugEnabled = true;
@@ -176,7 +178,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				corpusData.add(currentUtterance);
 				parentStack = new Stack<LinguisticParent>();
 				parentStack.push(currentUtterance);
-				currentUtterance.setId(attributes.getValue(NS_XML, ATT_ID));
+				currentUtterance.setId(attributes.getValue(String.join(":", NS_XML, ATT_ID)));
 			}
 			else if (TAG_SPAN.equals(localName)) {
 				if (!group2AnnotationMapping.containsKey(currentSpanGroupType)) {
@@ -242,7 +244,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			}
 			else if (TAG_STRING.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					annoId2FreeAnnotation.put(currentAnnoId, Pair.of(currentAnnoLayer, textBuffer));
+					annoId2FreeAnnotations.get(currentAnnoId).put(currentAnnoLayer, textBuffer);
 				}
 			}
 			else if (TAG_SIC.equals(localName)) {
@@ -305,7 +307,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			getDocument().getDocumentGraph().addRelation(timeRel);
 		}
 		
-		private void addAnnotations(SequenceElement e, SToken token) {
+		private void addAnnotations(SequenceElement e, SToken token, String speaker, boolean addFreeAnnotations) {
 			SAnnotation a = null;			
 			for (Entry<String, String> akv : e.getAnnotations().entrySet()) {
 				a = SaltFactory.createSAnnotation();
@@ -314,18 +316,26 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				token.addAnnotation(a);
 			}
 			String tokenId = e.getId();
-			debugMessage("id", tokenId);
-			if (tokenId != null) {				
-				Pair<String, String> freeKVPair = null;
+			debugMessage("id:", tokenId, "; text:", e.getValue(), "; level:", e.getElementType().toString());
+			if (addFreeAnnotations && tokenId != null) {
 				for (Entry<String, HashMap<String, List<String>>> g2m : group2AnnotationMapping.entrySet()) {
 					List<String> freeAnnotationIds = g2m.getValue().get(tokenId);
-					debugMessage(Integer.toString(freeAnnotationIds.size()), "free annotations for token", e.getId());
-					for (String annoId : freeAnnotationIds) {
-						a = SaltFactory.createSAnnotation();
-						freeKVPair = annoId2FreeAnnotation.get(annoId);
-						a.setName(freeKVPair.getLeft());
-						a.setValue(freeKVPair.getRight());
-						token.addAnnotation(a);
+					if (freeAnnotationIds != null) {
+						for (String annoId : freeAnnotationIds) {
+							for (Entry<String, String> freeKVPair : annoId2FreeAnnotations.get(annoId).entrySet()) {
+								debugMessage(tokenId, freeKVPair.getKey(), freeKVPair.getValue());
+								a = SaltFactory.createSAnnotation();								
+								a.setName(String.join("_", speaker, freeKVPair.getKey()));
+								a.setValue(freeKVPair.getValue());
+								token.addAnnotation(a);
+								if (true) { //TODO introduce property switch for collapsed layers
+									a = SaltFactory.createSAnnotation();								
+									a.setName(freeKVPair.getKey());
+									a.setValue(freeKVPair.getValue());
+									token.addAnnotation(a);
+								}
+							}
+						}
 					}
 				}				
 			}
@@ -455,14 +465,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 								diplTokens.add(tok);								
 								d = nv + 1;
 								addTimelineRelation(timeline, tok, true);
-								addAnnotations(e, tok);
+								addAnnotations(e, tok, speaker, false);
 								SequenceElement ov = ElementType.ALL.equals(etype)? e : e.getOverlap();
 								if (ov != null && ov.getValue() != null) {
 									nv = n + ov.getValue().length();
 									tok = docGraph.createToken(normDS, n, nv);
 									normTokens.add(tok);
 									addTimelineRelation(timeline, tok, false);
-									addAnnotations(ov, tok);
+									addAnnotations(ov, tok, speaker, true);
 									n = nv + 1;
 									{/*Syntax*/
 										child = treeNodeStack.peek();
@@ -554,7 +564,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				}
 			};
 			debugVis(exportFilter);
-			debugMessage(Integer.toString(annoId2FreeAnnotation.size()));
+			debugMessage(Integer.toString(annoId2FreeAnnotations.size()));			
 		}
 		
 		private void debugVis(ExportFilter exportFilter) {
