@@ -15,6 +15,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
@@ -70,11 +71,15 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
 		
-		private static final String PAUSE_TEXT_VALUE = "";
+		private final String PAUSE_TEXT_VALUE = null;
 		
 		private static final String PAUSE_LAYER_NAME = "pause";
 		
 		private static final String ERR_MSG_STACK_INCONSISTENCY_EXCEPTION = "Opening and closing element do not match!";
+
+		private static final String CAT_SEG = "clause";
+
+		private static final String CAT_U = "u";
 		/** This is the element stack representing the hierarchy of elements to be closed. */
 		private Stack<String> stack;
 		/** This variable is keeping track of read characters */
@@ -121,15 +126,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		public void startElement(String uri, String localName, String qName, Attributes attributes)
 				throws SAXException {
 			localName = qName.substring(qName.lastIndexOf(":") + 1);
-			if (debugEnabled && !stack.isEmpty()) {
-//				debugMessage("OPENING", localName, stack.peek(), parentStack != null && !parentStack.isEmpty()? parentStack.peek().toString() : "");
-			}
 			if (TAG_W.equals(localName) || TAG_PC.equals(localName)) {
 				if (TAG_SEG.equals(stack.peek())) {
 					currentT = new TokenLike(ElementType.ALL, null, attributes.getValue(String.join(":", NS_XML, ATT_ID)));
 				}
 				else if (TAG_CORR.equals(stack.peek())) {
-					debugMessage("ID is set");
 					overlap.getRight().setId(attributes.getValue(String.join(":", NS_XML, ATT_ID)));
 				}
 			}
@@ -147,7 +148,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			}
 			else if (TAG_PAUSE.equals(localName)) {
 				LinguisticParent parent = parentStack.peek();
-				TokenLike pause = new TokenLike(ElementType.DIPL, PAUSE_TEXT_VALUE);
+				TokenLike pause = new TokenLike(ElementType.DIPL, null);
 				parent.addElement(pause);
 				pause.addAnnotation(PAUSE_LAYER_NAME, attributes.getValue(ATT_TYPE));
 			}
@@ -199,7 +200,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			else if (TAG_SPANGRP.equals(localName)) {
 				currentSpanGroupType = attributes.getValue(ATT_TYPE);
 			}
-			else if (TAG_WHEN.equals(localName) && TAG_TIMELINE.equals(stack.peek())) {
+			else if (TAG_WHEN.equals(localName) && TAG_TIMELINE.equals(stack.peek())) {//FIXME what to do when order is mentioned later? -> save only names in u-read and replace them with times later!				
 				String timeValue = attributes.getValue(ATT_ABSOLUTE).replaceAll("\\.|:", "");
 				internalOrder.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), Long.parseLong(timeValue));
 			}
@@ -215,9 +216,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		public void endElement(String uri, String localName, String qName) throws SAXException {
 			localName = qName.substring(qName.lastIndexOf(":") + 1);			
 			String stackTop = stack.pop();
-			if (debugEnabled && !stack.isEmpty()) {
-//				debugMessage("CLOSURE", localName, stack.peek(), parentStack != null && !parentStack.isEmpty()? parentStack.peek().toString() : "");				
-			}
 			if (!localName.equals(stackTop)) {
 				throw new PepperModuleDataException(SgsTEI2SaltMapper.this, ERR_MSG_STACK_INCONSISTENCY_EXCEPTION);
 			}
@@ -265,7 +263,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				parent.addElement(t);				
 			}
 			else if (TAG_TEI.equals(localName)) {
-				debugPrintCollectedData();
+//				debugPrintCollectedData();
 				buildGraph();
 			}
 		}
@@ -276,8 +274,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		
 		private void debugPrintCollectedData() {
 			for (LinguisticParent u : corpusData) {
-//				debugMessage("utterance", u.toString());
-//				debugMessage(debugRecPrint(u, 0));
+				debugMessage("utterance", u.toString());
+				debugMessage(debugRecPrint(u, 0));
 			}
 		}
 		
@@ -316,24 +314,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				token.addAnnotation(a);
 			}
 			String tokenId = e.getId();
-			debugMessage("id:", tokenId, "; text:", e.getValue(), "; level:", e.getElementType().toString());
 			if (addFreeAnnotations && tokenId != null) {
 				for (Entry<String, HashMap<String, List<String>>> g2m : group2AnnotationMapping.entrySet()) {
 					List<String> freeAnnotationIds = g2m.getValue().get(tokenId);
 					if (freeAnnotationIds != null) {
 						for (String annoId : freeAnnotationIds) {
 							for (Entry<String, String> freeKVPair : annoId2FreeAnnotations.get(annoId).entrySet()) {
-								debugMessage(tokenId, freeKVPair.getKey(), freeKVPair.getValue());
 								a = SaltFactory.createSAnnotation();								
 								a.setName(String.join("_", speaker, freeKVPair.getKey()));
 								a.setValue(freeKVPair.getValue());
 								token.addAnnotation(a);
-								if (true) { //TODO introduce property switch for collapsed layers
-									a = SaltFactory.createSAnnotation();								
-									a.setName(freeKVPair.getKey());
-									a.setValue(freeKVPair.getValue());
-									token.addAnnotation(a);
-								}
 							}
 						}
 					}
@@ -359,20 +349,27 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			/* collect and build base texts */
 			StringBuilder dipl = null;
 			StringBuilder norm = null;
-			HashMap<String, Pair<StringBuilder, StringBuilder>> baseTexts = new HashMap<>();
-			Pair<StringBuilder, StringBuilder> basePair = null;
+			StringBuilder pause = null;
+			HashMap<String, Triple<StringBuilder, StringBuilder, StringBuilder>> baseTexts = new HashMap<>();
+			Triple<StringBuilder, StringBuilder, StringBuilder> basePair = null;
 			String space = " ";
 			String speaker = null;
 			debugMessage("Collecting base texts ....");
+			boolean[] overlap2previous = new boolean[orderedTimes.length];
+			long previousEndTime = -1;
 			for (int i = 0; i < orderedTimes.length; i++) {				
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
 				speaker = ((LinguisticParent) e).getSpeaker().replace("#", "");
 				basePair = baseTexts.get(speaker);
+				debugMessage("prev:", Long.toString(previousEndTime), "new:", Long.toString(((LinguisticParent) e).getStart()));
+				overlap2previous[i] = (previousEndTime > ((LinguisticParent) e).getStart()); //TODO introduce regulating property
+				previousEndTime = ((LinguisticParent) e).getEnd();
 				if (basePair == null) {
-					basePair = Pair.of(new StringBuilder(), new StringBuilder());
+					basePair = Triple.of(new StringBuilder(), new StringBuilder(), new StringBuilder());
 					baseTexts.put(speaker, basePair);
 				}
 				dipl = basePair.getLeft();
+				pause = basePair.getMiddle();
 				norm = basePair.getRight();
 				Stack<Iterator<SequenceElement>> iteratorStack = new Stack<>();				
 				iteratorStack.push(e.getElements().iterator());
@@ -389,7 +386,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 								SequenceElement ov = ElementType.ALL.equals(etype)? e : e.getOverlap();
 								if (ov != null && ov.getValue() != null) {
 									norm.append(ov.getValue()).append(space);
-								}
+								} 
+							}
+							else if (ElementType.DIPL.equals(etype)) {//TODO does it work?
+								pause.append(e.getAnnotations().get(PAUSE_LAYER_NAME));
 							}
 						}
 						if (!iteratorStack.peek().hasNext()) {
@@ -400,41 +400,54 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			}
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			STimeline timeline = docGraph.createTimeline();
-			HashMap<String, Pair<STextualDS, STextualDS>> dataSources = new HashMap<>();
-			HashMap<String, Pair<Integer, Integer>> positions = new HashMap<>();
-			HashMap<String, Pair<ArrayList<SToken>, ArrayList<SToken>>> tokenLists = new HashMap<>();
-			for (Entry<String, Pair<StringBuilder, StringBuilder>> entry : baseTexts.entrySet()) {
+			HashMap<String, Triple<STextualDS, STextualDS, STextualDS>> dataSources = new HashMap<>();
+			HashMap<String, Triple<Integer, Integer, Integer>> positions = new HashMap<>();
+			HashMap<String, Triple<ArrayList<SToken>, ArrayList<SToken>, ArrayList<SToken>>> tokenLists = new HashMap<>();
+			for (Entry<String, Triple<StringBuilder, StringBuilder, StringBuilder>> entry : baseTexts.entrySet()) {
 				speaker = entry.getKey();
 				basePair = entry.getValue();
-				dataSources.put(speaker, Pair.of(docGraph.createTextualDS(basePair.getLeft().toString().trim()), docGraph.createTextualDS(basePair.getRight().toString().trim())));
-				positions.put(speaker, Pair.of(0, 0));
-				tokenLists.put(speaker, Pair.of(new ArrayList<SToken>(), new ArrayList<SToken>()));
+				dataSources.put(speaker, 
+						Triple.of(	docGraph.createTextualDS(basePair.getLeft().toString().trim()),
+									docGraph.createTextualDS(basePair.getMiddle().toString().trim()),
+									docGraph.createTextualDS(basePair.getRight().toString().trim())
+						)
+				);
+				positions.put(speaker, Triple.of(0, 0, 0));
+				tokenLists.put(speaker, Triple.of(new ArrayList<SToken>(), new ArrayList<SToken>(), new ArrayList<SToken>()));
 			}
 			STextualDS diplDS = null;
-			STextualDS normDS = null;			
+			STextualDS normDS = null;		
+			STextualDS pauseDS = null;
 			int d = 0;
 			int n = 0;
+			int p = 0;
 			int nv = 0;
 			List<SToken> diplTokens = null;
-			List<SToken> normTokens = null;			 
+			List<SToken> normTokens = null;		
+			List<SToken> pauseTokens = null;
 			debugMessage("Building graph ...");
+			SingularEvent timeShift;			
 			for (int i = 0; i < orderedTimes.length; i++) {
+				timeShift = new SingularEvent(overlap2previous[i]);
 				SequenceElement e = start2utterance.get(orderedTimes[i]);
 				speaker = ((LinguisticParent) e).getSpeaker().replace("#", "");
-				Pair<ArrayList<SToken>, ArrayList<SToken>> tlPair = tokenLists.get(speaker);
+				Triple<ArrayList<SToken>, ArrayList<SToken>, ArrayList<SToken>> tlPair = tokenLists.get(speaker);
 				diplTokens = tlPair.getLeft();
 				normTokens = tlPair.getRight();
+				pauseTokens = tlPair.getMiddle();
 				diplDS = dataSources.get(speaker).getLeft();
 				normDS = dataSources.get(speaker).getRight();
+				pauseDS = dataSources.get(speaker).getMiddle();
 				d = positions.get(speaker).getLeft();
 				n = positions.get(speaker).getRight();
+				p = positions.get(speaker).getMiddle();
 				Stack<Iterator<SequenceElement>> iteratorStack = new Stack<>();				
 				iteratorStack.push(e.getElements().iterator());
 				/*syntax*/
 				Stack<SStructure> treeNodeStack = new Stack<>();
 				SStructure child = SaltFactory.createSStructure();
 				SCatAnnotation anno = SaltFactory.createSCatAnnotation();
-				anno.setValue("u");
+				anno.setValue(CAT_U);
 				child.addAnnotation(anno);
 				treeNodeStack.push(child);
 				SDominanceRelation domRel = null;
@@ -448,7 +461,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 						{/*Syntax*/
 							child = SaltFactory.createSStructure();
 							anno = SaltFactory.createSCatAnnotation();
-							anno.setValue("seg");
+							anno.setValue(CAT_SEG);
 							child.addAnnotation(anno);
 							domRel = SaltFactory.createSDominanceRelation();
 							domRel.setSource(treeNodeStack.peek());
@@ -464,7 +477,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 								SToken tok = docGraph.createToken(diplDS, d, nv);
 								diplTokens.add(tok);								
 								d = nv + 1;
-								addTimelineRelation(timeline, tok, true);
+								addTimelineRelation(timeline, tok, !timeShift.getValue());
 								addAnnotations(e, tok, speaker, false);
 								SequenceElement ov = ElementType.ALL.equals(etype)? e : e.getOverlap();
 								if (ov != null && ov.getValue() != null) {
@@ -503,6 +516,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 									}
 								}
 							}
+							else if (ElementType.DIPL.equals(etype)) {//FIXME does that work out here?
+								String value = e.getAnnotations().get(PAUSE_LAYER_NAME); 
+								nv = p + value.length();
+								SToken tok = docGraph.createToken(pauseDS, p, nv);
+								pauseTokens.add(tok);
+								addTimelineRelation(timeline, tok, !timeShift.getValue());
+								p = nv + 1;
+							}
 						}
 						if (!iteratorStack.peek().hasNext()) {
 							iteratorStack.pop();
@@ -512,7 +533,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 						}
 					}
 				}
-				positions.put(speaker, Pair.of(d, n));
+				positions.put(speaker, Triple.of(d, p, n));
 				{/*Syntax*/
 					docGraph.addNode(treeNodeStack.pop());
 					for (SDominanceRelation drl : domRels) {
@@ -520,15 +541,22 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 					}	
 				}				
 			}
-			for (Entry<String, Pair<ArrayList<SToken>, ArrayList<SToken>>> entry : tokenLists.entrySet()) {
+			for (Entry<String, Triple<ArrayList<SToken>, ArrayList<SToken>, ArrayList<SToken>>> entry : tokenLists.entrySet()) {
 				speaker = entry.getKey();
 				diplTokens = entry.getValue().getLeft();
 				normTokens = entry.getValue().getRight();
+				pauseTokens = entry.getValue().getMiddle();				
 				SOrderRelation orderRel = null;
 				List<List<SToken>> tokenSources = new ArrayList<>();
 				tokenSources.add(diplTokens);
 				tokenSources.add(normTokens);
-				String[] names = {speaker + "_dipl", speaker + "_norm"};  //FIXME obtain from properties
+				tokenSources.add(pauseTokens);				
+				if (pauseTokens.size() < 2) { 
+					/*add dummy token for pause layer to have at least one order relation*/
+					pauseDS = dataSources.get(speaker).getMiddle();
+					pauseTokens.add(docGraph.createToken(pauseDS, pauseDS.getEnd(), pauseDS.getEnd()));
+				}
+				String[] names = {speaker + "_dipl", speaker + "_norm", speaker + "_pause"};  //FIXME obtain from properties
 				for (int j = 0; j < tokenSources.size(); j++) {
 					List<SToken> tokenSource = tokenSources.get(j);
 					String name = names[j];
@@ -563,8 +591,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 					return false;
 				}
 			};
-			debugVis(exportFilter);
-			debugMessage(Integer.toString(annoId2FreeAnnotations.size()));			
+			debugVis(exportFilter);		
 		}
 		
 		private void debugVis(ExportFilter exportFilter) {
@@ -576,5 +603,19 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				e.printStackTrace();
 			}			
 		}
-	}	
+	}
+	
+	private class SingularEvent{
+		private boolean value;
+		
+		public SingularEvent(boolean initial) {
+			this.value = initial;
+		}
+		
+		public boolean getValue() {
+			boolean v = this.value;
+			this.value = false;
+			return v;
+		}
+	}
 }

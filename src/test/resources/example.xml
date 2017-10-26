@@ -397,7 +397,7 @@
             <when xml:id="interv_det02_643840" absolute="00:00:00.643840"/>
             <when xml:id="interv_det02_644102" absolute="00:00:00.644102"/>
             <when xml:id="interv_det02_648723" absolute="00:00:00.648723"/>
-            <when xml:id="interv_det02_649752" absolute="00:00:00.649752"/>
+            <when xml:id="interv_det02_649752" absolute="00:00:00.648700"/> <!-- used to be: 00:00:00.649752-->
             <when xml:id="interv_det02_653308" absolute="00:00:00.653308"/>
          </timeline>
       </front>
