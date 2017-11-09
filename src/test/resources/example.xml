@@ -2,11 +2,11 @@
 <?xml-model href="schema/standoff-proposal.rnc" type="application/relax-ng-compact-syntax"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0"
      xmlns:so="http://standoff.proposal">
-   <teiHeader>
+   <teiHeader><!-- TODO 
 	  <so:standOff type="morphosyntax">
       <teiHeader>
-         <!-- TODO -->
-      </teiHeader>
+         
+      </teiHeader>-->
       <so:listAnnotation type="markables">
       <!-- contains word forms in span elements, @target points to corresponding tokens in the transcription, @ana to the feature structure with the pos/lemma information -->
          <annotationBlock xmlns="http://www.tei-c.org/ns/1.0" xml:id="u_252_morph">

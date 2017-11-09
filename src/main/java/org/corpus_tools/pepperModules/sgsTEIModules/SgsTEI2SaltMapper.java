@@ -200,7 +200,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			else if (TAG_SPANGRP.equals(localName)) {
 				currentSpanGroupType = attributes.getValue(ATT_TYPE);
 			}
-			else if (TAG_WHEN.equals(localName) && TAG_TIMELINE.equals(stack.peek())) {//FIXME what to do when order is mentioned later? -> save only names in u-read and replace them with times later!				
+			else if (TAG_WHEN.equals(localName) && TAG_TIMELINE.equals(stack.peek())) {				
 				String timeValue = attributes.getValue(ATT_ABSOLUTE).replaceAll("\\.|:", "");
 				internalOrder.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), Long.parseLong(timeValue));
 			}
@@ -516,7 +516,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 									}
 								}
 							}
-							else if (ElementType.DIPL.equals(etype)) {//FIXME does that work out here?
+							else if (ElementType.DIPL.equals(etype)) {
 								String value = e.getAnnotations().get(PAUSE_LAYER_NAME); 
 								nv = p + value.length();
 								SToken tok = docGraph.createToken(pauseDS, p, nv);
