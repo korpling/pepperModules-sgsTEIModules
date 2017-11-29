@@ -23,6 +23,7 @@ import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SDominanceRelation;
 import org.corpus_tools.salt.common.SOrderRelation;
+import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
@@ -105,7 +106,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 		private String currentAnnoId;
 		/** This variable keeps track of the currently active annotation name in the f-tag's environment */
 		private String currentAnnoLayer;
-		/** */
+		/** This variable keeps track of the current standoff type (morphosyntax, syntax, references, ...)*/
+		private String currentStandoffType;
+		/** This collects pointers for dependency relations, gov:dep;label */
+		private HashMap<String, Pair<String, String>> gov2depPointers;
 		
 		public SgsTEIReader() {
 			stack = new Stack<String>();
@@ -114,6 +118,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			corpusData = new ArrayList<LinguisticParent>();
 			group2AnnotationMapping = new HashMap<String, HashMap<String, List<String>>>();
 			annoId2FreeAnnotations = new HashMap<String, HashMap<String, String>>();
+			gov2depPointers = new HashMap<>();
 		}
 		
 		private void debugMessage(String... elements) {
@@ -134,7 +139,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 					overlap.getRight().setId(attributes.getValue(String.join(":", NS_XML, ATT_ID)));
 				}
 			}
-			else if (TAG_FS.equals(localName)) {
+			else if (/*TYPE_MORPHOSYNTAX.equals(currentStandoffType) && */TAG_FS.equals(localName)) {
 				currentAnnoId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 				annoId2FreeAnnotations.put(currentAnnoId, new HashMap<String, String>());	
 			}
@@ -199,6 +204,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			}
 			else if (TAG_SPANGRP.equals(localName)) {
 				currentSpanGroupType = attributes.getValue(ATT_TYPE);
+			}
+			else if (TAG_STANDOFF.equals(localName)) {
+				currentStandoffType = attributes.getValue(ATT_TYPE);
 			}
 			else if (TAG_WHEN.equals(localName) && TAG_TIMELINE.equals(stack.peek())) {				
 				String timeValue = attributes.getValue(ATT_ABSOLUTE).replaceAll("\\.|:", "");
@@ -339,7 +347,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			/* first obtain order */
 			HashMap<Long, LinguisticParent> start2utterance = new HashMap<Long, LinguisticParent>();
 			long[] orderedTimes = new long[corpusData.size()];
-			for (int i = 0; i < corpusData.size(); i++) { //FIXME Dangerous, when people start exactly the same time
+			for (int i = 0; i < corpusData.size(); i++) { //FIXME Dangerous, when people start exactly the same time;
 				LinguisticParent lp = corpusData.get(i);
 				start2utterance.put(lp.getStart(), lp);
 				orderedTimes[i] = lp.getStart();
@@ -398,6 +406,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 					}
 				}
 			}
+			/*final work on graph*/
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			STimeline timeline = docGraph.createTimeline();
 			HashMap<String, Triple<STextualDS, STextualDS, STextualDS>> dataSources = new HashMap<>();
@@ -592,6 +601,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 				}
 			};
 			debugVis(exportFilter);		
+			
+			buildSyntax();
 		}
 		
 		private void debugVis(ExportFilter exportFilter) {
@@ -617,5 +628,114 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl{
 			this.value = false;
 			return v;
 		}
+	}
+	
+	private void buildSyntax() {
+		/*introduce artificial tree and text*/
+		if (true) {
+			return;
+		}
+		STextualDS ds = getDocument().getDocumentGraph().createTextualDS("c était qqn qqn qui s int bc aux autres aux gens en général");
+		List<SToken> testTokens = ds.tokenize();
+		SOrderRelation oRel = null;
+		STimeline timeline = getDocument().getDocumentGraph().getTimeline();
+		STimelineRelation tRel = SaltFactory.createSTimelineRelation();
+		tRel.setSource(testTokens.get(0));
+		tRel.setTarget(timeline);		
+		tRel.setStart(timeline.getEnd());
+		timeline.increasePointOfTime();
+		tRel.setEnd(timeline.getEnd());
+		String name = "test";
+				
+		for (int i=1; i < testTokens.size(); i++) {
+			oRel = SaltFactory.createSOrderRelation();
+			oRel.setSource(testTokens.get(i - 1));
+			oRel.setTarget(testTokens.get(i));
+			oRel.setName(name);
+			
+			tRel.setSource(testTokens.get(i));
+			tRel.setTarget(timeline);		
+			tRel.setStart(timeline.getEnd());
+			timeline.increasePointOfTime();
+			tRel.setEnd(timeline.getEnd());
+		}
+		
+		
+		String cat = "cat";
+		List<SStructure> structures = new ArrayList<>();
+		SDocumentGraph graph = getDocument().getDocumentGraph();
+		
+		/*0*/
+		SStructure structure = graph.createStructure(testTokens.get(0));
+		structure.createAnnotation(null, cat, "PRN");		
+		structures.add(structure);
+		
+		structure = graph.createStructure(testTokens.get(4));
+		structure.createAnnotation(null, cat, "PRN");		
+		structures.add(structure);
+		
+		structure = graph.createStructure(testTokens.get(5));
+		structure.createAnnotation(null, cat, "PRN");		
+		structures.add(structure);
+		
+		structure = graph.createStructure(testTokens.get(7));
+		structure.createAnnotation(null, cat, "ADV");		
+		structures.add(structure);
+		
+		structure = graph.createStructure(testTokens.get(8));
+		structure.createAnnotation(null, cat, "D");		
+		structures.add(structure);
+		
+		structure = graph.createStructure(testTokens.get(10));
+		structure.createAnnotation(null, cat, "D");		
+		structures.add(structure);
+		
+		structure = graph.createStructure(testTokens.get(12), testTokens.get(13));
+		structure.createAnnotation(null, cat, "ADV");		
+		structures.add(structure);
+		
+		/*1*/		
+		structure = graph.createStructure(testTokens.get(9), structures.get(4));
+		structure.createAnnotation(null, cat, "Q");		
+		structures.add(structure);
+		
+		structure = graph.createStructure(structures.get(5), testTokens.get(11), structures.get(6));
+		structure.createAnnotation(null, cat, "N");		
+		structures.add(structure);
+		
+		/*2*/		
+		structure = graph.createStructure(testTokens.get(10), structure);
+		structure.createAnnotation(null, cat, "P");		
+		structures.add(structure);
+		
+		/*3*/		
+		structure = graph.createStructure(structure);
+		structure.createAnnotation(null, cat, "COORD");		
+		structures.add(structure);
+		
+		/*4*/		
+		structure = graph.createStructure(testTokens.get(8), structures.get(7), structure);
+		structure.createAnnotation(null, cat, "P");		
+		structures.add(structure);
+		
+		/*5*/		
+		structure = graph.createStructure(structures.get(1), structures.get(2), testTokens.get(6), structure);
+		structure.createAnnotation(null, cat, "V");		
+		structures.add(structure);
+		
+		/*6*/
+		structure = graph.createStructure(testTokens.get(3), structure);
+		structure.createAnnotation(null, cat, "PRN");		
+		structures.add(structure);
+		
+		/*7*/
+		structure = graph.createStructure(structures.get(0), testTokens.get(1), structure);
+		structure.createAnnotation(null, cat, "V");		
+		structures.add(structure);
+		
+		/*8*/
+		structure = graph.createStructure(structure);
+		structure.createAnnotation(null, cat, "ROOT");		
+		structures.add(structure);
 	}
 }

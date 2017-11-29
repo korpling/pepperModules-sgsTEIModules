@@ -16,6 +16,7 @@ public interface SgsTEIDictionary {
 	public static final String TAG_SIC = "sic";
 	public static final String TAG_SPAN = "span";
 	public static final String TAG_SPANGRP = "spanGrp";
+	public static final String TAG_STANDOFF = "standoff";
 	public static final String TAG_STRING = "string";
 	public static final String TAG_SYMBOL = "symbol";
 	public static final String TAG_TEI = "TEI";
@@ -38,5 +39,6 @@ public interface SgsTEIDictionary {
 	public static final String ATT_WHO = "who";
 	/* Attribute values */
 	public static final String TYPE_MORPHOSYNTAX = "morphosyntax";
+	public static final String TYPE_SYNTAX = "syntax";
 	public static final String TYPE_WORDFORM = "wordForm";
 }
