@@ -39,6 +39,7 @@ public interface SgsTEIDictionary {
 	public static final String ATT_WHO = "who";
 	/* Attribute values */
 	public static final String TYPE_MORPHOSYNTAX = "morphosyntax";
+	public static final String TYPE_REFERENCES = "references";
 	public static final String TYPE_SYNTAX = "syntax";
 	public static final String TYPE_WORDFORM = "wordForm";
 }
