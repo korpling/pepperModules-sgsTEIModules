@@ -71,9 +71,9 @@
                 <!-- example w/ portmanteau and incomplete syntactic analysis (parenthetical) -->
                 <interpGrp>
                     <interp xml:id="syntax-root-4" ana="#fs-root-4"/>
-                    <interp xml:id="syntax-node-4" inst="#d2e2113" ana="#fs-node-4">viens</interp>
+                    <interp xml:id="syntax-node-4" inst="#d2e2113" ana="#fs-node-4">viens</interp> <!-- used to be inst="#d2e2113" -->
                     <interp xml:id="syntax-node-4-1" inst="#d2e2102" ana="#fs-node-4-1">je</interp>
-                    <interp xml:id="syntax-node-4-2" inst="#d2e26" ana="#fs-node-4-2">à_propos_du</interp>
+                    <interp xml:id="syntax-node-4-2" inst="#d2e26" ana="#fs-node-4-2">à_propos_du</interp> <!-- used to be inst="#d2e26" -->
                     <interp xml:id="syntax-node-4-2-1" inst="#d2e2224" ana="#fs-node-4-2-1">cadavre</interp>
                     <interp xml:id="syntax-node-p4-2-1" inst="#d2e28" ana="#fs-node-p4-2-1"/>
                     <interp xml:id="syntax-node-4-2-1-1" inst="#d2e2268" ana="#fs-node-4-2-1-1">retrouvé</interp>
