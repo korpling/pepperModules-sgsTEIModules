@@ -411,7 +411,7 @@
                <pause type="long"/>
                <pc xml:id="tok_2080">,</pc>
                <w xml:id="tok_2081">pues</w>
-               <w xml:id="tok_2082">había</w>
+               <w xml:id="tok_2082">h<add>a</add>bía</w>
                <w xml:id="tok_2083">visto</w>
                <seg xml:id="seg_343">
                   <w xml:id="tok_2084">subir</w>
@@ -453,7 +453,7 @@
                <shift feature="tempo" new="normal"/>
                <w xml:id="tok_2095">bajaban</w>
                <w xml:id="tok_2096">a</w>
-               <w xml:id="tok_2097">altas</w>
+               <w xml:id="tok_2097"><add>a</add>ltas</w>
                <w xml:id="tok_2098">horas</w>
                <w xml:id="tok_2099">de</w>
                <w xml:id="tok_2100">la</w>

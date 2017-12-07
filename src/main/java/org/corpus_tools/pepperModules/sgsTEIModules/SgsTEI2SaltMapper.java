@@ -3,10 +3,12 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Stack;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -62,7 +64,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** This is the element stack representing the hierarchy of elements to be closed. */
 		private Stack<String> stack;
 		/** This variable is keeping track of read characters */
-		private String textBuffer;
+		private TextBuffer textBuffer;
 		/** what are we currently reading? */
 		private READ_MODE mode; 
 		
@@ -101,7 +103,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		public SgsTEIReader() {
 			stack = new Stack<String>();
-			textBuffer = "";
+			textBuffer = new TextBuffer();
 			mode = READ_MODE.BLIND;
 			
 			textTracker = new ArrayList<>();
@@ -124,7 +126,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private void debugMessage(Object... elements) {
 			String[] elems = new String[elements.length];
 			for (int i = 0; i < elements.length; i++) {
-				elems[i] = elements[i] == null? "null" : elements[i].toString();
+				elems[i] = elements[i] == null? "null" : (String) elements[i];
 			}
 			System.out.println(String.join(" ", elems));
 		}
@@ -264,9 +266,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			stack.push(localName);
 		}
 		
+		/* warning: this method should always concatenate, since sometimes several calls are used for text-node (built in multiple steps) */
 		@Override
 		public void characters(char[] ch, int start, int length) throws SAXException {
-			textBuffer = new String(Arrays.copyOfRange(ch, start, start + length)).trim(); //TODO figure out if there are cases where trim should not be used			
+			if (READ_MODE.TEXT.equals(mode) || READ_MODE.MORPHOSYNTAX.equals(mode)) {
+				String next = (new String(Arrays.copyOfRange(ch, start, start + length))).trim(); //TODO figure out if there are cases where trim should not be used;
+				textBuffer.append(next);
+			}
 		}
 		
 		private void newUtterance(String speakerCode, String startTimeCode, String endTimeCode) {
@@ -284,7 +290,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private void writeBufferToToken(boolean dipl, boolean norm, boolean overwrite) {
 			TextSegment lastTokenObject = getCurrentToken();
-			String text = textBuffer;
+			String text = textBuffer.clear();
 			if (dipl) {
 				String newText = overwrite? text : lastTokenObject.getDipl().concat(text);
 				lastTokenObject.setDipl(newText);
@@ -292,18 +298,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			if (norm) {
 				String newText = overwrite? text : lastTokenObject.getNorm().concat(text);
 				lastTokenObject.setNorm(newText);
-			}
-			textBuffer = "";			
+			}			
 		}
 		
 		@Override
 		public void endElement(String uri, String localName, String qName) throws SAXException {
 			localName = qName.substring(qName.lastIndexOf(":") + 1);			
-			String stackTop = stack.pop();
+			stack.pop();
 			if (TAG_W.equals(localName)) {
 				// read mode TEXT assumed				
 				/* also set the set dipl, because for add-cases dipl is also taken from w */
-				boolean isCorrection = TAG_CORR.equals(stackTop);
+				boolean isCorrection = TAG_CORR.equals(stack.peek());
 				writeBufferToToken(!isCorrection, true, false);
 			}
 			else if (TAG_PC.equals(localName)) {
@@ -315,7 +320,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				// here we DON'T add the add-text to middle, because it does not belong to dipl
 				writeBufferToToken(false, true, false);
 			}
-			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stackTop)) {
+			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stack.peek())) {
 				newToken(null);
 				writeBufferToToken(true, false, false);
 			}
@@ -328,7 +333,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_STRING.equals(localName)) {
 				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-					currentAnnotations.get(currentAnnotations.size() - 1).setValue(textBuffer);
+					currentAnnotations.get(currentAnnotations.size() - 1).setValue(textBuffer.clear());
 				}
 			}
 			else if (TAG_U.equals(localName)) {
@@ -360,135 +365,142 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private void buildGraph() {
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			STimeline timeline = docGraph.createTimeline();
-			timeline.increasePointOfTime();
-			// by iterating over speaker time tracker, we move through the text (ATTENTION: we are assuming, the text is given in chronological order)
-			/*Textual Datasource, Text for DS, Index limits of tokens*/
-			MutableTriple<STextualDS, StringBuilder, ArrayList<Pair<Integer, Integer>>> dipl = null;
-			MutableTriple<STextualDS, StringBuilder, ArrayList<Pair<Integer, Integer>>> norm = null;
-			MutableTriple<STextualDS, StringBuilder, ArrayList<Pair<Integer, Integer>>> pause = null;
+			{//create all necessary timeslots (maximum, overlaps decrease this number, but remaining timesteps are not a problem
+				timeline.increasePointOfTime(textTracker.size());				
+			}
 			String speaker = null;
-			int firstToken = 0;
-			int lastToken;
+			int firstTokenIx = 0;
+			int lastTokenIx;
 			TextSegment tokenObject = null;
-			Pair<Integer, Integer> limits = null;
-			HashMap<String, SToken> tokenId2SToken = new HashMap<>();
 			long startsAt = 0L;
 			long endedAt = 0L;
+			
+			HashMap<Integer, Integer> tokenIndex2timelineSlot = new HashMap<>();
+			HashMap<String, ArrayList<Integer>> speaker2TokenIndexes = new HashMap<>();
+			HashMap<String, Triple<StringBuilder, StringBuilder, StringBuilder>> speaker2Text = new HashMap<>();
+			ArrayList<Triple<Pair<Integer, Integer>, Pair<Integer, Integer>, Pair<Integer, Integer>>> tokenLimits = new ArrayList<>();
+			
 			boolean overlap = false;
+			int offset = 0;			
 			for (MutableTriple<String, Integer, Pair<String, String>> utteranceObject : speakerTimeTracker) {
-				speaker = utteranceObject.getLeft();				
-				dipl = MutableTriple.of(null, new StringBuilder(), new ArrayList<Pair<Integer, Integer>>());
-				norm = MutableTriple.of(null, new StringBuilder(), new ArrayList<Pair<Integer, Integer>>());
-				pause = MutableTriple.of(null, new StringBuilder(), new ArrayList<Pair<Integer, Integer>>());				
-				lastToken = utteranceObject.getMiddle();
+				speaker = utteranceObject.getLeft();							
+				lastTokenIx = utteranceObject.getMiddle();			
 				
-				startsAt = timeslotId2Time.get(utteranceObject.getRight().getLeft());
-				overlap = startsAt < endedAt;
-				
-				/*collect texts and limits*/				
-				for (int i = firstToken; i <= lastToken; i++) {
-					tokenObject = textTracker.get(i);
-					if (tokenObject.getPause() == null) { // text or pause?
-						if (!tokenObject.getDipl().isEmpty()) {
-							// has dipl
-							dipl.getRight().add(Pair.of(dipl.getMiddle().length(), dipl.getMiddle().length() + tokenObject.getDipl().length()));
-							dipl.getMiddle().append(tokenObject.getDipl()).append(SPACE);
-						}
-						if (!tokenObject.getNorm().isEmpty()) {
-							// has norm
-							norm.getRight().add(Pair.of(norm.getMiddle().length(), norm.getMiddle().length() + tokenObject.getNorm().length()));
-							norm.getMiddle().append(tokenObject.getNorm()).append(SPACE);
-						}
-					} else {
-						pause.getRight().add(Pair.of(pause.getMiddle().length(), pause.getMiddle().length() + tokenObject.getPause().length()));
-						pause.getMiddle().append(tokenObject.getPause()).append(SPACE);
-					}
+				//init speaker
+				if (!speaker2TokenIndexes.containsKey(speaker)) {
+					speaker2TokenIndexes.put(speaker, new ArrayList<Integer>());
+					speaker2Text.put(speaker, Triple.of(new StringBuilder(), new StringBuilder(), new StringBuilder()));	
 				}
-				//get DSs
-				Triple<STextualDS, STextualDS, STextualDS> dsTriple = speaker2DSMap.get(speaker);
-				if (dsTriple == null) {
-					dsTriple = Triple.of(docGraph.createTextualDS(""), 
-						 	  docGraph.createTextualDS(norm.getMiddle().toString().trim()), 
-							  docGraph.createTextualDS(pause.getMiddle().toString().trim())
-					);
-					speaker2DSMap.put(speaker, dsTriple);					
-				}				
-				dipl.setLeft(dsTriple.getLeft());
-				norm.setLeft(dsTriple.getMiddle());
-				pause.setLeft(dsTriple.getRight());
-				
-				//token counters 
-				int d = 0;
-				int n = 0;
-				int p = 0;
-				
-				//obtain token length offsets
-				int offset_d = dipl.getLeft().getText().length() + 1;
-				int offset_n = norm.getLeft().getText().length()+ 1;
-				int offset_p = pause.getLeft().getText().length() + 1;
-				
-				//enlarge text				
-				dipl.getLeft().setText(dipl.getLeft().getText().concat(dipl.getMiddle().toString()));			
-				norm.getLeft().setText(norm.getLeft().getText().concat(norm.getMiddle().toString()));
-				pause.getLeft().setText(pause.getLeft().getText().concat(pause.getMiddle().toString()));								
-				
-				/*token lists : (dipl, norm, pause)*/
-				Triple<ArrayList<SToken>, ArrayList<SToken>, ArrayList<SToken>> tokenLists = 
-						Triple.of(new ArrayList<SToken>(), 
-								new ArrayList<SToken>(), 
-								new ArrayList<SToken>());
-				
-				/*create token objects and add annotations*/				
-				for (int i = firstToken; i <= lastToken; i++) {
-					tokenObject = textTracker.get(i);
-					
-					if (tokenObject.getPause() == null) {
-						ArrayList<SToken> newTokens = new ArrayList<SToken>();
-						SToken tok = null;
-						// is textual
-						if (!tokenObject.getDipl().isEmpty()) {
-							// has dipl
-							limits = dipl.getRight().get(d++);
-							tok = docGraph.createToken(dipl.getLeft(), limits.getLeft() + offset_d, limits.getRight() + offset_d);
-							newTokens.add(tok);
-							tokenLists.getLeft().add(tok);
-						}
-						if (!tokenObject.getNorm().isEmpty()) {
-							// has norm
-							limits = norm.getRight().get(n++);
-							tok = docGraph.createToken(norm.getLeft(), limits.getLeft() + offset_n, limits.getRight() + offset_n);
-							newTokens.add(tok);
-							{ //add annotations
-								String markableId = tokenId2markableAnaId.get(tokenObject.getId());
-								if (morphosyntax.containsKey(markableId)) {								
-									for (SAnnotation anno : morphosyntax.get(markableId)) {
-										anno.setName(String.join("_", speaker, anno.getName()));
-										tok.addAnnotation(anno);
-									}
-								}
-							}
-							tokenLists.getMiddle().add(tok);
-							tokenId2SToken.put(tokenObject.getId(), tok); //only norm tokens need ids
-						}
-						addTimelineRelations(newTokens, docGraph.getTimeline(), !overlap);
-						overlap = false;						
-					} else {
-						// is pause (which never overlaps)
-						limits = pause.getRight().get(p++);
-						SToken tok = docGraph.createToken(pause.getLeft(), limits.getLeft() + offset_p, limits.getRight() + offset_p);
-						int start = timeline.getEnd();
-						timeline.increasePointOfTime();
-						addTimelineRelation(tok, timeline, start, timeline.getEnd());
-						tokenLists.getRight().add(tok);
-					}
-				}				
-				addOrderRelations(tokenLists.getLeft(), String.join(DELIMITER, speaker, DIPL));
-				addOrderRelations(tokenLists.getMiddle(), String.join(DELIMITER, speaker, NORM));
-				addOrderRelations(tokenLists.getRight(), String.join(DELIMITER, speaker, PAUSE));
+				ArrayList<Integer> tokenIndexes = speaker2TokenIndexes.get(speaker);
+				Triple<StringBuilder, StringBuilder, StringBuilder> texts = speaker2Text.get(speaker);
+				StringBuilder diplText = texts.getLeft();
+				StringBuilder normText = texts.getMiddle();
+				StringBuilder pauseText = texts.getRight();
 								
-				firstToken = lastToken + 1;
+				// check for overlap
+				startsAt = timeslotId2Time.get(utteranceObject.getRight().getLeft());			
+				overlap = startsAt < endedAt;
+				if (overlap) {
+					offset -= 1;
+				}
+				
+				for (int i = firstTokenIx; i <= lastTokenIx; i++) {
+					MutableTriple<Pair<Integer, Integer>, Pair<Integer, Integer>, Pair<Integer, Integer>> limitTriple = 
+							MutableTriple.of(null, null, null);
+					tokenLimits.add(limitTriple);
+					tokenIndexes.add(i);
+					tokenIndex2timelineSlot.put(i, i + offset);
+					tokenObject = textTracker.get(i);
+					if (tokenObject.getPause() == null) {
+						//is text
+						String diplT = tokenObject.getDipl();
+						String normT = tokenObject.getNorm();
+						if (!diplT.isEmpty()) {
+							limitTriple.setLeft(Pair.of(diplText.length(), diplText.length() + diplT.length()));
+							diplText.append(diplT);	
+						}
+						if (!normT.isEmpty()) {
+							limitTriple.setMiddle(Pair.of(normText.length(), normText.length() + normT.length()));
+							normText.append(normT);
+						}
+					} else {
+						//is pause
+						String pauseT = tokenObject.getPause();
+						limitTriple.setRight(Pair.of(pauseText.length(), pauseText.length() + pauseT.length()));
+						pauseText.append(pauseT);
+					}					
+				}				
+				
+				firstTokenIx = lastTokenIx + 1;
 				endedAt = timeslotId2Time.get(utteranceObject.getRight().getRight());
 			}
+			
+			HashMap<String, SToken> tokenId2SToken = new HashMap<>();
+			
+			ArrayList<SToken> diplTokens;
+			ArrayList<SToken> normTokens;
+			ArrayList<SToken> pauseTokens;
+			
+			for (Entry<String, Triple<StringBuilder, StringBuilder, StringBuilder>> e : speaker2Text.entrySet()) {
+				speaker = e.getKey();				
+				StringBuilder diplText = e.getValue().getLeft();
+				StringBuilder normText = e.getValue().getMiddle();
+				StringBuilder pauseText = e.getValue().getRight(); 
+				
+				STextualDS diplDS = docGraph.createTextualDS(diplText.toString());
+				STextualDS normDS = docGraph.createTextualDS(normText.toString());
+				STextualDS pauseDS = docGraph.createTextualDS(pauseText.toString());
+				
+				ArrayList<Integer> tokenIndexes = speaker2TokenIndexes.get(speaker);				
+				
+				diplTokens = new ArrayList<>();
+				normTokens = new ArrayList<>();
+				pauseTokens = new ArrayList<>();
+				
+				for (Iterator<Integer> itIx = tokenIndexes.iterator(); itIx.hasNext();) {
+					int tokenIndex = itIx.next();									
+					Triple<Pair<Integer, Integer>, Pair<Integer, Integer>, Pair<Integer, Integer>> limits = tokenLimits.get(tokenIndex);
+					int timeslot = tokenIndex2timelineSlot.get(tokenIndex);
+					SToken sTok = null;
+					if (limits.getRight() == null) {
+						// is text
+						if (limits.getLeft() != null) {
+							//create dipl token
+							sTok = docGraph.createToken(diplDS, limits.getLeft().getLeft(), limits.getLeft().getRight());
+							diplTokens.add(sTok);
+							addTimelineRelation(sTok, timeslot, timeslot + 1);							
+						}					
+						if (limits.getMiddle() != null) {
+							//create and store norm token
+							sTok = docGraph.createToken(normDS, limits.getMiddle().getLeft(), limits.getMiddle().getRight());
+							normTokens.add(sTok);
+							addTimelineRelation(sTok, timeslot, timeslot + 1);
+							//add annotations
+							String tokId = textTracker.get(tokenIndex).getId();
+							if (tokId != null) {
+								tokenId2SToken.put(tokId, sTok);								
+								List<SAnnotation> annotations = morphosyntax.get( tokenId2markableAnaId.get(tokId) );
+								for (SAnnotation anno : annotations) {
+									anno.setName(String.join(DELIMITER, speaker, anno.getName()));
+									sTok.addAnnotation(anno);
+								}
+							}							
+						}
+					} else {
+						//create pause token
+						sTok = docGraph.createToken(pauseDS, limits.getRight().getLeft(), limits.getRight().getRight());
+						pauseTokens.add(sTok);
+						addTimelineRelation(sTok, timeslot, timeslot + 1);
+					}
+				}
+				addOrderRelations(diplTokens, String.join(DELIMITER, speaker, DIPL));
+				addOrderRelations(normTokens, String.join(DELIMITER, speaker, NORM));
+				if (pauseTokens.size() == 1) {
+					//to make sure the pause layer has a name FIXME (there must be a less dirty way to do that)
+					pauseTokens.add( docGraph.createToken(pauseDS, pauseText.length(), pauseText.length()));					
+				}
+				addOrderRelations(pauseTokens, String.join(DELIMITER, speaker, PAUSE));				
+			}			
 			
 			/*Build syntax*/
 			//TOOLS:			
@@ -569,21 +581,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 		}
 		
-		private void addTimelineRelations(ArrayList<SToken> tokens, STimeline timeline, boolean increase) {
-			int end = timeline.getEnd();
-			int start = end;
-			if (increase) {
-				timeline.increasePointOfTime();
-				end += 1;
-			} else {
-				start -= 1;
-			}
-			for (SToken tok : tokens) {
-				addTimelineRelation(tok, timeline, start, end);
-			}
-		}
-		
-		private void addTimelineRelation(SToken tok, STimeline timeline, int start, int end) {
+		private void addTimelineRelation(SToken tok, int start, int end) {
+			STimeline timeline = getDocument().getDocumentGraph().getTimeline();
 			STimelineRelation rel = null;
 			rel = SaltFactory.createSTimelineRelation();
 			rel.setSource(tok);
@@ -591,6 +590,24 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			rel.setStart(start);
 			rel.setEnd(end);
 			getDocument().getDocumentGraph().addRelation(rel);
+		}
+	}
+	
+	private class TextBuffer{
+		private StringBuilder text;
+		
+		private TextBuffer() {
+			text = new StringBuilder();
+		}
+		
+		private String clear() {
+			String retVal = text.toString();
+			text.delete(0, text.length());
+			return retVal;
+		}
+		
+		private void append(String text) {
+			this.text.append(text);
 		}
 	}
 	
