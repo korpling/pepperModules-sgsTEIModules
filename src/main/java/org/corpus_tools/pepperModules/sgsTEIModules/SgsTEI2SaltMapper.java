@@ -504,7 +504,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				
 				addOrderRelations(diplTokens, diplName);
 				addOrderRelations(normTokens, normName);
-				addOrderRelations(pauseTokens, pauseName);				
+				if (docGraph.getText(pauseDS).trim().isEmpty()) {
+					docGraph.removeNode(pauseDS);
+				} else {
+					addOrderRelations(pauseTokens, pauseName);	
+				}
+				
 			}			
 			
 			/*Build syntax*/
