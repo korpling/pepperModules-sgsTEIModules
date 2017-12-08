@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
 import org.corpus_tools.salt.SALT_TYPE;
@@ -28,8 +28,6 @@ import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.util.DataSourceSequence;
-import org.corpus_tools.salt.util.Difference;
-import org.corpus_tools.salt.util.SaltUtil;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,11 +57,11 @@ public class SgsTEIImporterTest {
 	public static final String SPEAKER_SYNTAX_0 = "S92";
 	public static final String SPEAKER_SYNTAX_1 = "JER";
 	
-	public static final String TEXT_SYNTAX_DIPL_0 = "ben , je viens à propos du , j’ imagine que tu sais , du du cadavre qu’ on a retrouvé au quatrième étage . ";
-	public static final String TEXT_SYNTAX_DIPL_1 = "c’ était quel quelqu’un qui s’ intéressait beaucoup aux autres , aux gens en général . ";
-	public static final String TEXT_SYNTAX_NORM_0 = "ben , je viens à propos du , j’ imagine que tu sais , du du cadavre qu’ on a retrouvé au quatrième étage . ";
-	public static final String TEXT_SYNTAX_NORM_1 = "c’ était quelqu’un quelqu’un qui s’ intéressait beaucoup aux autres , aux gens en général . ";
-	public static final String TEXT_SYNTAX_PAUSE_0 = "short";
+	public static final String TEXT_SYNTAX_DIPL_0 = "ben , je viens à propos du , j' imagine que tu sais , du du cadavre qu' on a retrouvé au quatrième étage . ";
+	public static final String TEXT_SYNTAX_DIPL_1 = "c' était quel quelqu'un qui s' intéressait beaucoup aux autres , aux gens en général . ";
+	public static final String TEXT_SYNTAX_NORM_0 = "ben , je viens à propos du , j' imagine que tu sais , du du cadavre qu' on a retrouvé au quatrième étage . ";
+	public static final String TEXT_SYNTAX_NORM_1 = "c' était quelqu'un quelqu'un qui s' intéressait beaucoup aux autres , aux gens en général . ";
+	public static final String TEXT_SYNTAX_PAUSE_0 = "short ";
 	
 	private SgsTEI2SaltMapper fixture = null;
 	
@@ -697,34 +695,9 @@ public class SgsTEIImporterTest {
 		
 		assertNotNull(getFixture().getDocument());
 		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();
-		assertNotNull(fixGraph);		
-		assertEquals(goalGraph.getRelations().size(), fixGraph.getRelations().size());
-		assertEquals(goalGraph.getNodes().size(), fixGraph.getNodes().size());		 
-		assertEquals(goalGraph.getTextualDSs().size(), fixGraph.getTextualDSs().size());
-		assertEquals(goalGraph.getTokens().size(), fixGraph.getTokens().size());
-		HashMap<STextualDS, STextualDS> dsMapping = new HashMap<>();
-		HashSet<STextualDS> served = new HashSet<>();
-		for (STextualDS ds : goalGraph.getTextualDSs()) {
-			for (STextualDS fds : fixGraph.getTextualDSs()) {
-				if (!served.contains(fds) && ds.getName() != null && ds.getName().equals(fds.getName())) {
-					dsMapping.put(ds, fds);
-					served.add(fds);
-				}
-			}
-		}
-		for (Entry<STextualDS, STextualDS> e : dsMapping.entrySet()) {
-			STextualDS goalDS = e.getKey();
-			STextualDS fixDS = e.getValue();
-			assertEquals(goalDS.getText(), fixDS.getText());
-			DataSourceSequence<?> goalSeq = new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd());
-			DataSourceSequence<?> fixSeq = new DataSourceSequence<Number>(fixDS, fixDS.getStart(), fixDS.getEnd());
-			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence(goalSeq) );
-			List<SToken> fixTokens = fixGraph.getSortedTokenByText( fixGraph.getTokensBySequence(fixSeq) );
-			assertEquals(goalTokens.size(), fixTokens.size());
-			for (int i = 0; i < goalTokens.size(); i++) {
-				assertEquals(goalGraph.getText(goalTokens.get(i)), fixGraph.getText(fixTokens.get(i)));
-			}
-		}
+		
+		basicTest(goalGraph, fixGraph);
+		primaryDataTest(goalGraph, fixGraph);
 	}
 	
 	@Test
@@ -775,8 +748,67 @@ public class SgsTEIImporterTest {
 		assertNotNull(getFixture().getDocument());
 		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();				
 		
-		Set<Difference> diffs = goalGraph.findDiffs(fixGraph);
-		assertEquals(diffs.toString(), 0, diffs.size());
+		primaryDataTest(goalGraph, fixGraph);
+		
+		//find roots
+		List<SStructure> goalRoots = new ArrayList<>();
+		List<SStructure> fixRoots = new ArrayList<>();
+		
+		Iterator<SStructure> goalStructs = goalGraph.getStructures().iterator();
+		while (goalRoots.size() < 2 && goalStructs.hasNext()) {
+			SStructure struct = goalStructs.next();
+			SAnnotation anno = struct.getAnnotation(CAT);			
+			if (anno != null && "ROOT".equals(anno.getValue())) {
+				goalRoots.add(struct);
+			}
+		}
+		Iterator<SStructure> fixStructs = fixGraph.getStructures().iterator();
+		while (fixRoots.size() < 2 && fixStructs.hasNext()) {
+			SStructure struct = fixStructs.next();
+			SAnnotation anno = struct.getAnnotation(CAT);			
+			if (anno != null && "ROOT".equals(anno.getValue())) {
+				fixRoots.add(struct);
+			}
+		}
+		
+		assertEquals(goalRoots.size(), fixRoots.size());
+		for (int i = 0; i < goalRoots.size(); i++) {
+			assertEquals(goalGraph.getText(goalRoots.get(i)), fixGraph.getText(fixRoots.get(i)));
+		}
+	}
+	
+	private void basicTest(SDocumentGraph goalGraph, SDocumentGraph fixGraph) {
+		assertEquals(goalGraph.getRelations().size(), fixGraph.getRelations().size());
+		assertEquals(goalGraph.getNodes().size(), fixGraph.getNodes().size());		
+	}
+	
+	private void primaryDataTest(SDocumentGraph goalGraph, SDocumentGraph fixGraph) {
+		assertNotNull(fixGraph);		 
+		assertEquals(goalGraph.getTextualDSs().size(), fixGraph.getTextualDSs().size());
+		assertEquals(goalGraph.getTokens().size(), fixGraph.getTokens().size());
+		HashMap<STextualDS, STextualDS> dsMapping = new HashMap<>();
+		HashSet<STextualDS> served = new HashSet<>();
+		for (STextualDS ds : goalGraph.getTextualDSs()) {
+			for (STextualDS fds : fixGraph.getTextualDSs()) {
+				if (!served.contains(fds) && ds.getName() != null && ds.getName().equals(fds.getName())) {
+					dsMapping.put(ds, fds);
+					served.add(fds);
+				}
+			}
+		}
+		for (Entry<STextualDS, STextualDS> e : dsMapping.entrySet()) {
+			STextualDS goalDS = e.getKey();
+			STextualDS fixDS = e.getValue();
+			assertEquals(goalDS.getText(), fixDS.getText());
+			DataSourceSequence<?> goalSeq = new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd());
+			DataSourceSequence<?> fixSeq = new DataSourceSequence<Number>(fixDS, fixDS.getStart(), fixDS.getEnd());
+			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence(goalSeq) );
+			List<SToken> fixTokens = fixGraph.getSortedTokenByText( fixGraph.getTokensBySequence(fixSeq) );
+			assertEquals(goalTokens.size(), fixTokens.size());
+			for (int i = 0; i < goalTokens.size(); i++) {
+				assertEquals(goalGraph.getText(goalTokens.get(i)), fixGraph.getText(fixTokens.get(i)));
+			}
+		}
 	}
 	
 	@Test
