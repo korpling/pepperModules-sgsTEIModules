@@ -9,11 +9,14 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	private static final String PROP_NORM_NAME = "norm.name";
 	/** This property determines the pause layer's name. */
 	private static final String PROP_PAUSE_NAME = "pause.name";
+	/** Delimiter for multiple analyses on one token */
+	private static final String PROP_ANALYSES_DELIMITER = "ana.del";
 	
 	public SgsTEIImporterProperties() {
 		addProperty(new PepperModuleProperty<String>(PROP_DIPL_NAME, String.class, "This property determines the diplomatic layer's name.", "dipl", false));
 		addProperty(new PepperModuleProperty<String>(PROP_NORM_NAME, String.class, "This property determines the normed layer's name.", "norm", false));
 		addProperty(new PepperModuleProperty<String>(PROP_PAUSE_NAME, String.class, "This property determines the pause layer's name.", "pause", false));
+		addProperty(new PepperModuleProperty<String>(PROP_ANALYSES_DELIMITER, String.class, "Delimiter for multiple analyses on one token", ",", false));
 	}
 	
 	/**
@@ -38,6 +41,14 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	 */
 	public String getPauseName() {
 		return (String) getProperty(PROP_PAUSE_NAME).getValue();
+	}
+	
+	/**
+	 * Get the delimiter for multiple values of one type of analysis
+	 * @return delimiter
+	 */
+	public String getAnalysesDelimiter() {
+		return (String) getProperty(PROP_ANALYSES_DELIMITER).getValue();
 	}
 	
 	
