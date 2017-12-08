@@ -406,8 +406,8 @@ public class SgsTEIImporterTest {
 			STextualDS goalDS = e.getKey();
 			STextualDS fixDS = e.getValue();
 			assertEquals(goalDS.getText(), fixDS.getText());
-			DataSourceSequence goalSeq = new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd());
-			DataSourceSequence fixSeq = new DataSourceSequence<Number>(fixDS, fixDS.getStart(), fixDS.getEnd());
+			DataSourceSequence<?> goalSeq = new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd());
+			DataSourceSequence<?> fixSeq = new DataSourceSequence<Number>(fixDS, fixDS.getStart(), fixDS.getEnd());
 			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence(goalSeq) );
 			List<SToken> fixTokens = fixGraph.getSortedTokenByText( fixGraph.getTokensBySequence(fixSeq) );
 			assertEquals(goalTokens.size(), fixTokens.size());
@@ -419,7 +419,39 @@ public class SgsTEIImporterTest {
 	
 	@Test
 	public void testMorphosyntax() {
-		fail();
+		SDocumentGraph goalGraph = getGoalDocumentGraph(null);
+		File resourceDir = new File(PepperTestUtil.getTestResources());
+		File example = new File(resourceDir, EXAMPLE_FILE);
+		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
+		getFixture().mapSDocument();
+		
+		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();
+		HashMap<STextualDS, STextualDS> dsMapping = new HashMap<>();
+		HashSet<STextualDS> served = new HashSet<>();
+		for (STextualDS ds : goalGraph.getTextualDSs()) {
+			for (STextualDS fds : fixGraph.getTextualDSs()) {
+				if (!served.contains(fds) && ds.getName() != null && ds.getName().equals(fds.getName())) {
+					dsMapping.put(ds, fds);
+					served.add(fds);
+				}
+			}
+		}
+		for (Entry<STextualDS, STextualDS> e : dsMapping.entrySet()) {
+			STextualDS goalDS = e.getKey();
+			STextualDS fixDS = e.getValue();
+			assertEquals(goalDS.getText(), fixDS.getText());
+			DataSourceSequence<?> goalSeq = new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd());
+			DataSourceSequence<?> fixSeq = new DataSourceSequence<Number>(fixDS, fixDS.getStart(), fixDS.getEnd());
+			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence(goalSeq) );
+			List<SToken> fixTokens = fixGraph.getSortedTokenByText( fixGraph.getTokensBySequence(fixSeq) );
+			assertEquals(goalTokens.size(), fixTokens.size());
+			for (int i = 0; i < goalTokens.size(); i++) {
+				assertEquals(goalGraph.getText(goalTokens.get(i)), fixGraph.getText(fixTokens.get(i)));
+				assertEquals(goalTokens.get(i).getAnnotations().size(), fixTokens.get(i).getAnnotations().size());
+				assertEquals(goalTokens.get(i).getAnnotation(LEMMA), fixTokens.get(i).getAnnotation(LEMMA));
+				assertEquals(goalTokens.get(i).getAnnotation(POS), fixTokens.get(i).getAnnotation(POS));
+			}
+		}
 	}
 	
 	@Test
