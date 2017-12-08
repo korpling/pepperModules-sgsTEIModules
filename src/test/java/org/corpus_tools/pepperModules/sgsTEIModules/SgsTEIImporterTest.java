@@ -2,6 +2,7 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -573,23 +574,24 @@ public class SgsTEIImporterTest {
 		
 		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[19][0], leafStructures[21][0], "obj") );
 				
-		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[15][0], "obj");
-		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[16][0], "suj");
-		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[17][0], "aux_tps");
-		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[19][0], "mod");
-		
-		createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[4][1], "det");
-		createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[18][0], "mod_rel");
-		
-		createDominanceRelation(docGraph, leafStructures[4][0], leafStructures[14][0], "obj");
-		
-		createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[2][0], "suj");
-		createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[4][0], "mod");
-		
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[15][0], "obj") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[16][0], "suj") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[17][0], "aux_tps") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[19][0], "mod") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[4][1], "det") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[18][0], "mod_rel") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[4][0], leafStructures[14][0], "obj") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[2][0], "suj") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[4][0], "mod") );
+
 		SStructure root = SaltFactory.createSStructure();
 		root.createAnnotation(null, CAT, "ROOT");
 		docGraph.addNode(root);
-		createDominanceRelation(docGraph, root, leafStructures[3][0], "root"); 
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, root, leafStructures[3][0], "root") ); 
+		syntaxLayer.addNode(root);
 				
 		/* speaker 1 */
 		syntacticNodes = new String[] {"PRN", "V", null, "PRN", "PRN", "PRN", "V", "ADV", "P,D", "Q", null, "P,D", "N", "ADV"};
@@ -607,36 +609,37 @@ public class SgsTEIImporterTest {
 				}
 			}			
 		}
-		
-		createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[11][1], "det");
-		createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[13][0], "mod");
-		
-		createDominanceRelation(docGraph, leafStructures[11][0], leafStructures[12][0], "obj");
-		
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[11][1], "det") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[13][0], "mod") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[11][0], leafStructures[12][0], "obj") );
+
 		SStructure coord = SaltFactory.createSStructure();
 		coord.createAnnotation(null, CAT, "COORD");
 		coord.createAnnotation(null, "form", "elided");
 		docGraph.addNode(coord);
-		createDominanceRelation(docGraph, coord, leafStructures[11][0], "dep_coord");
-		
-		createDominanceRelation(docGraph, leafStructures[9][0], leafStructures[8][1], "det");
-		createDominanceRelation(docGraph, leafStructures[8][0], leafStructures[9][0], "obj");
-		createDominanceRelation(docGraph, leafStructures[8][0], coord, "coord");
-		
-		createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[4][0], "suj");
-		createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[5][0], "att");
-		createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[7][0], "mod");
-		createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[8][0], "p_obj");
-		
-		createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[6][0], "mod_rel");
-		
-		createDominanceRelation(docGraph, leafStructures[1][0], leafStructures[0][0], "suj");
-		createDominanceRelation(docGraph, leafStructures[1][0], leafStructures[3][0], "ats");
-		
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, coord, leafStructures[11][0], "dep_coord") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[9][0], leafStructures[8][1], "det") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[8][0], leafStructures[9][0], "obj") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[8][0], coord, "coord") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[4][0], "suj") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[5][0], "att") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[7][0], "mod") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[8][0], "p_obj") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[6][0], "mod_rel") );
+
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[1][0], leafStructures[0][0], "suj") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[1][0], leafStructures[3][0], "ats") );
+
 		root = SaltFactory.createSStructure();
 		root.createAnnotation(null, CAT, "ROOT");
 		docGraph.addNode(root);
-		createDominanceRelation(docGraph, root, leafStructures[1][0], "root");
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, root, leafStructures[1][0], "root") );
+		syntaxLayer.addNode(root);
 		
 		return docGraph;
 	}
@@ -756,48 +759,16 @@ public class SgsTEIImporterTest {
 		getFixture().mapSDocument();
 		
 		assertNotNull(getFixture().getDocument());
-		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();				
-		{
-			for (SStructure s : goalGraph.getStructures()) {
-				debugPrintNode(goalGraph, s);
-			}
-			System.out.println("---------------------------");
-			for (SStructure s : fixGraph.getStructures()) {
-				debugPrintNode(fixGraph, s);
-			}
-		}
+		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();
+
 		basicTest(goalGraph, fixGraph);
 		primaryDataTest(goalGraph, fixGraph);
 		
 		//find roots
-		List<SStructure> goalRoots = new ArrayList<>();
-		List<SStructure> fixRoots = new ArrayList<>();
+		Set<SStructure> goalStructs = new HashSet<>(goalGraph.getStructures());
+		Set<SStructure> fixStructs = new HashSet<>(fixGraph.getStructures());
+		assertEquals(goalStructs.size(), fixStructs.size());
 		
-		Iterator<SStructure> goalStructs = goalGraph.getStructures().iterator();
-		while (goalRoots.size() < 2 && goalStructs.hasNext()) {
-			SStructure struct = goalStructs.next();
-			SAnnotation anno = struct.getAnnotation(CAT);			
-			if (anno != null && "ROOT".equals(anno.getValue())) {
-				goalRoots.add(struct);
-			}
-		}
-		Iterator<SStructure> fixStructs = fixGraph.getStructures().iterator();
-		while (fixRoots.size() < 2 && fixStructs.hasNext()) {
-			SStructure struct = fixStructs.next();
-			SAnnotation anno = struct.getAnnotation(CAT);			
-			if (anno != null && "ROOT".equals(anno.getValue())) {
-				fixRoots.add(struct);
-			}
-		}
-		
-		System.out.println(goalRoots);
-		System.out.println(fixRoots);
-		
-		assertEquals(goalRoots.size(), fixRoots.size());
-		assertEquals(0, goalGraph.findDiffs(fixGraph).size());
-		for (int i = 0; i < goalRoots.size(); i++) {
-			assertEquals(goalGraph.getText(goalRoots.get(i)), fixGraph.getText(fixRoots.get(i)));
-		}
 	}
 	
 	private void basicTest(SDocumentGraph goalGraph, SDocumentGraph fixGraph) {
