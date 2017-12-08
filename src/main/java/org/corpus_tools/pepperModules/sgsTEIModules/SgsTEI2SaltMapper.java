@@ -44,6 +44,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		SDocumentGraph docGraph = SaltFactory.createSDocumentGraph();
 		getDocument().setDocumentGraph(docGraph);
 		SgsTEIReader reader = new SgsTEIReader();
+		System.out.println(getResourceURI());
 		this.readXMLResource(reader, getResourceURI());
 		return (DOCUMENT_STATUS.COMPLETED);
 	}
@@ -493,13 +494,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						addTimelineRelation(sTok, timeslot, timeslot + 1);
 					}
 				}
-				addOrderRelations(diplTokens, String.join(DELIMITER, speaker, DIPL));
-				addOrderRelations(normTokens, String.join(DELIMITER, speaker, NORM));
-				if (pauseTokens.size() == 1) {
-					//to make sure the pause layer has a name FIXME (there must be a less dirty way to do that)
-					pauseTokens.add( docGraph.createToken(pauseDS, pauseText.length(), pauseText.length()));					
-				}
-				addOrderRelations(pauseTokens, String.join(DELIMITER, speaker, PAUSE));				
+				String diplName = String.join(DELIMITER, speaker, DIPL);
+				String normName = String.join(DELIMITER, speaker, NORM);
+				String pauseName = String.join(DELIMITER, speaker, PAUSE);
+				
+				diplDS.setName(diplName);
+				normDS.setName(normName);
+				pauseDS.setName(pauseName);
+				
+				addOrderRelations(diplTokens, diplName);
+				addOrderRelations(normTokens, normName);
+				addOrderRelations(pauseTokens, pauseName);				
 			}			
 			
 			/*Build syntax*/

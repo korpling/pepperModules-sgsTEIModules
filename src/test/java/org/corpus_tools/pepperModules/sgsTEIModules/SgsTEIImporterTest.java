@@ -1,12 +1,19 @@
 package org.corpus_tools.pepperModules.sgsTEIModules;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
+import org.corpus_tools.pepper.testFramework.PepperTestUtil;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SOrderRelation;
@@ -14,6 +21,8 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.util.DataSourceSequence;
+import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -209,6 +218,10 @@ public class SgsTEIImporterTest {
 		normDS = normDS1;
 		pauseDS = pauseDS1;
 
+		addOrderRelations(docGraph, diplTokens, SPEAKER_0, getModuleProperties().getDiplName());
+		addOrderRelations(docGraph, normTokens, SPEAKER_0, getModuleProperties().getNormName());
+		addOrderRelations(docGraph, pauseTokens, SPEAKER_0, getModuleProperties().getPauseName());
+		
 		diplTokens.clear();
 		normTokens.clear();
 		pauseTokens.clear();
@@ -255,6 +268,10 @@ public class SgsTEIImporterTest {
 		diplDS = diplDS0;
 		normDS = normDS0;
 		pauseDS = pauseDS0;
+		
+		addOrderRelations(docGraph, diplTokens, SPEAKER_1, getModuleProperties().getDiplName());
+		addOrderRelations(docGraph, normTokens, SPEAKER_1, getModuleProperties().getNormName());
+		addOrderRelations(docGraph, pauseTokens, SPEAKER_1, getModuleProperties().getPauseName());
 
 		diplTokens.clear();
 		normTokens.clear();
@@ -315,6 +332,10 @@ public class SgsTEIImporterTest {
 		point = newPointOfTime(timeline);
 		diplTokens.add( createToken(docGraph, diplDS, 175, 176, point) );
 		normTokens.add( createToken(docGraph, normDS, 177, 178, point) );
+		
+		addOrderRelations(docGraph, diplTokens, SPEAKER_0, getModuleProperties().getDiplName());
+		addOrderRelations(docGraph, normTokens, SPEAKER_0, getModuleProperties().getNormName());
+		addOrderRelations(docGraph, pauseTokens, SPEAKER_0, getModuleProperties().getPauseName());
 
 		return docGraph;
 	}
@@ -369,7 +390,31 @@ public class SgsTEIImporterTest {
 	@Test
 	public void testPrimaryData() {
 		SDocumentGraph goalGraph = getGoalDocumentGraph(null);
+		File resourceDir = new File(PepperTestUtil.getTestResources());
+		File example = new File(resourceDir, EXAMPLE_FILE);
+		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
+		getFixture().mapSDocument();
 		
+		assertNotNull(getFixture().getDocument());
+		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();
+		assertNotNull(fixGraph);		 
+		assertEquals(goalGraph.getTextualDSs().size(), fixGraph.getTextualDSs().size());
+		HashMap<STextualDS, STextualDS> dsMapping = new HashMap<>();
+		HashSet<STextualDS> served = new HashSet<>();
+		for (STextualDS ds : goalGraph.getTextualDSs()) {
+			for (STextualDS fds : fixGraph.getTextualDSs()) {
+				if (!served.contains(fds) && ds.getName() != null && ds.getName().equals(fds.getName())) {
+					dsMapping.put(ds, fds);
+					served.add(fds);
+				}
+			}
+		}
+		for (Entry<STextualDS, STextualDS> e : dsMapping.entrySet()) {
+			STextualDS goalDS = e.getKey();
+			STextualDS fixDS = e.getValue();
+			assertEquals(goalDS.getText(), fixDS.getText());
+			assertEquals(goalGraph.getTokensBySequence((DataSourceSequence) goalDS).size(), fixGraph.getTokensBySequence((DataSourceSequence) fixDS).size());
+		}
 	}
 	
 	@Test
