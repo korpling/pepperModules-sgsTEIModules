@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Stack;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
+import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SDominanceRelation;
@@ -119,8 +119,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			timeslotId2Time = new HashMap<>();
 			speaker2DSMap = new HashMap<>();
 			
-			syntaxLayer = SaltFactory.createSLayer();
+			syntaxLayer = SaltFactory.createSLayer();			
 			syntaxLayer.setName(TYPE_SYNTAX);
+			getDocument().getDocumentGraph().addLayer(syntaxLayer);
 			
 		}
 		
@@ -242,7 +243,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					node.addProcessingAnnotation(panno);
 					
 					nodeId2Structure.put(id, node);
-					syntaxLayer.addNode(node);
+//					syntaxLayer.addNode(node);
 				}
 			}
 			else if (TAG_LINK.equals(localName)) {
@@ -542,6 +543,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						}					
 					}
 					nodeId2NewStructure.put(e.getKey(), struct);
+					syntaxLayer.addNode(struct);
 				}				
 			}
 			for (Entry<String, SStructure> e : nodeId2NewStructure.entrySet()) {
@@ -555,13 +557,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				for (Pair<String, String> relation : e.getValue()) {
 					target = nodeId2Structure.get(relation.getKey());
 					type = relation.getValue();
-					domRel = SaltFactory.createSDominanceRelation();
-					domRel.setSource(node);
-					domRel.setTarget(target);
-					SAnnotation anno = SaltFactory.createSAnnotation();
-					anno.setName(ATT_TYPE);
-					anno.setValue(type);
-					domRel.addAnnotation(anno);
+					docGraph.addNode(node);
+					domRel = (SDominanceRelation) docGraph.createRelation(node, target, SALT_TYPE.SDOMINANCE_RELATION, null);					
+					domRel.createAnnotation(null, ATT_TYPE, type);
 					syntaxLayer.addRelation(domRel);
 				}
 				SProcessingAnnotation p_anno = node.getProcessingAnnotation(ATT_ANA);
@@ -571,10 +569,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						for (SAnnotation anno : annos) {
 							node.addAnnotation(anno);
 						}
-					}					
+					}
+					node.removeLabel(p_anno.getQName());
 				}
 			}
-			docGraph.addLayer(syntaxLayer);
 		}		
 		
 		/** Delimiter used in layer names to specify layers with speaker names*/

@@ -19,6 +19,7 @@ import org.corpus_tools.pepper.testFramework.PepperTestUtil;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
+import org.corpus_tools.salt.common.SDominanceRelation;
 import org.corpus_tools.salt.common.SOrderRelation;
 import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.SStructuredNode;
@@ -27,6 +28,9 @@ import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
+import org.corpus_tools.salt.core.SLayer;
+import org.corpus_tools.salt.core.SNode;
+import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
@@ -542,6 +546,8 @@ public class SgsTEIImporterTest {
 		addOrderRelations(docGraph, pauseTokens0, SPEAKER_SYNTAX_0, getModuleProperties().getPauseName());
 		
 		/* add syntax */
+		SLayer syntaxLayer = SaltFactory.createSLayer();
+		docGraph.addLayer(syntaxLayer);
 		/* speaker 0 */
 		String[] syntacticNodes = {"PRN", "V", "P,D", "N", "PRN", "PRN", "V", "V", "P,D", "A", "N"};
 		Integer[] indexes = {2, 3, 4, 14, 15, 16, 17, 18, 19, 20, 21};
@@ -557,18 +563,20 @@ public class SgsTEIImporterTest {
 				for (int j = 0; j < cats.length; j++) {
 					leafStructures[ix][j] = docGraph.createStructure(normTokens0.get(ix));
 					leafStructures[ix][j].createAnnotation(null, CAT, cats[j]);
+					syntaxLayer.addNode(leafStructures[ix][j]);
 				}
 			}
 		}
 		
-		createDominanceRelation(docGraph, leafStructures[21][0], leafStructures[19][1], "det");
-		createDominanceRelation(docGraph, leafStructures[21][0], leafStructures[20][0], "mod");
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[21][0], leafStructures[19][1], "det") );
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[21][0], leafStructures[20][0], "mod") );
 		
-		createDominanceRelation(docGraph, leafStructures[19][0], leafStructures[21][0], "obj");
-		
+		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[19][0], leafStructures[21][0], "obj") );
+				
 		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[15][0], "obj");
 		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[16][0], "suj");
 		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[17][0], "aux_tps");
+		createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[19][0], "mod");
 		
 		createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[4][1], "det");
 		createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[18][0], "mod_rel");
@@ -582,7 +590,7 @@ public class SgsTEIImporterTest {
 		root.createAnnotation(null, CAT, "ROOT");
 		docGraph.addNode(root);
 		createDominanceRelation(docGraph, root, leafStructures[3][0], "root"); 
-		
+				
 		/* speaker 1 */
 		syntacticNodes = new String[] {"PRN", "V", null, "PRN", "PRN", "PRN", "V", "ADV", "P,D", "Q", null, "P,D", "N", "ADV"};
 		indexes = new Integer[] {0, 1, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13};
@@ -600,16 +608,14 @@ public class SgsTEIImporterTest {
 			}			
 		}
 		
-		SStructure n0 = SaltFactory.createSStructure();
-		n0.createAnnotation(null, CAT, "N");
-		docGraph.addNode(n0);
-		createDominanceRelation(docGraph, n0, leafStructures[11][1], "det");
-		createDominanceRelation(docGraph, n0, leafStructures[13][0], "mod");
+		createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[11][1], "det");
+		createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[13][0], "mod");
 		
-		createDominanceRelation(docGraph, leafStructures[11][0], n0, "obj");
+		createDominanceRelation(docGraph, leafStructures[11][0], leafStructures[12][0], "obj");
 		
 		SStructure coord = SaltFactory.createSStructure();
 		coord.createAnnotation(null, CAT, "COORD");
+		coord.createAnnotation(null, "form", "elided");
 		docGraph.addNode(coord);
 		createDominanceRelation(docGraph, coord, leafStructures[11][0], "dep_coord");
 		
@@ -635,8 +641,12 @@ public class SgsTEIImporterTest {
 		return docGraph;
 	}
 	
-	private void createDominanceRelation(SDocumentGraph graph, SStructuredNode source, SStructuredNode target, String edgeLabel) {
-		graph.createRelation(source, target, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", SgsTEIDictionary.ATT_TYPE, edgeLabel));
+	private void debugPrintNode(SDocumentGraph graph, SNode node) {
+		System.out.println(String.join(":", node.getAnnotations().toString(), graph.getText(node)));
+	}
+	
+	private SDominanceRelation createDominanceRelation(SDocumentGraph graph, SStructuredNode source, SStructuredNode target, String edgeLabel) {
+		return (SDominanceRelation) graph.createRelation(source, target, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", SgsTEIDictionary.ATT_TYPE, edgeLabel));
 	}
 	
 	private static final String DELIMITER = "_";
@@ -747,7 +757,16 @@ public class SgsTEIImporterTest {
 		
 		assertNotNull(getFixture().getDocument());
 		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();				
-		
+		{
+			for (SStructure s : goalGraph.getStructures()) {
+				debugPrintNode(goalGraph, s);
+			}
+			System.out.println("---------------------------");
+			for (SStructure s : fixGraph.getStructures()) {
+				debugPrintNode(fixGraph, s);
+			}
+		}
+		basicTest(goalGraph, fixGraph);
 		primaryDataTest(goalGraph, fixGraph);
 		
 		//find roots
@@ -771,7 +790,11 @@ public class SgsTEIImporterTest {
 			}
 		}
 		
+		System.out.println(goalRoots);
+		System.out.println(fixRoots);
+		
 		assertEquals(goalRoots.size(), fixRoots.size());
+		assertEquals(0, goalGraph.findDiffs(fixGraph).size());
 		for (int i = 0; i < goalRoots.size(); i++) {
 			assertEquals(goalGraph.getText(goalRoots.get(i)), fixGraph.getText(fixRoots.get(i)));
 		}
