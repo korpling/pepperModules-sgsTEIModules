@@ -418,17 +418,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						String normT = tokenObject.getNorm();
 						if (!diplT.isEmpty()) {
 							limitTriple.setLeft(Pair.of(diplText.length(), diplText.length() + diplT.length()));
-							diplText.append(diplT);	
+							diplText.append(diplT).append(SPACE);	
 						}
 						if (!normT.isEmpty()) {
 							limitTriple.setMiddle(Pair.of(normText.length(), normText.length() + normT.length()));
-							normText.append(normT);
+							normText.append(normT).append(SPACE);
 						}
 					} else {
 						//is pause
 						String pauseT = tokenObject.getPause();
 						limitTriple.setRight(Pair.of(pauseText.length(), pauseText.length() + pauseT.length()));
-						pauseText.append(pauseT);
+						pauseText.append(pauseT).append(SPACE);
 					}					
 				}				
 				

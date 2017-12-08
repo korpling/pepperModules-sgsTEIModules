@@ -40,12 +40,12 @@ import org.junit.Test;
  * @author Martin Klotz
  */
 public class SgsTEIImporterTest {
-	public static final String TEXT_DIPL_0 = "bueno , pues hbía visto subir con hombrnoes jóvenes . que subían mm a medianoche . y bajaban a ltas horas de la madrugada . bueno , yo no yo cre mira te voy a decir la verdad .";
-	public static final String TEXT_DIPL_1 = "¿ crees que podrían mantener alguna relación amorosa ?";
-	public static final String TEXT_NORM_0 = "bueno , pues había visto subir con hombretones jóvenes . que subían a medianoche . y bajaban a altas horas de la madrugada . bueno , yo no yo creo mira te voy a decir la verdad .";
-	public static final String TEXT_NORM_1 = "¿ crees que podrían mantener alguna relación amorosa ?";
-	public static final String TEXT_PAUSE_0 = "long";
-	public static final String TEXT_PAUSE_1 = "long";
+	public static final String TEXT_DIPL_0 = "bueno , pues hbía visto subir con hombrnoes jóvenes . que subían mm a medianoche . y bajaban a ltas horas de la madrugada . bueno , yo no yo cre mira te voy a decir la verdad . ";
+	public static final String TEXT_DIPL_1 = "¿ crees que podrían mantener alguna relación amorosa ? ";
+	public static final String TEXT_NORM_0 = "bueno , pues había visto subir con hombretones jóvenes . que subían a medianoche . y bajaban a altas horas de la madrugada . bueno , yo no yo creo mira te voy a decir la verdad . ";
+	public static final String TEXT_NORM_1 = "¿ crees que podrían mantener alguna relación amorosa ? ";
+	public static final String TEXT_PAUSE_0 = "long ";
+	public static final String TEXT_PAUSE_1 = "long ";
 	public static final String SPEAKER_0 = "ANT";
 	public static final String SPEAKER_1 = "S02";
 	
@@ -399,6 +399,7 @@ public class SgsTEIImporterTest {
 		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();
 		assertNotNull(fixGraph);		 
 		assertEquals(goalGraph.getTextualDSs().size(), fixGraph.getTextualDSs().size());
+		assertEquals(goalGraph.getTokens().size(), fixGraph.getTokens().size());
 		HashMap<STextualDS, STextualDS> dsMapping = new HashMap<>();
 		HashSet<STextualDS> served = new HashSet<>();
 		for (STextualDS ds : goalGraph.getTextualDSs()) {
@@ -413,7 +414,15 @@ public class SgsTEIImporterTest {
 			STextualDS goalDS = e.getKey();
 			STextualDS fixDS = e.getValue();
 			assertEquals(goalDS.getText(), fixDS.getText());
-			assertEquals(goalGraph.getTokensBySequence((DataSourceSequence) goalDS).size(), fixGraph.getTokensBySequence((DataSourceSequence) fixDS).size());
+			DataSourceSequence goalSeq = new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd());
+			DataSourceSequence fixSeq = new DataSourceSequence<Number>(fixDS, fixDS.getStart(), fixDS.getEnd());
+			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence(goalSeq) );
+			List<SToken> fixTokens = fixGraph.getSortedTokenByText( fixGraph.getTokensBySequence(fixSeq) );
+			assertEquals(goalTokens.size(), fixTokens.size());
+			for (int i = 0; i < goalTokens.size(); i++) {
+				assertEquals(goalGraph.getText(goalTokens.get(i)), fixGraph.getText(fixTokens.get(i)));
+//				System.out.println("|" + goalGraph.getText(goalTokens.get(i)) + "|<->|" + fixGraph.getText(fixTokens.get(i)) + "|");
+			}
 		}
 	}
 	
