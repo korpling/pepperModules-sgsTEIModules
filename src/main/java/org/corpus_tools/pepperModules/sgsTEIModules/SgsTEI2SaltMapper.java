@@ -567,7 +567,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			docGraph.addLayer(syntaxLayer);
 		}		
 		
-		private static final String DELIMITER = "_";
+		/** Delimiter used in layer names to specify layers with speaker names*/
+		public static final String DELIMITER = "_";
 				
 		private void addOrderRelations(List<SToken> tokens, String name) {
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();

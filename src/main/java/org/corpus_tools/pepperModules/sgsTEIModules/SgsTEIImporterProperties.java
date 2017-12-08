@@ -7,12 +7,13 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	private static final String PROP_DIPL_NAME = "dipl.name";
 	/** This property determines the normed layer's name. */
 	private static final String PROP_NORM_NAME = "norm.name";
-	/** */
-//	private static final String PROP_NORM_
+	/** This property determines the pause layer's name. */
+	private static final String PROP_PAUSE_NAME = "pause.name";
 	
 	public SgsTEIImporterProperties() {
 		addProperty(new PepperModuleProperty<String>(PROP_DIPL_NAME, String.class, "This property determines the diplomatic layer's name.", "dipl", false));
 		addProperty(new PepperModuleProperty<String>(PROP_NORM_NAME, String.class, "This property determines the normed layer's name.", "norm", false));
+		addProperty(new PepperModuleProperty<String>(PROP_PAUSE_NAME, String.class, "This property determines the pause layer's name.", "pause", false));
 	}
 	
 	/**
@@ -29,6 +30,14 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	 */
 	public String getNormName() {
 		return (String) getProperty(PROP_NORM_NAME).getValue();
+	}
+	
+	/**
+	 * Get the desired name for the pause segmentation layer.
+	 * @return
+	 */
+	public String getPauseName() {
+		return (String) getProperty(PROP_PAUSE_NAME).getValue();
 	}
 	
 	
