@@ -108,234 +108,224 @@ public class SgsTEIImporterTest {
 		STextualDS normDS = normDS0;
 		STextualDS pauseDS = pauseDS0;
 		
-		ArrayList<SToken> diplTokens = new ArrayList<SToken>();
-		ArrayList<SToken> normTokens = new ArrayList<SToken>();
+		ArrayList<SToken> diplTokens0 = new ArrayList<SToken>();
+		ArrayList<SToken> normTokens0 = new ArrayList<SToken>();
 		ArrayList<SToken> pauseTokens = new ArrayList<SToken>();
 
 		int point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 0, 5, point) );
-		normTokens.add( createToken(docGraph, normDS, 0, 5, point, SPEAKER_0, "bueno", "ADJ") );
+		diplTokens0.add( createToken(docGraph, diplDS, 0, 5, point) );
+		normTokens0.add( createToken(docGraph, normDS, 0, 5, point, SPEAKER_0, "bueno", "ADJ") );
 
 		point = newPointOfTime(timeline);	
 		pauseTokens.add( createToken(docGraph, pauseDS, 0, 4, point) );
 
 		point = newPointOfTime(timeline);		
-		diplTokens.add( createToken(docGraph, diplDS, 6, 7, point) );
-		normTokens.add( createToken(docGraph, normDS, 6, 7, point) );
+		diplTokens0.add( createToken(docGraph, diplDS, 6, 7, point) );
+		normTokens0.add( createToken(docGraph, normDS, 6, 7, point) );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 8, 12, point) );
-		normTokens.add( createToken(docGraph, normDS, 8, 12, point, SPEAKER_0, "pues", "CSUBF") );
+		diplTokens0.add( createToken(docGraph, diplDS, 8, 12, point) );
+		normTokens0.add( createToken(docGraph, normDS, 8, 12, point, SPEAKER_0, "pues", "CSUBF") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 13, 17, point) );		
-		normTokens.add( createToken(docGraph, normDS, 13, 18, point, SPEAKER_0, "haber", "VHfin") );
+		diplTokens0.add( createToken(docGraph, diplDS, 13, 17, point) );		
+		normTokens0.add( createToken(docGraph, normDS, 13, 18, point, SPEAKER_0, "haber", "VHfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 18, 23, point) );
-		normTokens.add( createToken(docGraph, normDS, 19, 24, point, SPEAKER_0, "ver", "VLadj") );
+		diplTokens0.add( createToken(docGraph, diplDS, 18, 23, point) );
+		normTokens0.add( createToken(docGraph, normDS, 19, 24, point, SPEAKER_0, "ver", "VLadj") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 24, 29, point) );
-		normTokens.add( createToken(docGraph, normDS, 25, 30, point, SPEAKER_0, "subir", "VLinf") );
+		diplTokens0.add( createToken(docGraph, diplDS, 24, 29, point) );
+		normTokens0.add( createToken(docGraph, normDS, 25, 30, point, SPEAKER_0, "subir", "VLinf") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 30, 33, point) );
-		normTokens.add( createToken(docGraph, normDS, 31, 34, point, SPEAKER_0, "con", "PREP") );
+		diplTokens0.add( createToken(docGraph, diplDS, 30, 33, point) );
+		normTokens0.add( createToken(docGraph, normDS, 31, 34, point, SPEAKER_0, "con", "PREP") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 34, 43, point) );
-		normTokens.add( createToken(docGraph, normDS, 35, 46, point, SPEAKER_0, "hombretones", "NC") );
+		diplTokens0.add( createToken(docGraph, diplDS, 34, 43, point) );
+		normTokens0.add( createToken(docGraph, normDS, 35, 46, point, SPEAKER_0, "hombretones", "NC") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 44, 51, point) );
-		normTokens.add( createToken(docGraph, normDS, 47, 54, point, SPEAKER_0, "joven", "ADJ") );
+		diplTokens0.add( createToken(docGraph, diplDS, 44, 51, point) );
+		normTokens0.add( createToken(docGraph, normDS, 47, 54, point, SPEAKER_0, "joven", "ADJ") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 52, 53, point) );
-		normTokens.add( createToken(docGraph, normDS, 55, 56, point) );
+		diplTokens0.add( createToken(docGraph, diplDS, 52, 53, point) );
+		normTokens0.add( createToken(docGraph, normDS, 55, 56, point) );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 54, 57, point) );
-		normTokens.add( createToken(docGraph, normDS, 57, 60, point, SPEAKER_0, "que", "CQUE") );
+		diplTokens0.add( createToken(docGraph, diplDS, 54, 57, point) );
+		normTokens0.add( createToken(docGraph, normDS, 57, 60, point, SPEAKER_0, "que", "CQUE") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 58, 64, point) );
-		normTokens.add( createToken(docGraph, normDS, 61, 67, point, SPEAKER_0, "subir", "VLfin") );
+		diplTokens0.add( createToken(docGraph, diplDS, 58, 64, point) );
+		normTokens0.add( createToken(docGraph, normDS, 61, 67, point, SPEAKER_0, "subir", "VLfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 65, 67, point) );
+		diplTokens0.add( createToken(docGraph, diplDS, 65, 67, point) );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 68, 69, point) );
-		normTokens.add( createToken(docGraph, normDS, 68, 69, point, SPEAKER_0, "a", "PREP") );
+		diplTokens0.add( createToken(docGraph, diplDS, 68, 69, point) );
+		normTokens0.add( createToken(docGraph, normDS, 68, 69, point, SPEAKER_0, "a", "PREP") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 70, 80, point) );
-		normTokens.add( createToken(docGraph, normDS, 70, 80, point, SPEAKER_0, "medianoche", "NC") );
+		diplTokens0.add( createToken(docGraph, diplDS, 70, 80, point) );
+		normTokens0.add( createToken(docGraph, normDS, 70, 80, point, SPEAKER_0, "medianoche", "NC") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 81, 82, point) );
-		normTokens.add( createToken(docGraph, normDS, 81, 82, point) );
+		diplTokens0.add( createToken(docGraph, diplDS, 81, 82, point) );
+		normTokens0.add( createToken(docGraph, normDS, 81, 82, point) );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 83, 84, point) );
-		normTokens.add( createToken(docGraph, normDS, 83, 84, point, SPEAKER_0, "y", "CC") );
+		diplTokens0.add( createToken(docGraph, diplDS, 83, 84, point) );
+		normTokens0.add( createToken(docGraph, normDS, 83, 84, point, SPEAKER_0, "y", "CC") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 85, 92, point) );
-		normTokens.add( createToken(docGraph, normDS, 85, 92, point, SPEAKER_0, "bajar", "VLfin") );
+		diplTokens0.add( createToken(docGraph, diplDS, 85, 92, point) );
+		normTokens0.add( createToken(docGraph, normDS, 85, 92, point, SPEAKER_0, "bajar", "VLfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 93, 94, point) );
-		normTokens.add( createToken(docGraph, normDS, 93, 94, point, SPEAKER_0, "a", "PREP") );
+		diplTokens0.add( createToken(docGraph, diplDS, 93, 94, point) );
+		normTokens0.add( createToken(docGraph, normDS, 93, 94, point, SPEAKER_0, "a", "PREP") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 95, 99, point) );
-		normTokens.add( createToken(docGraph, normDS, 95, 100, point, SPEAKER_0, "alto", "ADJ") );
+		diplTokens0.add( createToken(docGraph, diplDS, 95, 99, point) );
+		normTokens0.add( createToken(docGraph, normDS, 95, 100, point, SPEAKER_0, "alto", "ADJ") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 100, 105, point) );
-		normTokens.add( createToken(docGraph, normDS, 101, 106, point, SPEAKER_0, "hora", "NC") );
+		diplTokens0.add( createToken(docGraph, diplDS, 100, 105, point) );
+		normTokens0.add( createToken(docGraph, normDS, 101, 106, point, SPEAKER_0, "hora", "NC") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 106, 108, point) );
-		normTokens.add( createToken(docGraph, normDS, 107, 109, point, SPEAKER_0, "de", "PREP") );
+		diplTokens0.add( createToken(docGraph, diplDS, 106, 108, point) );
+		normTokens0.add( createToken(docGraph, normDS, 107, 109, point, SPEAKER_0, "de", "PREP") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 109, 111, point) );
-		normTokens.add( createToken(docGraph, normDS, 110, 112, point, SPEAKER_0, "el", "ART") );
+		diplTokens0.add( createToken(docGraph, diplDS, 109, 111, point) );
+		normTokens0.add( createToken(docGraph, normDS, 110, 112, point, SPEAKER_0, "el", "ART") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 112, 121, point) );
-		normTokens.add( createToken(docGraph, normDS, 113, 122, point, SPEAKER_0, "madugada", "NC") );
+		diplTokens0.add( createToken(docGraph, diplDS, 112, 121, point) );
+		normTokens0.add( createToken(docGraph, normDS, 113, 122, point, SPEAKER_0, "madugada", "NC") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 122, 123, point) );
-		normTokens.add( createToken(docGraph, normDS, 123, 124, point) );
+		diplTokens0.add( createToken(docGraph, diplDS, 122, 123, point) );
+		normTokens0.add( createToken(docGraph, normDS, 123, 124, point) );
 
 		diplDS = diplDS1;
 		normDS = normDS1;
 		pauseDS = pauseDS1;
-
-		addOrderRelations(docGraph, diplTokens, SPEAKER_0, getModuleProperties().getDiplName());
-		addOrderRelations(docGraph, normTokens, SPEAKER_0, getModuleProperties().getNormName());
-		addOrderRelations(docGraph, pauseTokens, SPEAKER_0, getModuleProperties().getPauseName());
 		
-		diplTokens.clear();
-		normTokens.clear();
-		pauseTokens.clear();
+		ArrayList<SToken> diplTokens1 = new ArrayList<SToken>();
+		ArrayList<SToken> normTokens1 = new ArrayList<SToken>();
+		ArrayList<SToken> pauseTokens1 = new ArrayList<SToken>();
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 0, 1, point) );
-		normTokens.add( createToken(docGraph, normDS, 0, 1, point) );
+		diplTokens1.add( createToken(docGraph, diplDS, 0, 1, point) );
+		normTokens1.add( createToken(docGraph, normDS, 0, 1, point) );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 2, 7, point) );
-		normTokens.add( createToken(docGraph, normDS, 2, 7, point, SPEAKER_1, "crear|creer", "VLfin") );
+		diplTokens1.add( createToken(docGraph, diplDS, 2, 7, point) );
+		normTokens1.add( createToken(docGraph, normDS, 2, 7, point, SPEAKER_1, "crear|creer", "VLfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 8, 11, point) );
-		normTokens.add( createToken(docGraph, normDS, 8, 11, point, SPEAKER_1, "que", "CQUE") );
+		diplTokens1.add( createToken(docGraph, diplDS, 8, 11, point) );
+		normTokens1.add( createToken(docGraph, normDS, 8, 11, point, SPEAKER_1, "que", "CQUE") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 12, 19, point) );
-		normTokens.add( createToken(docGraph, normDS, 12, 19, point, SPEAKER_1, "poder", "VMfin") );
+		diplTokens1.add( createToken(docGraph, diplDS, 12, 19, point) );
+		normTokens1.add( createToken(docGraph, normDS, 12, 19, point, SPEAKER_1, "poder", "VMfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 20, 28, point) );
-		normTokens.add( createToken(docGraph, normDS, 20, 28, point, SPEAKER_1, "mantener", "VLinf") );
+		diplTokens1.add( createToken(docGraph, diplDS, 20, 28, point) );
+		normTokens1.add( createToken(docGraph, normDS, 20, 28, point, SPEAKER_1, "mantener", "VLinf") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 29, 35, point) );
-		normTokens.add( createToken(docGraph, normDS, 29, 35, point, SPEAKER_1, "alguno", "QU") );
+		diplTokens1.add( createToken(docGraph, diplDS, 29, 35, point) );
+		normTokens1.add( createToken(docGraph, normDS, 29, 35, point, SPEAKER_1, "alguno", "QU") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 36, 44, point) );
-		normTokens.add( createToken(docGraph, normDS, 36, 44, point, SPEAKER_1, "relación", "NC") );
+		diplTokens1.add( createToken(docGraph, diplDS, 36, 44, point) );
+		normTokens1.add( createToken(docGraph, normDS, 36, 44, point, SPEAKER_1, "relación", "NC") );
 
 		point = newPointOfTime(timeline);
 		pauseTokens.add( createToken(docGraph, pauseDS, 0, 4, point) );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 45, 52, point) );
-		normTokens.add( createToken(docGraph, normDS, 45, 52, point, SPEAKER_1, "amoroso", "ADJ") );
+		diplTokens1.add( createToken(docGraph, diplDS, 45, 52, point) );
+		normTokens1.add( createToken(docGraph, normDS, 45, 52, point, SPEAKER_1, "amoroso", "ADJ") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 53, 54, point) );
-		normTokens.add( createToken(docGraph, normDS, 53, 54, point) );
+		diplTokens1.add( createToken(docGraph, diplDS, 53, 54, point) );
+		normTokens1.add( createToken(docGraph, normDS, 53, 54, point) );
 
 		diplDS = diplDS0;
 		normDS = normDS0;
 		pauseDS = pauseDS0;
 		
-		addOrderRelations(docGraph, diplTokens, SPEAKER_1, getModuleProperties().getDiplName());
-		addOrderRelations(docGraph, normTokens, SPEAKER_1, getModuleProperties().getNormName());
-		addOrderRelations(docGraph, pauseTokens, SPEAKER_1, getModuleProperties().getPauseName());
-
-		diplTokens.clear();
-		normTokens.clear();
-		pauseTokens.clear();
+		addOrderRelations(docGraph, diplTokens1, SPEAKER_1, getModuleProperties().getDiplName());
+		addOrderRelations(docGraph, normTokens1, SPEAKER_1, getModuleProperties().getNormName());
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 124, 129, point) );
-		normTokens.add( createToken(docGraph, normDS, 125, 130, point, SPEAKER_0, "bueno", "ADJ") );
+		diplTokens0.add( createToken(docGraph, diplDS, 124, 129, point) );
+		normTokens0.add( createToken(docGraph, normDS, 125, 130, point, SPEAKER_0, "bueno", "ADJ") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 130, 131, point) );
-		normTokens.add( createToken(docGraph, normDS, 131, 132, point) );
+		diplTokens0.add( createToken(docGraph, diplDS, 130, 131, point) );
+		normTokens0.add( createToken(docGraph, normDS, 131, 132, point) );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 132, 134, point) );
-		normTokens.add( createToken(docGraph, normDS, 133, 135, point, SPEAKER_0, "yo", "PPX") );
+		diplTokens0.add( createToken(docGraph, diplDS, 132, 134, point) );
+		normTokens0.add( createToken(docGraph, normDS, 133, 135, point, SPEAKER_0, "yo", "PPX") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 135, 137, point) );
-		normTokens.add( createToken(docGraph, normDS, 136, 138, point, SPEAKER_0, "no", "NEG") );
+		diplTokens0.add( createToken(docGraph, diplDS, 135, 137, point) );
+		normTokens0.add( createToken(docGraph, normDS, 136, 138, point, SPEAKER_0, "no", "NEG") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 138, 140, point) );
-		normTokens.add( createToken(docGraph, normDS, 139, 141, point, SPEAKER_0, "yo", "PPX") );
+		diplTokens0.add( createToken(docGraph, diplDS, 138, 140, point) );
+		normTokens0.add( createToken(docGraph, normDS, 139, 141, point, SPEAKER_0, "yo", "PPX") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 141, 144, point) );
-		normTokens.add( createToken(docGraph, normDS, 142, 146, point, SPEAKER_0, "cre", "VLfin") );
+		diplTokens0.add( createToken(docGraph, diplDS, 141, 144, point) );
+		normTokens0.add( createToken(docGraph, normDS, 142, 146, point, SPEAKER_0, "cre", "VLfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 145, 149, point) );
-		normTokens.add( createToken(docGraph, normDS, 147, 151, point, SPEAKER_0, "mirar", "VLfin") );
+		diplTokens0.add( createToken(docGraph, diplDS, 145, 149, point) );
+		normTokens0.add( createToken(docGraph, normDS, 147, 151, point, SPEAKER_0, "mirar", "VLfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 150, 152, point) );
-		normTokens.add( createToken(docGraph, normDS, 152, 154, point, SPEAKER_0, "tú", "PPX") );
+		diplTokens0.add( createToken(docGraph, diplDS, 150, 152, point) );
+		normTokens0.add( createToken(docGraph, normDS, 152, 154, point, SPEAKER_0, "tú", "PPX") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 153, 156, point) );
-		normTokens.add( createToken(docGraph, normDS, 155, 158, point, SPEAKER_0, "ir", "VLfin") );
+		diplTokens0.add( createToken(docGraph, diplDS, 153, 156, point) );
+		normTokens0.add( createToken(docGraph, normDS, 155, 158, point, SPEAKER_0, "ir", "VLfin") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 157, 158, point) );
-		normTokens.add( createToken(docGraph, normDS, 159, 160, point, SPEAKER_0, "a", "PREP") );
+		diplTokens0.add( createToken(docGraph, diplDS, 157, 158, point) );
+		normTokens0.add( createToken(docGraph, normDS, 159, 160, point, SPEAKER_0, "a", "PREP") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 159, 164, point) );
-		normTokens.add( createToken(docGraph, normDS, 161, 166, point, SPEAKER_0, "decir", "VLinf") );
+		diplTokens0.add( createToken(docGraph, diplDS, 159, 164, point) );
+		normTokens0.add( createToken(docGraph, normDS, 161, 166, point, SPEAKER_0, "decir", "VLinf") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 165, 167, point) );
-		normTokens.add( createToken(docGraph, normDS, 167, 169, point, SPEAKER_0, "el", "ART") );
+		diplTokens0.add( createToken(docGraph, diplDS, 165, 167, point) );
+		normTokens0.add( createToken(docGraph, normDS, 167, 169, point, SPEAKER_0, "el", "ART") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 168, 174, point) );
-		normTokens.add( createToken(docGraph, normDS, 170, 176, point, SPEAKER_0, "verdad", "NC") );
+		diplTokens0.add( createToken(docGraph, diplDS, 168, 174, point) );
+		normTokens0.add( createToken(docGraph, normDS, 170, 176, point, SPEAKER_0, "verdad", "NC") );
 
 		point = newPointOfTime(timeline);
-		diplTokens.add( createToken(docGraph, diplDS, 175, 176, point) );
-		normTokens.add( createToken(docGraph, normDS, 177, 178, point) );
+		diplTokens0.add( createToken(docGraph, diplDS, 175, 176, point) );
+		normTokens0.add( createToken(docGraph, normDS, 177, 178, point) );
 		
-		addOrderRelations(docGraph, diplTokens, SPEAKER_0, getModuleProperties().getDiplName());
-		addOrderRelations(docGraph, normTokens, SPEAKER_0, getModuleProperties().getNormName());
-		addOrderRelations(docGraph, pauseTokens, SPEAKER_0, getModuleProperties().getPauseName());
+		addOrderRelations(docGraph, diplTokens0, SPEAKER_0, getModuleProperties().getDiplName());
+		addOrderRelations(docGraph, normTokens0, SPEAKER_0, getModuleProperties().getNormName());
 
 		return docGraph;
 	}
@@ -397,7 +387,9 @@ public class SgsTEIImporterTest {
 		
 		assertNotNull(getFixture().getDocument());
 		SDocumentGraph fixGraph = getFixture().getDocument().getDocumentGraph();
-		assertNotNull(fixGraph);		 
+		assertNotNull(fixGraph);		
+		assertEquals(goalGraph.getRelations().size(), fixGraph.getRelations().size());
+		assertEquals(goalGraph.getNodes().size(), fixGraph.getNodes().size());		 
 		assertEquals(goalGraph.getTextualDSs().size(), fixGraph.getTextualDSs().size());
 		assertEquals(goalGraph.getTokens().size(), fixGraph.getTokens().size());
 		HashMap<STextualDS, STextualDS> dsMapping = new HashMap<>();
@@ -421,7 +413,6 @@ public class SgsTEIImporterTest {
 			assertEquals(goalTokens.size(), fixTokens.size());
 			for (int i = 0; i < goalTokens.size(); i++) {
 				assertEquals(goalGraph.getText(goalTokens.get(i)), fixGraph.getText(fixTokens.get(i)));
-//				System.out.println("|" + goalGraph.getText(goalTokens.get(i)) + "|<->|" + fixGraph.getText(fixTokens.get(i)) + "|");
 			}
 		}
 	}
