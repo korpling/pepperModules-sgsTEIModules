@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
 
@@ -89,14 +90,38 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** mapping between markableId and markableAnaId */
 		private HashMap<String, String> markable2ana;
 		
+		/* syntax */
 		/** this variable collects the syntax structures; map id 2 structure */
 		private HashMap<String, SStructure> nodeId2Structure;
 		/** this variable collects the link relations between syntax nodes, mapping from source node to list of pairs (target, function) */
-		private HashMap<String, List<Pair<String, String>>> syntaxRelations;
+		private HashMap<String, List<Pair<String, String>>> syntaxLinks;
 		/** this variable collects the node (not link) annotations, maps ana-ID to annotation */
 		private HashMap<String, List<SAnnotation>> nodeAnnotations;
 		/** syntax layer to facilitate adding the nodes and relations */
 		private SLayer syntaxLayer;
+		
+		/* references */ 
+		/** this variable logs the spans for referring expressions, map id->target*/
+		private HashMap<String, String> referenceSpans;
+		/** this tracks the interpretations, maps id to instance id*/
+		private HashMap<String, List<String>> refInterpId2Inst;
+		/** this maps instanceId to their referential analysis id */
+		private HashMap<String, String> refInstId2AnaId;
+		/** this variable maps annotation id to annotations (reference) */
+		private HashMap<String, List<SAnnotation>> anaId2Annotations;
+		/** this variable stores the reference links; maps source to (target, function) */
+		private HashMap<String, List<Pair<String, String>>> referenceLinks;
+		
+		private void buildReferences(Map<String, SToken> tokenMap) {
+			SDocumentGraph docGraph = getDocument().getDocumentGraph();
+			for (Entry<String, String> e : referenceSpans.keySet()) {
+				String spanId = e.getKey();
+				String targetNodeId = e.getValue();
+				SStructure targetNode = nodeId2Structure.get(targetNodeId);
+				docGraph.getOverlappedTokens(targetNode);
+				
+			}
+		}
 		
 		/** records the timeline inside the document */
 		private HashMap<String, Long> timeslotId2Time;
@@ -113,11 +138,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			id2TimeMap = new HashMap<>();
 			speakerTimeTracker = new ArrayList<>();
 			nodeId2Structure = new HashMap<>();
-			syntaxRelations = new HashMap<>();
+			syntaxLinks = new HashMap<>();
 			nodeAnnotations = new HashMap<>();
 			markable2ana = new HashMap<>();
 			timeslotId2Time = new HashMap<>();
 			speaker2DSMap = new HashMap<>();
+			referenceSpans = new HashMap<>();
+			refInterpId2Inst = new HashMap<>();
+			refInstId2AnaId = new HashMap<>();
+			anaId2Annotations = new HashMap<>();
+			referenceLinks = new HashMap<>();
 			
 			syntaxLayer = SaltFactory.createSLayer();			
 			syntaxLayer.setName(TYPE_SYNTAX);
@@ -128,7 +158,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private void debugMessage(Object... elements) {
 			String[] elems = new String[elements.length];
 			for (int i = 0; i < elements.length; i++) {
-				elems[i] = elements[i] == null? "null" : (String) elements[i];
+				elems[i] = elements[i] == null? "null" : elements[i].toString();
 			}
 			System.out.println(String.join(" ", elems));
 		}
@@ -181,20 +211,20 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						analysisId2tokenId.put(attributes.getValue(ATT_ANA).substring(1), attributes.getValue(ATT_TARGET).substring(1));
 					}
 				}
+				else if (READ_MODE.REFERENCES.equals(mode)) {
+					referenceSpans.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TARGET).substring(1));
+				}
 			}
 			else if (TAG_STANDOFF.equals(localName)) {
 				String standoffType = attributes.getValue(ATT_TYPE);
 				mode = READ_MODE.getMode(standoffType);
 			}
-			else if (TAG_SYMBOL.equals(localName)) {
-				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-					currentAnnotations.get(currentAnnotations.size() - 1).setValue(attributes.getValue(ATT_VALUE));
-				}
-				else if (READ_MODE.SYNTAX.equals(mode)) {
+			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
+				if (TAG_F.equals(stack.peek()) && (READ_MODE.MORPHOSYNTAX.equals(mode) || READ_MODE.SYNTAX.equals(mode) || READ_MODE.REFERENCES.equals(mode))) {
 					currentAnnotations.get(currentAnnotations.size() - 1).setValue(attributes.getValue(ATT_VALUE));
 				}
 			}
-			else if (TAG_F.equals(localName)) {
+			else if (TAG_F.equals(localName)) { // TODO one behaviour for all
 				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
 					SAnnotation anno = SaltFactory.createSAnnotation();
 					anno.setName(attributes.getValue(ATT_NAME));					
@@ -205,8 +235,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					anno.setName(attributes.getValue(ATT_NAME));
 					currentAnnotations.add(anno);
 				}
+				else if (READ_MODE.REFERENCES.equals(mode)) {
+					SAnnotation anno = SaltFactory.createSAnnotation();
+					anno.setName(attributes.getValue(ATT_NAME));
+					currentAnnotations.add(anno);
+				}
 			}
-			else if (TAG_FS.equals(localName)) {
+			else if (TAG_FS.equals(localName)) { // TODO one behaviour for all! variable anaId2Annotations could serve all purposes, since ids are unique
 				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
 					currentAnnotations = new ArrayList<SAnnotation>();
 					String markableId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
@@ -217,46 +252,42 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					String analysisId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					nodeAnnotations.put(analysisId, currentAnnotations);
 				}
+				else if (READ_MODE.REFERENCES.equals(mode)) {
+					currentAnnotations = new ArrayList<SAnnotation>();
+					String analysisId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
+					anaId2Annotations.put(analysisId, currentAnnotations);
+				}
 			}
 			else if (TAG_INTERP.equals(localName)) {
-				if (READ_MODE.SYNTAX.equals(mode)) {
-					SStructure node = SaltFactory.createSStructure();
-					
-					SProcessingAnnotation panno = SaltFactory.createSProcessingAnnotation();					
-					panno.setName(ATT_ANA);
-					panno.setValue(attributes.getValue(ATT_ANA).substring(1));
-					node.addProcessingAnnotation(panno);
-					
-					/*the following is null for root*/
-					String value = attributes.getValue(ATT_INST);
-					if (value != null) { 
-						panno = SaltFactory.createSProcessingAnnotation();
-						panno.setName(ATT_INST);
-						panno.setValue(value.substring(1));
-						node.addProcessingAnnotation(panno);
-					}
-					
-					panno = SaltFactory.createSProcessingAnnotation();
-					panno.setName(ATT_ID);
+				if (READ_MODE.SYNTAX.equals(mode)) {		
 					String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-					panno.setValue(id);
-					node.addProcessingAnnotation(panno);
-					
-					nodeId2Structure.put(id, node);
-//					syntaxLayer.addNode(node);
+					String instValue = attributes.getValue(ATT_INST);
+					nodeId2Structure.put(id, createTreenode(id, instValue==null? instValue : instValue.substring(1), attributes.getValue(ATT_ANA).substring(1)));
+				}
+				else if (READ_MODE.REFERENCES.equals(mode)) {
+					String[] instances = attributes.getValue(ATT_INST).split(" ");
+					String anaValue = attributes.getValue(ATT_ANA).substring(1);
+					for (String instance : instances) {
+						refInstId2AnaId.put(instance, anaValue);
+					}
 				}
 			}
 			else if (TAG_LINK.equals(localName)) {
+				HashMap<String, List<Pair<String, String>>> linkMap = null;
 				if (READ_MODE.SYNTAX.equals(mode)) {
-					String[] targetInfo = attributes.getValue(ATT_TARGET).split(SPACE);
-					String sourceId = targetInfo[1].substring(1);
-					String targetId = targetInfo[0].substring(1);
-					String type = attributes.getValue(ATT_TYPE);
-					if (!syntaxRelations.containsKey(sourceId) ) {
-						syntaxRelations.put(sourceId, new ArrayList<Pair<String, String>>());
-					}
-					syntaxRelations.get(sourceId).add(Pair.of(targetId, type));				
+					linkMap = syntaxLinks;				
 				}
+				else if (READ_MODE.REFERENCES.equals(mode)) {
+					linkMap = referenceLinks;
+				}
+				String[] targetInfo = attributes.getValue(ATT_TARGET).split(SPACE);
+				String sourceId = targetInfo[1].substring(1);
+				String targetId = targetInfo[0].substring(1);
+				String type = attributes.getValue(ATT_TYPE);
+				if (!linkMap.containsKey(sourceId) ) {
+					linkMap.put(sourceId, new ArrayList<Pair<String, String>>());
+				}
+				linkMap.get(sourceId).add(Pair.of(targetId, type));
 			}
 			else if (TAG_WHEN.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				timeslotId2Time.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), Long.parseLong(attributes.getValue(ATT_ABSOLUTE).replaceAll("\\.|:", "")));
@@ -288,6 +319,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private TextSegment getCurrentToken() {
 			return textTracker.get(textTracker.size() - 1);
+		}
+		
+		private SStructure createTreenode(String id, String instValue, String anaValue) {
+			SStructure node = SaltFactory.createSStructure();			
+			node.createProcessingAnnotation(null, ATT_ANA, anaValue);			
+			/*the following is null for non-terminals*/
+			if (instValue != null) { 
+				node.createProcessingAnnotation(null, ATT_INST, instValue);
+			}			
+			node.createProcessingAnnotation(null, ATT_ID, id);
+			return node;
 		}
 		
 		private void writeBufferToToken(boolean dipl, boolean norm, boolean overwrite) {
@@ -334,7 +376,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				currentAnnotations = null;
 			}
 			else if (TAG_STRING.equals(localName)) {
-				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
+				if (TAG_F.equals(stack.peek()) && (READ_MODE.MORPHOSYNTAX.equals(mode) || READ_MODE.REFERENCES.equals(mode) || READ_MODE.SYNTAX.equals(mode))) { //TODO untested for syntax, no test case
 					currentAnnotations.get(currentAnnotations.size() - 1).setValue(textBuffer.clear());
 				}
 			}
@@ -549,7 +591,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			for (Entry<String, SStructure> e : nodeId2NewStructure.entrySet()) {
 				nodeId2Structure.put(e.getKey(), e.getValue());
 			}
-			for (Entry<String, List<Pair<String, String>>> e : syntaxRelations.entrySet()) {
+			for (Entry<String, List<Pair<String, String>>> e : syntaxLinks.entrySet()) {
+				debugMessage(e.getKey());
 				node = nodeId2Structure.get(e.getKey());
 				SStructure target;
 				String type;
@@ -573,6 +616,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					node.removeLabel(p_anno.getQName());
 				}
 			}
+			
+			/* references */
+			buildReferences(tokenId2SToken);
 		}		
 		
 		/** Delimiter used in layer names to specify layers with speaker names*/

@@ -12,6 +12,7 @@ public interface SgsTEIDictionary {
 	public static final String TAG_FS = "fs";
 	public static final String TAG_INTERP = "interp";
 	public static final String TAG_LINK = "link";
+	public static final String TAG_NUMERIC = "numeric";
 	public static final String TAG_PAUSE = "pause";
 	public static final String TAG_PC = "pc";
 	public static final String TAG_SEG = "seg";

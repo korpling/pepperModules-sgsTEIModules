@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -19,6 +18,7 @@ import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
+import org.corpus_tools.salt.common.SDocument;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SDominanceRelation;
 import org.corpus_tools.salt.common.SOrderRelation;
@@ -28,10 +28,8 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
-import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SLayer;
 import org.corpus_tools.salt.core.SNode;
-import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
@@ -242,7 +240,6 @@ public class SgsTEIImporterTest {
 		
 		ArrayList<SToken> diplTokens1 = new ArrayList<SToken>();
 		ArrayList<SToken> normTokens1 = new ArrayList<SToken>();
-		ArrayList<SToken> pauseTokens1 = new ArrayList<SToken>();
 
 		point = newPointOfTime(timeline);
 		diplTokens1.add( createToken(docGraph, diplDS, 0, 1, point) );
@@ -353,7 +350,9 @@ public class SgsTEIImporterTest {
 	}
 	
 	private SDocumentGraph getGoalDocumentGraphSyntax() {
-		SDocumentGraph docGraph = SaltFactory.createSDocumentGraph();
+		SDocument doc = SaltFactory.createSDocument();
+		doc.setId("doc");
+		SDocumentGraph docGraph = doc.createDocumentGraph();
 		STimeline timeline = docGraph.createTimeline();
 		
 		String anaDelimiter = getModuleProperties().getAnalysesDelimiter();		
@@ -644,6 +643,10 @@ public class SgsTEIImporterTest {
 		return docGraph;
 	}
 	
+	private void getGoalGraphReferencesAndSyntax() {
+		
+	}
+	
 	private void debugPrintNode(SDocumentGraph graph, SNode node) {
 		System.out.println(String.join(":", node.getAnnotations().toString(), graph.getText(node)));
 	}
@@ -765,10 +768,24 @@ public class SgsTEIImporterTest {
 		primaryDataTest(goalGraph, fixGraph);
 		
 		//find roots
-		Set<SStructure> goalStructs = new HashSet<>(goalGraph.getStructures());
-		Set<SStructure> fixStructs = new HashSet<>(fixGraph.getStructures());
+		List<SStructure> goalStructs = goalGraph.getStructures();
+		List<SStructure> fixStructs = fixGraph.getStructures();
 		assertEquals(goalStructs.size(), fixStructs.size());
 		
+		for (int f = 0; f < fixStructs.size(); f++) {
+			SStructure fs = fixStructs.get(f);			
+			int g = 0;
+			SStructure gs = goalStructs.get(g);
+			while (g < goalStructs.size() && !fixGraph.getText(fs).equals(goalGraph.getText(goalStructs.get(g))) 
+					&& !fs.getAnnotation(CAT).getValue_STEXT().equals(goalStructs.get(g).getAnnotation(CAT).getValue_STEXT())
+					&& fs.getInRelations().size() != gs.getInRelations().size()
+					&& fs.getOutRelations().size() != gs.getOutRelations().size()
+					) {
+				g++;
+				gs = goalStructs.get(g);
+			}
+			assertTrue(g <= goalStructs.size());
+		}
 	}
 	
 	private void basicTest(SDocumentGraph goalGraph, SDocumentGraph fixGraph) {
