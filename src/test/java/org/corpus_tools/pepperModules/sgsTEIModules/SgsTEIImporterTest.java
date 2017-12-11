@@ -828,11 +828,6 @@ public class SgsTEIImporterTest {
 	}
 	
 	@Test
-	public void testTopicality() {
-		fail();
-	}
-	
-	@Test
 	public void testMetaData() {
 		fail();
 	}

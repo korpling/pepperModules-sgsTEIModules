@@ -10,7 +10,7 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	/** This property determines the pause layer's name. */
 	private static final String PROP_PAUSE_NAME = "pause.name";
 	/** Delimiter for multiple analyses on one token */
-	private static final String PROP_ANALYSES_DELIMITER = "ana.del";
+	private static final String PROP_ANALYSES_DELIMITER = "ana.del";	
 	
 	public SgsTEIImporterProperties() {
 		addProperty(new PepperModuleProperty<String>(PROP_DIPL_NAME, String.class, "This property determines the diplomatic layer's name.", "dipl", false));

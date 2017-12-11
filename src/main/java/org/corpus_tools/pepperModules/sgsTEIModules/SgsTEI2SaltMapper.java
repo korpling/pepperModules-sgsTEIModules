@@ -14,11 +14,13 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
+import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SDominanceRelation;
 import org.corpus_tools.salt.common.SOrderRelation;
+import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
@@ -112,14 +114,31 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** this variable stores the reference links; maps source to (target, function) */
 		private HashMap<String, List<Pair<String, String>>> referenceLinks;
 		
-		private void buildReferences(Map<String, SToken> tokenMap) {
+		private void buildReferences(Map<String, String> sToken2speaker) {
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
-			for (Entry<String, String> e : referenceSpans.keySet()) {
-				String spanId = e.getKey();
-				String targetNodeId = e.getValue();
-				SStructure targetNode = nodeId2Structure.get(targetNodeId);
-				docGraph.getOverlappedTokens(targetNode);
-				
+			HashMap<String, SSpan> spanId2SSpan = new HashMap<>();
+			for (Entry<String, List<String>> interpretation : refInterpId2Inst.entrySet()) {
+				for (String spanId : interpretation.getValue()) {
+					String targetNodeId = referenceSpans.get(spanId);
+					SStructure targetNode = nodeId2Structure.get(targetNodeId);
+					List<SToken> overlappedTokens = docGraph.getOverlappedTokens(targetNode);
+					SSpan entity = docGraph.createSpan(overlappedTokens);
+					String speaker = sToken2speaker.get(overlappedTokens.get(0).getId());
+					for (SAnnotation anno : anaId2Annotations.get(refInstId2AnaId.get(spanId))) {
+						anno.setName(String.join(DELIMITER, speaker, anno.getName()));
+						entity.addAnnotation(anno);						
+					}
+					spanId2SSpan.put(spanId, entity);					
+				}				
+			}
+			for (Entry<String, List<Pair<String, String>>> refLinks : referenceLinks.entrySet()) {
+				for (Pair<String, String> referenceLink : refLinks.getValue()) {
+					docGraph.createRelation(
+							spanId2SSpan.get(refLinks.getKey()), 
+							spanId2SSpan.get(referenceLink.getLeft()), 
+							SALT_TYPE.SPOINTING_RELATION, 
+							String.join("=", ATT_TYPE, referenceLink.getRight()));
+				}
 			}
 		}
 		
@@ -151,8 +170,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			
 			syntaxLayer = SaltFactory.createSLayer();			
 			syntaxLayer.setName(TYPE_SYNTAX);
-			getDocument().getDocumentGraph().addLayer(syntaxLayer);
-			
+			getDocument().getDocumentGraph().addLayer(syntaxLayer);			
 		}
 		
 		private void debugMessage(Object... elements) {
@@ -323,9 +341,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private SStructure createTreenode(String id, String instValue, String anaValue) {
 			SStructure node = SaltFactory.createSStructure();			
-			node.createProcessingAnnotation(null, ATT_ANA, anaValue);			
-			/*the following is null for non-terminals*/
-			if (instValue != null) { 
+			node.createProcessingAnnotation(null, ATT_ANA, anaValue);
+			if (instValue != null) { // is terminal node
 				node.createProcessingAnnotation(null, ATT_INST, instValue);
 			}			
 			node.createProcessingAnnotation(null, ATT_ID, id);
@@ -405,6 +422,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private static final String DIPL = "dipl";
 		
 		private static final String PAUSE = "pause";
+
+		private static final String F_ERR_MSG_SYNTAX_NODE_MISSING = "Undefined syntax node: %s";
 		
 		private void buildGraph() {
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
@@ -485,6 +504,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			ArrayList<SToken> normTokens;
 			ArrayList<SToken> pauseTokens;
 			
+			HashMap<String, String> sTokId2speaker = new HashMap<>();
+			
 			for (Entry<String, Triple<StringBuilder, StringBuilder, StringBuilder>> e : speaker2Text.entrySet()) {
 				speaker = e.getKey();				
 				StringBuilder diplText = e.getValue().getLeft();
@@ -492,8 +513,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				StringBuilder pauseText = e.getValue().getRight(); 
 				
 				STextualDS diplDS = docGraph.createTextualDS(diplText.toString());
+				diplDS.createMetaAnnotation(null, "speaker", speaker);
 				STextualDS normDS = docGraph.createTextualDS(normText.toString());
+				normDS.createMetaAnnotation(null, "speaker", speaker);
 				STextualDS pauseDS = docGraph.createTextualDS(pauseText.toString());
+				pauseDS.createMetaAnnotation(null, "speaker", speaker);
 				
 				ArrayList<Integer> tokenIndexes = speaker2TokenIndexes.get(speaker);				
 				
@@ -528,7 +552,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 									anno.setName(String.join(DELIMITER, speaker, anno.getName()));
 									sTok.addAnnotation(anno);
 								}
-							}							
+							}
+							sTokId2speaker.put(sTok.getId(), speaker);
 						}
 					} else {
 						//create pause token
@@ -555,9 +580,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				
 			}			
 			
-			/*Build syntax*/
-			//TOOLS:			
-			//step 1: connect all structures with an instance to their tokens
+			buildSyntax(tokenId2SToken);
+			buildReferences(sTokId2speaker);
+		}
+		
+		private void buildSyntax(HashMap<String, SToken> tokenId2SToken) {
+			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			SProcessingAnnotation panno = null;
 			SStructure node = null;
 			HashMap<String, SStructure> nodeId2NewStructure = new HashMap<>();
@@ -591,9 +619,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			for (Entry<String, SStructure> e : nodeId2NewStructure.entrySet()) {
 				nodeId2Structure.put(e.getKey(), e.getValue());
 			}
-			for (Entry<String, List<Pair<String, String>>> e : syntaxLinks.entrySet()) {
-				debugMessage(e.getKey());
+			for (Entry<String, List<Pair<String, String>>> e : syntaxLinks.entrySet()) {				
 				node = nodeId2Structure.get(e.getKey());
+				if (node == null) {
+					throw new PepperModuleDataException(SgsTEI2SaltMapper.this, String.format(F_ERR_MSG_SYNTAX_NODE_MISSING, e.getKey()));
+				}
 				SStructure target;
 				String type;
 				SDominanceRelation domRel;
@@ -616,10 +646,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					node.removeLabel(p_anno.getQName());
 				}
 			}
-			
-			/* references */
-			buildReferences(tokenId2SToken);
-		}		
+		}
 		
 		/** Delimiter used in layer names to specify layers with speaker names*/
 		public static final String DELIMITER = "_";

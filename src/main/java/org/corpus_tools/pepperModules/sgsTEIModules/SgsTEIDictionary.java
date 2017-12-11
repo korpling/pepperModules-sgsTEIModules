@@ -2,7 +2,8 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 
 public interface SgsTEIDictionary {
 	/* Name spaces */
-	public static final String NS_XML = "xml";
+	public static final String NS_SO = "so";
+	public static final String NS_XML = "xml";	
 	/* Tags */
 	public static final String TAG_ADD = "add";
 	public static final String TAG_CHOICE = "choice";
@@ -47,4 +48,7 @@ public interface SgsTEIDictionary {
 	public static final String TYPE_REFERENCES = "references";
 	public static final String TYPE_SYNTAX = "syntax";
 	public static final String TYPE_WORDFORM = "wordForm";
+	/* Namespace uris */
+	public static final String URI_NS_XML = "http://www.tei-c.org/ns/1.0";
+	public static final String URI_NS_SO = "http://standoff.proposal";
 }
