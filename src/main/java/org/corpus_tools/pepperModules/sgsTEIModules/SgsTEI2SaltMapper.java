@@ -3,7 +3,6 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -74,7 +74,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** what are we currently reading? */
 		private READ_MODE mode; 
 		
-		/*here variables for collecting information*/	
+		/*here variables for collecting information*/		
 		/** this maps time slot ids to actual times */
 		private HashMap<String, Long> id2TimeMap;
 		/** text tracker, list of triples (tokenId, diplValue, normValue), id==null means pause; array list keeps order */
@@ -83,14 +83,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private ArrayList<MutableTriple<String, Integer, Pair<String, String>>> speakerTimeTracker;
 		/** this variable maps speaker names to STextualDSs-triples (dipl, norm, pause)*/
 		private HashMap<String, Triple<STextualDS, STextualDS, STextualDS>> speaker2DSMap;
-		/**mapping from markable-id to List of annotations*/
-		private HashMap<String, List<SAnnotation>> morphosyntax;
+		/**mapping from markable-id to List of annotations (order is important) */
+		private HashMap<String, List<Pair<String, String>>> morphosyntax;
+		/** this collects the morphosyntactical levels */
+		private Set<String> morphoLevels;
 		/**mapping from tokens to markables*/
-		private HashMap<String, String> tokenId2markableAnaId; //FIXME this is buggy, one token can have several analyses
+		private HashMap<String, List<String>> tokenId2markableAnaId; //FIXME this is buggy, one token can have several analyses
 		/*WORKAROUND, this does not fix it, but helps for now for syntax*/
 		HashMap<String, String> analysisId2tokenId = new HashMap<>(); //FIXME
 		/**variable keeping track of last markables annotation list, last annotation can simple be taken from end of the list*/
-		private List<SAnnotation> currentAnnotations;
+		private List<Pair<String, String>> currentAnnotations;
 		/** mapping between markableId and markableAnaId */
 		private HashMap<String, String> markable2ana;
 		
@@ -100,7 +102,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** this variable collects the link relations between syntax nodes, mapping from source node to list of pairs (target, function) */
 		private HashMap<String, List<Pair<String, String>>> syntaxLinks;
 		/** this variable collects the node (not link) annotations, maps ana-ID to annotation */
-		private HashMap<String, List<SAnnotation>> nodeAnnotations;
+		private HashMap<String, List<Pair<String, String>>> nodeAnnotations;
 		/** syntax layer to facilitate adding the nodes and relations */
 		private SLayer syntaxLayer;
 		
@@ -112,7 +114,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** this maps instanceId to their referential analysis id */
 		private HashMap<String, String> refInstId2AnaId;
 		/** this variable maps annotation id to annotations (reference) */
-		private HashMap<String, List<SAnnotation>> anaId2Annotations;
+		private HashMap<String, List<Pair<String, String>>> anaId2Annotations;
 		/** this variable stores the reference links; maps source to (target, function) */
 		private HashMap<String, List<Pair<String, String>>> referenceLinks;
 		
@@ -134,8 +136,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					SSpan entity = docGraph.createSpan(overlappedTokens);
 					entity.setId(spanId);
 					String speaker = sToken2speaker.get(overlappedTokens.get(0).getId());					
-					for (SAnnotation anno : anaId2Annotations.get(refInstId2AnaId.get(spanId))) {
-						entity.createAnnotation(null, String.join(DELIMITER, speaker, anno.getName()), anno.getValue());
+					for (Pair<String, String> anno : anaId2Annotations.get(refInstId2AnaId.get(spanId))) {
+						entity.createAnnotation(null, String.join(DELIMITER, speaker, anno.getLeft()), anno.getRight());
 					}					
 					spanId2SSpan.put(spanId, entity);					
 				}				
@@ -232,7 +234,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					String targetValue = attributes.getValue(ATT_TARGET);
 					String anaValue = attributes.getValue(ATT_ANA);
 					if (targetValue != null && anaValue != null) {
-						tokenId2markableAnaId.put(targetValue.substring(1), anaValue.substring(1));
+						String tgt = targetValue.substring(1);
+						if (!tokenId2markableAnaId.containsKey(tgt)) {
+							tokenId2markableAnaId.put(tgt, new ArrayList<String>());
+						}
+						tokenId2markableAnaId.get(tgt).add(anaValue.substring(1));
 						//WORKAROUNDs FIXME
 						markable2ana.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_ANA).substring(1));
 						analysisId2tokenId.put(attributes.getValue(ATT_ANA).substring(1), attributes.getValue(ATT_TARGET).substring(1));
@@ -252,35 +258,27 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 			}
 			else if (TAG_F.equals(localName)) { // TODO one behaviour for all
-				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-					SAnnotation anno = SaltFactory.createSAnnotation();
-					anno.setName(attributes.getValue(ATT_NAME));					
-					currentAnnotations.add(anno);					
-				}
-				else if (READ_MODE.SYNTAX.equals(mode)) {
-					SAnnotation anno = SaltFactory.createSAnnotation();
-					anno.setName(attributes.getValue(ATT_NAME));
-					currentAnnotations.add(anno);
-				}
-				else if (READ_MODE.REFERENCES.equals(mode)) {
-					SAnnotation anno = SaltFactory.createSAnnotation();
-					anno.setName(attributes.getValue(ATT_NAME));
-					currentAnnotations.add(anno);
+				if (READ_MODE.MORPHOSYNTAX.equals(mode) || READ_MODE.SYNTAX.equals(mode) || READ_MODE.REFERENCES.equals(mode)) {
+					String level = attributes.getValue(ATT_NAME);
+					currentAnnotations.add(MutablePair.<String, String>of(level, null));
+					if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
+						morphoLevels.add(level);
+					}
 				}
 			}
 			else if (TAG_FS.equals(localName)) { // TODO one behaviour for all! variable anaId2Annotations could serve all purposes, since ids are unique
 				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-					currentAnnotations = new ArrayList<SAnnotation>();
+					currentAnnotations = new ArrayList<Pair<String, String>>();
 					String markableId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					morphosyntax.put(markableId, currentAnnotations);
 				}
 				else if (READ_MODE.SYNTAX.equals(mode)) {
-					currentAnnotations = new ArrayList<SAnnotation>();
+					currentAnnotations = new ArrayList<Pair<String, String>>();
 					String analysisId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					nodeAnnotations.put(analysisId, currentAnnotations);
 				}
 				else if (READ_MODE.REFERENCES.equals(mode)) {
-					currentAnnotations = new ArrayList<SAnnotation>();
+					currentAnnotations = new ArrayList<Pair<String, String>>();
 					String analysisId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					anaId2Annotations.put(analysisId, currentAnnotations);
 				}
@@ -458,7 +456,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			HashMap<Integer, Integer> tokenIndex2timelineSlot = new HashMap<>();
 			HashMap<String, ArrayList<Integer>> speaker2TokenIndexes = new HashMap<>();
 			HashMap<String, Triple<StringBuilder, StringBuilder, StringBuilder>> speaker2Text = new HashMap<>();
-			ArrayList<Triple<Pair<Integer, Integer>, Pair<Integer, Integer>, Pair<Integer, Integer>>> tokenLimits = new ArrayList<>();
+			List<int[][]> tokenLimits = new ArrayList<>(); //shape (n, 4, 2) where n = number of tokens FIXME this does not work, int is not initialized with null
+			HashMap<Integer, Integer> timeslot2nMarkables = new HashMap<>();
 			
 			boolean overlap = false;
 			int offset = 0;			
@@ -485,10 +484,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 				
 				for (int i = firstTokenIx; i <= lastTokenIx; i++) {
-					MutableTriple<Pair<Integer, Integer>, Pair<Integer, Integer>, Pair<Integer, Integer>> limitTriple = 
-							MutableTriple.of(null, null, null);
-					tokenLimits.add(limitTriple);
-					tokenIndexes.add(i);
+					int [][] limitTuple = new int[4][2];
+					
+					tokenLimits.add(limitTuple);
+					tokenIndexes.add(i);					
 					tokenIndex2timelineSlot.put(i, i + offset);
 					tokenObject = textTracker.get(i);
 					if (tokenObject.getPause() == null) {
@@ -496,17 +495,24 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						String diplT = tokenObject.getDipl();
 						String normT = tokenObject.getNorm();
 						if (!diplT.isEmpty()) {
-							limitTriple.setLeft(Pair.of(diplText.length(), diplText.length() + diplT.length()));
+							limitTuple[0][0] = diplText.length();
+							limitTuple[0][1] = diplText.length() + diplT.length();
 							diplText.append(diplT).append(SPACE);	
 						}
 						if (!normT.isEmpty()) {
-							limitTriple.setMiddle(Pair.of(normText.length(), normText.length() + normT.length()));
+							limitTuple[1][0] = normText.length();
+							limitTuple[1][1] = normText.length() + normT.length();
 							normText.append(normT).append(SPACE);
+							List<?> l = tokenId2markableAnaId.get(tokenObject.getId());
+							if (l != null) {
+								timeslot2nMarkables.put(i, l.size());								
+							}
 						}
 					} else {
 						//is pause
 						String pauseT = tokenObject.getPause();
-						limitTriple.setRight(Pair.of(pauseText.length(), pauseText.length() + pauseT.length()));
+						limitTuple[2][0] = pauseText.length();
+						limitTuple[2][1] = pauseText.length() + pauseT.length();
 						pauseText.append(pauseT).append(SPACE);
 					}					
 				}				
@@ -544,10 +550,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				
 				for (Iterator<Integer> itIx = tokenIndexes.iterator(); itIx.hasNext();) {
 					int tokenIndex = itIx.next();									
-					Triple<Pair<Integer, Integer>, Pair<Integer, Integer>, Pair<Integer, Integer>> limits = tokenLimits.get(tokenIndex);
+					int[][] limits = tokenLimits.get(tokenIndex);
 					int timeslot = tokenIndex2timelineSlot.get(tokenIndex);
 					SToken sTok = null;
-					if (limits.getRight() == null) {
+					if (limits[2][0] == null) {
 						// is text
 						if (limits.getLeft() != null) {
 							//create dipl token
@@ -564,10 +570,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 							String tokId = textTracker.get(tokenIndex).getId();
 							if (tokId != null) {
 								tokenId2SToken.put(tokId, sTok);								
-								List<SAnnotation> annotations = morphosyntax.get( tokenId2markableAnaId.get(tokId) );
-								for (SAnnotation anno : annotations) {
+								List<Pair<String, String>> annotations = morphosyntax.get( tokenId2markableAnaId.get(tokId) );
+								for (Pair<String, String> anno : annotations) {
 									anno.setName(String.join(DELIMITER, speaker, anno.getName()));
-									sTok.addAnnotation(anno);
+									
 								}
 							}
 							sTokId2speaker.put(sTok.getId(), speaker);
