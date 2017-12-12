@@ -3,10 +3,12 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.lang3.tuple.MutableTriple;
@@ -120,21 +122,21 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private void buildReferences(Map<String, String> sToken2speaker) {
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			HashMap<String, SSpan> spanId2SSpan = new HashMap<>();	
-			debugMessage(refInterpId2Inst);
+			debugMessage(refInterpId2Inst);			
 			for (Entry<String, List<String>> interpretation : refInterpId2Inst.entrySet()) {				
 				for (String spanId : interpretation.getValue()) {					
 					String targetNodeId = referenceSpans.get(spanId);
 					SStructure targetNode = nodeId2Structure.get(targetNodeId);
-					List<SToken> overlappedTokens = docGraph.getOverlappedTokens(targetNode);
+					List<SToken> overlappedTokens = docGraph.getOverlappedTokens(targetNode);					
+					for (SToken tok : docGraph.getSortedTokenByText(overlappedTokens)) {
+						debugMessage(spanId, docGraph.getText(tok));
+					}
 					SSpan entity = docGraph.createSpan(overlappedTokens);
 					entity.setId(spanId);
-					String speaker = sToken2speaker.get(overlappedTokens.get(0).getId());
+					String speaker = sToken2speaker.get(overlappedTokens.get(0).getId());					
 					for (SAnnotation anno : anaId2Annotations.get(refInstId2AnaId.get(spanId))) {
-						debugMessage(spanId, entity, docGraph.getText(entity));
-						debugMessage(anno.getName());
-						anno.setName(String.join(DELIMITER, speaker, anno.getName()));
-						entity.addAnnotation(anno);								
-					}
+						entity.createAnnotation(null, String.join(DELIMITER, speaker, anno.getName()), anno.getValue());
+					}					
 					spanId2SSpan.put(spanId, entity);					
 				}				
 			}
@@ -596,7 +598,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}			
 			
 			buildSyntax(tokenId2SToken);
-			buildReferences(sTokId2speaker);
+//			buildReferences(sTokId2speaker);
 		}
 		
 		private void buildSyntax(HashMap<String, SToken> tokenId2SToken) {
