@@ -61,8 +61,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 * @author klotzmaz
 	 *
 	 */
-	private class SgsTEIReader extends DefaultHandler2{
-		
+	private class SgsTEIReader extends DefaultHandler2{		
+
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
 		
 		/** This is the element stack representing the hierarchy of elements to be closed. */
@@ -114,32 +114,39 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** this variable stores the reference links; maps source to (target, function) */
 		private HashMap<String, List<Pair<String, String>>> referenceLinks;
 		
+		private static final String WARN_UNKNOWN_LINKS = "Unknown links will be ignored, this might lead to errors in further processing.";
+		private static final String F_ERR_MSG_SYNTAX_NODE_MISSING = "Undefined syntax node: %s";
+		
 		private void buildReferences(Map<String, String> sToken2speaker) {
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
-			HashMap<String, SSpan> spanId2SSpan = new HashMap<>();
-			for (Entry<String, List<String>> interpretation : refInterpId2Inst.entrySet()) {
-				for (String spanId : interpretation.getValue()) {
+			HashMap<String, SSpan> spanId2SSpan = new HashMap<>();	
+			debugMessage(refInterpId2Inst);
+			for (Entry<String, List<String>> interpretation : refInterpId2Inst.entrySet()) {				
+				for (String spanId : interpretation.getValue()) {					
 					String targetNodeId = referenceSpans.get(spanId);
 					SStructure targetNode = nodeId2Structure.get(targetNodeId);
 					List<SToken> overlappedTokens = docGraph.getOverlappedTokens(targetNode);
 					SSpan entity = docGraph.createSpan(overlappedTokens);
+					entity.setId(spanId);
 					String speaker = sToken2speaker.get(overlappedTokens.get(0).getId());
 					for (SAnnotation anno : anaId2Annotations.get(refInstId2AnaId.get(spanId))) {
+						debugMessage(spanId, entity, docGraph.getText(entity));
+						debugMessage(anno.getName());
 						anno.setName(String.join(DELIMITER, speaker, anno.getName()));
-						entity.addAnnotation(anno);						
+						entity.addAnnotation(anno);								
 					}
 					spanId2SSpan.put(spanId, entity);					
 				}				
 			}
-			for (Entry<String, List<Pair<String, String>>> refLinks : referenceLinks.entrySet()) {
-				for (Pair<String, String> referenceLink : refLinks.getValue()) {
-					docGraph.createRelation(
-							spanId2SSpan.get(refLinks.getKey()), 
-							spanId2SSpan.get(referenceLink.getLeft()), 
-							SALT_TYPE.SPOINTING_RELATION, 
-							String.join("=", ATT_TYPE, referenceLink.getRight()));
-				}
-			}
+//			for (Entry<String, List<Pair<String, String>>> refLinks : referenceLinks.entrySet()) {
+//				for (Pair<String, String> referenceLink : refLinks.getValue()) {
+//					docGraph.createRelation(
+//							spanId2SSpan.get(refLinks.getKey()), 
+//							spanId2SSpan.get(referenceLink.getLeft()), 
+//							SALT_TYPE.SPOINTING_RELATION, 
+//							String.join("=", ATT_TYPE, referenceLink.getRight()));
+//				}
+//			}
 		}
 		
 		/** records the timeline inside the document */
@@ -280,14 +287,19 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				if (READ_MODE.SYNTAX.equals(mode)) {		
 					String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					String instValue = attributes.getValue(ATT_INST);
-					nodeId2Structure.put(id, createTreenode(id, instValue==null? instValue : instValue.substring(1), attributes.getValue(ATT_ANA).substring(1)));
+					instValue = instValue == null || instValue.isEmpty()? null : instValue.substring(1); //This will treat empty terminals as non-terminals
+					nodeId2Structure.put(id, createTreenode(id, instValue, attributes.getValue(ATT_ANA).substring(1)));
 				}
 				else if (READ_MODE.REFERENCES.equals(mode)) {
+					String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));					
 					String[] instances = attributes.getValue(ATT_INST).split(" ");
 					String anaValue = attributes.getValue(ATT_ANA).substring(1);
+					List<String> instanceList = new ArrayList<>();
 					for (String instance : instances) {
-						refInstId2AnaId.put(instance, anaValue);
+						refInstId2AnaId.put(instance.substring(1), anaValue);
+						instanceList.add(instance.substring(1));
 					}
+					refInterpId2Inst.put(id, instanceList);
 				}
 			}
 			else if (TAG_LINK.equals(localName)) {
@@ -298,14 +310,18 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				else if (READ_MODE.REFERENCES.equals(mode)) {
 					linkMap = referenceLinks;
 				}
-				String[] targetInfo = attributes.getValue(ATT_TARGET).split(SPACE);
-				String sourceId = targetInfo[1].substring(1);
-				String targetId = targetInfo[0].substring(1);
-				String type = attributes.getValue(ATT_TYPE);
-				if (!linkMap.containsKey(sourceId) ) {
-					linkMap.put(sourceId, new ArrayList<Pair<String, String>>());
+				if (linkMap != null) {
+					String[] targetInfo = attributes.getValue(ATT_TARGET).split(SPACE);
+					String sourceId = targetInfo[1].substring(1);
+					String targetId = targetInfo[0].substring(1);
+					String type = attributes.getValue(ATT_TYPE);
+					if (!linkMap.containsKey(sourceId) ) {
+						linkMap.put(sourceId, new ArrayList<Pair<String, String>>());
+					}
+					linkMap.get(sourceId).add(Pair.of(targetId, type));
+				} else {
+					logger.warn(WARN_UNKNOWN_LINKS);
 				}
-				linkMap.get(sourceId).add(Pair.of(targetId, type));
 			}
 			else if (TAG_WHEN.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				timeslotId2Time.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), Long.parseLong(attributes.getValue(ATT_ABSOLUTE).replaceAll("\\.|:", "")));
@@ -343,9 +359,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			SStructure node = SaltFactory.createSStructure();			
 			node.createProcessingAnnotation(null, ATT_ANA, anaValue);
 			if (instValue != null) { // is terminal node
-				node.createProcessingAnnotation(null, ATT_INST, instValue);
+				node.createProcessingAnnotation(null, ATT_INST, instValue);				
 			}			
 			node.createProcessingAnnotation(null, ATT_ID, id);
+			node.setId(id);
 			return node;
 		}
 		
@@ -422,8 +439,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private static final String DIPL = "dipl";
 		
 		private static final String PAUSE = "pause";
-
-		private static final String F_ERR_MSG_SYNTAX_NODE_MISSING = "Undefined syntax node: %s";
 		
 		private void buildGraph() {
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
@@ -631,6 +646,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					target = nodeId2Structure.get(relation.getKey());
 					type = relation.getValue();
 					docGraph.addNode(node);
+					docGraph.addNode(target);					
 					domRel = (SDominanceRelation) docGraph.createRelation(node, target, SALT_TYPE.SDOMINANCE_RELATION, null);					
 					domRel.createAnnotation(null, ATT_TYPE, type);
 					syntaxLayer.addRelation(domRel);
@@ -755,7 +771,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TYPE_MORPHOSYNTAX.equalsIgnoreCase(standoffType)) {
 				return READ_MODE.MORPHOSYNTAX;
 			}
-			else if (TYPE_REFERENCES.equals(standoffType)) {
+			else if (TYPE_REFERENCE.equals(standoffType)) {
 				return READ_MODE.REFERENCES;
 			} 
 			else if (TAG_TEXT.equalsIgnoreCase(standoffType)) {
