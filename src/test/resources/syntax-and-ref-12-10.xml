@@ -1,0 +1,1258 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0"
+    xmlns:mv="http://myvocab"
+    xmlns:so="http://standoff.proposal">
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title>Encoding of interview 92</title>
+                <respStmt>
+                    <resp>Editor</resp>
+                    <name>Aria Adli</name>
+                </respStmt>
+            </titleStmt>
+            <publicationStmt>
+                <distributor>
+                    <persName>
+                        <forename>Aria</forename>
+                        <surname>Adli</surname>
+                    </persName>
+                </distributor>
+                <availability>
+                    <licence target="http://creativecommons.org/licenses/by/4.0/"
+                        notBefore="2013-01-01">
+                        <p>The Creative Commons Attribution 4.0 International (CC BY 4.0) Licence
+                            applies to this document.</p>
+                        <p>The material contained in this document must be quoted as follows:
+                            .<q>Copyright Aria Adli, $$name of the corpus, $date of
+                                publication</q>
+                        </p>
+                    </licence>
+                </availability>
+            </publicationStmt>
+            <sourceDesc>
+                <recordingStmt>
+                    <recording>
+                        <media mimeType="audio/wav" url="interv_det92.wav" dur="PT13M">
+                            <desc>The speech source file for this dialogue</desc>
+                        </media>
+                    </recording>
+                </recordingStmt>
+            </sourceDesc>
+        </fileDesc>
+        <profileDesc>
+            <particDesc>
+                <person xml:id="ARI">
+                    <persName>
+                        <forename>Aria</forename>
+                        <surname>Adli</surname>
+                    </persName>
+                </person>
+                <listPerson type="interviewee">
+                    <person xml:id="S92">
+                        <p>The interviewee, called S01, S02, S03, etc. (i.e. Sxx, where xx stands
+                            for the two-digit number of the subject – the subjects 100, 101 and 102
+                            are coded as Sc0, Sc1 and Sc2),</p>
+                    </person>
+                </listPerson>
+                <listPerson type="interviewer">
+                    <person xml:id="JER">
+                        <p>the interviewer (called KAV, ARE, JAB, MAR, JER, SEV, FRA, SOP, HEL,
+                            ANT),</p>
+                    </person>
+                </listPerson>
+                <listPerson type="others"/>
+            </particDesc>
+        </profileDesc>
+    </teiHeader>
+    <so:standOff type="reference">
+        <teiHeader>
+            <!-- TODO -->
+        </teiHeader>
+        <so:listAnnotation type="markables">
+            <annotationBlock xml:id="ref-expressions-1">
+                <span xml:id="refex-001" target="#syntax-nt-25-3"/>  <!-- de nombreuses relations -->
+                <span xml:id="refex-002" target="#syntax-nt-27"/>  <!-- nombreuses relations -->
+                <span xml:id="refex-003" target="#syntax-nt-30-1-1"/>  <!-- sa femme -->
+            </annotationBlock>
+        </so:listAnnotation>
+        <so:listAnnotation type="discourseEntities">
+            <interpGrp>
+                <interp xml:id="ref-e001" inst="#refex-001 #refex-002" ana="#ref-e1-ana"/>
+                <interp xml:id="ref-e002" inst="#refex-003" ana="#ref-e2-ana"/>
+            </interpGrp>
+            <fs xml:id="ref-e1-ana">
+                <f name="label">
+                    <string>RELATIONS</string>
+                </f>
+                <f name="animacy">
+                    <symbol value="human"/>
+                </f>
+                <f name="specificity">
+                    <symbol value="nonspecific"/>
+                </f>
+            </fs>
+            <fs xml:id="ref-e2-ana">
+                <f name="label">
+                    <string>WIFE</string>
+                </f>
+                <f name="animacy">
+                    <symbol value="human"/>
+                </f>
+                <f name="specificity">
+                    <symbol value="specific"/>
+                </f>
+                <f name="naturalGender">
+                    <symbol value="female"/>
+                </f>
+                <f name="cardinality">
+                    <numeric value="1"/>
+                </f>
+            </fs>
+        </so:listAnnotation>
+        <so:listAnnotation type="links">
+            <link xml:id="link-ref-001" type="subset" target="#ref-e002 #ref-e001"/>  <!-- SUBSET(wife, relations) -->
+        </so:listAnnotation>
+    </so:standOff>
+    <so:standOff type="syntax">
+        <teiHeader/>
+        <so:listAnnotation type="nodes">
+            <annotationBlock xml:id="syntax-nodes-25">
+                <interpGrp type="nonterminals">
+                    <interp xml:id="syntax-root-25" ana="#syntax-root-25-ana"/>
+                    <interp xml:id="syntax-nt-25" ana="#syntax-nt-25-ana"/>
+                    <!--eu il a relations de nombreuses-->
+                    <interp xml:id="syntax-nt-25-3" ana="#syntax-nt-25-3-ana"/>
+                    <!--relations de nombreuses-->
+                </interpGrp>
+                <interpGrp type="terminals">
+                    <interp xml:id="syntax-t-25" inst="#d2e22742" ana="#syntax-t-25-ana"/>
+                    <!--eu-->
+                    <interp xml:id="syntax-t-25-1" inst="#d2e22720" ana="#syntax-t-25-1-ana"/>
+                    <!--il-->
+                    <interp xml:id="syntax-t-25-2" inst="#d2e22731" ana="#syntax-t-25-2-ana"/>
+                    <!--a-->
+                    <interp xml:id="syntax-t-25-3" inst="#d2e22786" ana="#syntax-t-25-3-ana"/>
+                    <!--relations-->
+                    <interp xml:id="syntax-t-25-3-1"
+                        inst="#d2e22764"
+                        ana="#syntax-t-25-3-1-ana"/>
+                    <!--de-->
+                    <interp xml:id="syntax-t-25-3-2"
+                        inst="#d2e22775"
+                        ana="#syntax-t-25-3-2-ana"/>
+                    <!--nombreuses-->
+                </interpGrp>
+                <fs xml:id="syntax-root-25-ana">
+                    <f name="cat">
+                        <symbol value="ROOT"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-25-ana">
+                    <f name="cat">
+                        <symbol value="VP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-25-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-25-1-ana">
+                    <f name="cat">
+                        <symbol value="PRN"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-25-2-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-25-3-ana">
+                    <f name="cat">
+                        <symbol value="NP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-25-3-ana">
+                    <f name="cat">
+                        <symbol value="N"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-25-3-1-ana">
+                    <f name="cat">
+                        <symbol value="D"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-25-3-2-ana">
+                    <f name="cat">
+                        <symbol value="A"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-nodes-26">
+                <interpGrp type="nonterminals">
+                    <interp xml:id="syntax-root-26" ana="#syntax-root-26-ana"/>
+                    <interp xml:id="syntax-nt-26" ana="#syntax-nt-26-ana"/>
+                    <!--était là il divorcé-->
+                </interpGrp>
+                <interpGrp type="terminals">
+                    <interp xml:id="syntax-t-26" inst="#d2e22845" ana="#syntax-t-26-ana"/>
+                    <!--était-->
+                    <interp xml:id="syntax-t-26-1" inst="#d2e22816" ana="#syntax-t-26-1-ana"/>
+                    <!--là-->
+                    <interp xml:id="syntax-t-26-2" inst="#d2e22834" ana="#syntax-t-26-2-ana"/>
+                    <!--il-->
+                    <interp xml:id="syntax-t-26-3" inst="#d2e22856" ana="#syntax-t-26-3-ana"/>
+                    <!--divorcé-->
+                </interpGrp>
+                <fs xml:id="syntax-root-26-ana">
+                    <f name="cat">
+                        <symbol value="ROOT"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-26-ana">
+                    <f name="cat">
+                        <symbol value="VP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-26-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-26-1-ana">
+                    <f name="cat">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-26-2-ana">
+                    <f name="cat">
+                        <symbol value="PRN"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-26-3-ana">
+                    <f name="cat">
+                        <symbol value="A"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-nodes-27">
+                <interpGrp type="nonterminals">
+                    <interp xml:id="syntax-root-27" ana="#syntax-root-27-ana"/>
+                    <interp xml:id="syntax-nt-27" ana="#syntax-nt-27-ana"/>
+                    <!--relations nombreuses-->
+                </interpGrp>
+                <interpGrp type="terminals">
+                    <interp xml:id="syntax-t-27" inst="#d2e3269" ana="#syntax-t-27-ana"/>
+                    <!--relations-->
+                    <interp xml:id="syntax-t-27-1" inst="#d2e3258" ana="#syntax-t-27-1-ana"/>
+                    <!--nombreuses-->
+                </interpGrp>
+                <fs xml:id="syntax-root-27-ana">
+                    <f name="cat">
+                        <symbol value="ROOT"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-27-ana">
+                    <f name="cat">
+                        <symbol value="NP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-27-ana">
+                    <f name="cat">
+                        <symbol value="N"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-27-1-ana">
+                    <f name="cat">
+                        <symbol value="A"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-nodes-28">
+                <interpGrp type="nonterminals">
+                    <interp xml:id="syntax-root-28" ana="#syntax-root-28-ana"/>
+                    <interp xml:id="syntax-nt-28" ana="#syntax-nt-28-ana"/>
+                    <!--était là il divorcé-->
+                </interpGrp>
+                <interpGrp type="terminals">
+                    <interp xml:id="syntax-t-28" inst="#d2e3327" ana="#syntax-t-28-ana"/>
+                    <!--était-->
+                    <interp xml:id="syntax-t-28-1" inst="#d2e3298" ana="#syntax-t-28-1-ana"/>
+                    <!--là-->
+                    <interp xml:id="syntax-t-28-2" inst="#d2e3316" ana="#syntax-t-28-2-ana"/>
+                    <!--il-->
+                    <interp xml:id="syntax-t-28-3" inst="#d2e3339" ana="#syntax-t-28-3-ana"/>
+                    <!--divorcé-->
+                </interpGrp>
+                <fs xml:id="syntax-root-28-ana">
+                    <f name="cat">
+                        <symbol value="ROOT"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-28-ana">
+                    <f name="cat">
+                        <symbol value="VP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-28-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-28-1-ana">
+                    <f name="cat">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-28-2-ana">
+                    <f name="cat">
+                        <symbol value="PRN"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-28-3-ana">
+                    <f name="cat">
+                        <symbol value="A"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-nodes-29">
+                <interpGrp type="nonterminals">
+                    <interp xml:id="syntax-root-29" ana="#syntax-root-29-ana"/>
+                    <interp xml:id="syntax-nt-29" ana="#syntax-nt-29-ana"/>
+                    <!--faisait ça longtemps qu' séparé il s' était-->
+                    <interp xml:id="syntax-nt-29-3" ana="#syntax-nt-29-3-ana"/>
+                    <!--qu' séparé il s' était-->
+                    <interp xml:id="syntax-nt-29-3-1" ana="#syntax-nt-29-3-1-ana"/>
+                    <!--séparé il s' était-->
+                </interpGrp>
+                <interpGrp type="terminals">
+                    <interp xml:id="syntax-t-29" inst="#d2e49" ana="#syntax-t-29-ana"/>
+                    <!--faisait-->
+                    <interp xml:id="syntax-t-29-1" inst="#d2e3368" ana="#syntax-t-29-1-ana"/>
+                    <!--ça-->
+                    <interp xml:id="syntax-t-29-2" inst="#d2e3379" ana="#syntax-t-29-2-ana"/>
+                    <!--longtemps-->
+                    <interp xml:id="syntax-t-29-3" inst="#d2e3390" ana="#syntax-t-29-3-ana"/>
+                    <!--qu'-->
+                    <interp xml:id="syntax-t-29-3-1" inst="#d2e3434" ana="#syntax-t-29-3-1-ana"/>
+                    <!--séparé-->
+                    <interp xml:id="syntax-t-29-3-1-1"
+                        inst="#d2e3401"
+                        ana="#syntax-t-29-3-1-1-ana"/>
+                    <!--il-->
+                    <interp xml:id="syntax-t-29-3-1-2"
+                        inst="#d2e3412"
+                        ana="#syntax-t-29-3-1-2-ana"/>
+                    <!--s'-->
+                    <interp xml:id="syntax-t-29-3-1-3"
+                        inst="#d2e3423"
+                        ana="#syntax-t-29-3-1-3-ana"/>
+                    <!--était-->
+                </interpGrp>
+                <fs xml:id="syntax-root-29-ana">
+                    <f name="cat">
+                        <symbol value="ROOT"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-29-ana">
+                    <f name="cat">
+                        <symbol value="VP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-1-ana">
+                    <f name="cat">
+                        <symbol value="PRN"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-2-ana">
+                    <f name="cat">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-29-3-ana">
+                    <f name="cat">
+                        <symbol value="COORDP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-3-ana">
+                    <f name="cat">
+                        <symbol value="COORD"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-29-3-1-ana">
+                    <f name="cat">
+                        <symbol value="VP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-3-1-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-3-1-1-ana">
+                    <f name="cat">
+                        <symbol value="PRN"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-3-1-2-ana">
+                    <f name="cat">
+                        <symbol value="PRN"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-29-3-1-3-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-nodes-30">
+                <interpGrp type="nonterminals">
+                    <interp xml:id="syntax-root-30" ana="#syntax-root-30-ana"/>
+                    <interp xml:id="syntax-nt-30" ana="#syntax-nt-30-ana"/>
+                    <!--fait avec femme sa ça ans deux à_peu_près-->
+                    <interp xml:id="syntax-nt-30-1" ana="#syntax-nt-30-1-ana"/>
+                    <!--avec femme sa-->
+                    <interp xml:id="syntax-nt-30-1-1" ana="#syntax-nt-30-1-1-ana"/>
+                    <!--femme sa-->
+                    <interp xml:id="syntax-nt-30-3" ana="#syntax-nt-30-3-ana"/>
+                    <!--ans deux à_peu_près-->
+                </interpGrp>
+                <interpGrp type="terminals">
+                    <interp xml:id="syntax-t-30" inst="#d2e22981" ana="#syntax-t-30-ana"/>
+                    <!--fait-->
+                    <interp xml:id="syntax-t-30-1" inst="#d2e22915" ana="#syntax-t-30-1-ana"/>
+                    <!--avec-->
+                    <interp xml:id="syntax-t-30-1-1"
+                        inst="#d2e22937"
+                        ana="#syntax-t-30-1-1-ana"/>
+                    <!--femme-->
+                    <interp xml:id="syntax-t-30-1-1-1"
+                        inst="#d2e22926"
+                        ana="#syntax-t-30-1-1-1-ana"/>
+                    <!--sa-->
+                    <interp xml:id="syntax-t-30-2" inst="#d2e22970" ana="#syntax-t-30-2-ana"/>
+                    <!--ça-->
+                    <interp xml:id="syntax-t-30-3" inst="#d2e23003" ana="#syntax-t-30-3-ana"/>
+                    <!--ans-->
+                    <interp xml:id="syntax-t-30-3-1"
+                        inst="#d2e22992"
+                        ana="#syntax-t-30-3-1-ana"/>
+                    <!--deux-->
+                    <interp xml:id="syntax-t-30-3-2" inst="#d2e736" ana="#syntax-t-30-3-2-ana"/>
+                    <!--à_peu_près-->
+                </interpGrp>
+                <fs xml:id="syntax-root-30-ana">
+                    <f name="cat">
+                        <symbol value="ROOT"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-30-ana">
+                    <f name="cat">
+                        <symbol value="VP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-ana">
+                    <f name="cat">
+                        <symbol value="V"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-30-1-ana">
+                    <f name="cat">
+                        <symbol value="PP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-1-ana">
+                    <f name="cat">
+                        <symbol value="P"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-30-1-1-ana">
+                    <f name="cat">
+                        <symbol value="NP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-1-1-ana">
+                    <f name="cat">
+                        <symbol value="N"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-1-1-1-ana">
+                    <f name="cat">
+                        <symbol value="D"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-2-ana">
+                    <f name="cat">
+                        <symbol value="PRN"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-nt-30-3-ana">
+                    <f name="cat">
+                        <symbol value="NP"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-3-ana">
+                    <f name="cat">
+                        <symbol value="N"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-3-1-ana">
+                    <f name="cat">
+                        <symbol value="NUM"/>
+                    </f>
+                </fs>
+                <fs xml:id="syntax-t-30-3-2-ana">
+                    <f name="cat">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+        </so:listAnnotation>
+        <so:listAnnotation type="edges">
+            <annotationBlock xml:id="syntax-edges-25">
+                <linkGrp>
+                    <link xml:id="syntax-nt-25-dep"
+                        type="root"
+                        target="#syntax-nt-25 #syntax-root-25"/>
+                    <!--ROOT(eu il a relations de nombreuses, )-->
+                    <link xml:id="syntax-t-25-dep"
+                        type="head"
+                        target="#syntax-t-25 #syntax-nt-25"/>
+                    <!--HEAD(eu, eu il a relations de nombreuses)-->
+                    <link xml:id="syntax-t-25-1-dep"
+                        type="suj"
+                        target="#syntax-t-25-1 #syntax-nt-25"/>
+                    <!--SUJ(il, eu il a relations de nombreuses)-->
+                    <link xml:id="syntax-t-25-2-dep"
+                        type="aux_tps"
+                        target="#syntax-t-25-2 #syntax-nt-25"/>
+                    <!--AUX_TPS(a, eu il a relations de nombreuses)-->
+                    <link xml:id="syntax-nt-25-3-dep"
+                        type="obj"
+                        target="#syntax-nt-25-3 #syntax-nt-25"/>
+                    <!--OBJ(relations de nombreuses, eu il a relations de nombreuses)-->
+                    <link xml:id="syntax-t-25-3-dep"
+                        type="head"
+                        target="#syntax-t-25-3 #syntax-nt-25-3"/>
+                    <!--HEAD(relations, relations de nombreuses)-->
+                    <link xml:id="syntax-t-25-3-1-dep"
+                        type="det"
+                        target="#syntax-t-25-3-1 #syntax-nt-25-3"/>
+                    <!--DET(de, relations de nombreuses)-->
+                    <link xml:id="syntax-t-25-3-2-dep"
+                        type="mod"
+                        target="#syntax-t-25-3-2 #syntax-nt-25-3"/>
+                    <!--MOD(nombreuses, relations de nombreuses)-->
+                </linkGrp>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-edges-26">
+                <linkGrp>
+                    <link xml:id="syntax-nt-26-dep"
+                        type="root"
+                        target="#syntax-nt-26 #syntax-root-26"/>
+                    <!--ROOT(était là il divorcé, )-->
+                    <link xml:id="syntax-t-26-dep"
+                        type="head"
+                        target="#syntax-t-26 #syntax-nt-26"/>
+                    <!--HEAD(était, était là il divorcé)-->
+                    <link xml:id="syntax-t-26-1-dep"
+                        type="mod"
+                        target="#syntax-t-26-1 #syntax-nt-26"/>
+                    <!--MOD(là, était là il divorcé)-->
+                    <link xml:id="syntax-t-26-2-dep"
+                        type="suj"
+                        target="#syntax-t-26-2 #syntax-nt-26"/>
+                    <!--SUJ(il, était là il divorcé)-->
+                    <link xml:id="syntax-t-26-3-dep"
+                        type="ats"
+                        target="#syntax-t-26-3 #syntax-nt-26"/>
+                    <!--ATS(divorcé, était là il divorcé)-->
+                </linkGrp>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-edges-27">
+                <linkGrp>
+                    <link xml:id="syntax-nt-27-dep"
+                        type="obj"
+                        target="#syntax-nt-27 #syntax-root-27"/>
+                    <!--OBJ(relations nombreuses, )-->
+                    <link xml:id="syntax-t-27-dep"
+                        type="head"
+                        target="#syntax-t-27 #syntax-nt-27"/>
+                    <!--HEAD(relations, relations nombreuses)-->
+                    <link xml:id="syntax-t-27-1-dep"
+                        type="mod"
+                        target="#syntax-t-27-1 #syntax-nt-27"/>
+                    <!--MOD(nombreuses, relations nombreuses)-->
+                </linkGrp>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-edges-28">
+                <linkGrp>
+                    <link xml:id="syntax-nt-28-dep"
+                        type="root"
+                        target="#syntax-nt-28 #syntax-root-28"/>
+                    <!--ROOT(était là il divorcé, )-->
+                    <link xml:id="syntax-t-28-dep"
+                        type="head"
+                        target="#syntax-t-28 #syntax-nt-28"/>
+                    <!--HEAD(était, était là il divorcé)-->
+                    <link xml:id="syntax-t-28-1-dep"
+                        type="mod"
+                        target="#syntax-t-28-1 #syntax-nt-28"/>
+                    <!--MOD(là, était là il divorcé)-->
+                    <link xml:id="syntax-t-28-2-dep"
+                        type="suj"
+                        target="#syntax-t-28-2 #syntax-nt-28"/>
+                    <!--SUJ(il, était là il divorcé)-->
+                    <link xml:id="syntax-t-28-3-dep"
+                        type="ats"
+                        target="#syntax-t-28-3 #syntax-nt-28"/>
+                    <!--ATS(divorcé, était là il divorcé)-->
+                </linkGrp>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-edges-29">
+                <linkGrp>
+                    <link xml:id="syntax-nt-29-dep"
+                        type="root"
+                        target="#syntax-nt-29 #syntax-root-29"/>
+                    <!--ROOT(faisait ça longtemps qu' séparé il s' était, )-->
+                    <link xml:id="syntax-t-29-dep"
+                        type="head"
+                        target="#syntax-t-29 #syntax-nt-29"/>
+                    <!--HEAD(faisait, faisait ça longtemps qu' séparé il s' était)-->
+                    <link xml:id="syntax-t-29-1-dep"
+                        type="suj"
+                        target="#syntax-t-29-1 #syntax-nt-29"/>
+                    <!--SUJ(ça, faisait ça longtemps qu' séparé il s' était)-->
+                    <link xml:id="syntax-t-29-2-dep"
+                        type="obj"
+                        target="#syntax-t-29-2 #syntax-nt-29"/>
+                    <!--OBJ(longtemps, faisait ça longtemps qu' séparé il s' était)-->
+                    <link xml:id="syntax-nt-29-3-dep"
+                        type="suj"
+                        target="#syntax-nt-29-3 #syntax-nt-29"/>
+                    <!--SUJ(qu' séparé il s' était, faisait ça longtemps qu' séparé il s' était)-->
+                    <link xml:id="syntax-t-29-3-dep"
+                        type="head"
+                        target="#syntax-t-29-3 #syntax-nt-29-3"/>
+                    <!--HEAD(qu', qu' séparé il s' était)-->
+                    <link xml:id="syntax-nt-29-3-1-dep"
+                        type="obj"
+                        target="#syntax-nt-29-3-1 #syntax-nt-29-3"/>
+                    <!--OBJ(séparé il s' était, qu' séparé il s' était)-->
+                    <link xml:id="syntax-t-29-3-1-dep"
+                        type="head"
+                        target="#syntax-t-29-3-1 #syntax-nt-29-3-1"/>
+                    <!--HEAD(séparé, séparé il s' était)-->
+                    <link xml:id="syntax-t-29-3-1-1-dep"
+                        type="suj"
+                        target="#syntax-t-29-3-1-1 #syntax-nt-29-3-1"/>
+                    <!--SUJ(il, séparé il s' était)-->
+                    <link xml:id="syntax-t-29-3-1-2-dep"
+                        type="aff"
+                        target="#syntax-t-29-3-1-2 #syntax-nt-29-3-1"/>
+                    <!--AFF(s', séparé il s' était)-->
+                    <link xml:id="syntax-t-29-3-1-3-dep"
+                        type="aux_tps"
+                        target="#syntax-t-29-3-1-3 #syntax-nt-29-3-1"/>
+                    <!--AUX_TPS(était, séparé il s' était)-->
+                </linkGrp>
+            </annotationBlock>
+            <annotationBlock xml:id="syntax-edges-30">
+                <linkGrp>
+                    <link xml:id="syntax-nt-30-dep"
+                        type="root"
+                        target="#syntax-nt-30 #syntax-root-30"/>
+                    <!--ROOT(fait avec femme sa ça ans deux à_peu_près, )-->
+                    <link xml:id="syntax-t-30-dep"
+                        type="head"
+                        target="#syntax-t-30 #syntax-nt-30"/>
+                    <!--HEAD(fait, fait avec femme sa ça ans deux à_peu_près)-->
+                    <link xml:id="syntax-nt-30-1-dep"
+                        type="mod"
+                        target="#syntax-nt-30-1 #syntax-nt-30"/>
+                    <!--MOD(avec femme sa, fait avec femme sa ça ans deux à_peu_près)-->
+                    <link xml:id="syntax-t-30-1-dep"
+                        type="head"
+                        target="#syntax-t-30-1 #syntax-nt-30-1"/>
+                    <!--HEAD(avec, avec femme sa)-->
+                    <link xml:id="syntax-nt-30-1-1-dep"
+                        type="obj"
+                        target="#syntax-nt-30-1-1 #syntax-nt-30-1"/>
+                    <!--OBJ(femme sa, avec femme sa)-->
+                    <link xml:id="syntax-t-30-1-1-dep"
+                        type="head"
+                        target="#syntax-t-30-1-1 #syntax-nt-30-1-1"/>
+                    <!--HEAD(femme, femme sa)-->
+                    <link xml:id="syntax-t-30-1-1-1-dep"
+                        type="det"
+                        target="#syntax-t-30-1-1-1 #syntax-nt-30-1-1"/>
+                    <!--DET(sa, femme sa)-->
+                    <link xml:id="syntax-t-30-2-dep"
+                        type="suj"
+                        target="#syntax-t-30-2 #syntax-nt-30"/>
+                    <!--SUJ(ça, fait avec femme sa ça ans deux à_peu_près)-->
+                    <link xml:id="syntax-nt-30-3-dep"
+                        type="obj"
+                        target="#syntax-nt-30-3 #syntax-nt-30"/>
+                    <!--OBJ(ans deux à_peu_près, fait avec femme sa ça ans deux à_peu_près)-->
+                    <link xml:id="syntax-t-30-3-dep"
+                        type="head"
+                        target="#syntax-t-30-3 #syntax-nt-30-3"/>
+                    <!--HEAD(ans, ans deux à_peu_près)-->
+                    <link xml:id="syntax-t-30-3-1-dep"
+                        type="det"
+                        target="#syntax-t-30-3-1 #syntax-nt-30-3"/>
+                    <!--DET(deux, ans deux à_peu_près)-->
+                    <link xml:id="syntax-t-30-3-2-dep"
+                        type="mod"
+                        target="#syntax-t-30-3-2 #syntax-nt-30-3"/>
+                    <!--MOD(à_peu_près, ans deux à_peu_près)-->
+                </linkGrp>
+            </annotationBlock>
+        </so:listAnnotation>
+    </so:standOff>
+    <so:standOff type="morphosyntax">
+        <teiHeader/>
+        <listAnnotation type="markables">
+            <annotationBlock>
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e22720" target="#d1t2347-3" ana="#d2e22720-ana"/>
+                    <span xml:id="d2e22731" target="#d1t2347-4" ana="#d2e22731-ana"/>
+                    <span xml:id="d2e22742" target="#d1t2347-5" ana="#d2e22742-ana"/>
+                    <span xml:id="d2e22753" target="#d1t2347-6" ana="#d2e22753-ana"/>
+                    <span xml:id="d2e22764" target="#d1t2347-7" ana="#d2e22764-ana"/>
+                    <span xml:id="d2e22775" target="#d1t2347-8" ana="#d2e22775-ana"/>
+                    <span xml:id="d2e22786" target="#d1t2347-9" ana="#d2e22786-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e22720-ana">
+                    <f name="lemma">
+                        <string>il</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:cls"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22731-ana">
+                    <f name="lemma">
+                        <string>avoir</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="AUX:pres"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22742-ana">
+                    <f name="lemma">
+                        <string>avoir</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="VER:pper"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22753-ana">
+                    <f name="lemma">
+                        <string>de</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRP"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22764-ana">
+                    <f name="lemma">
+                        <string>un</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="DET:ind"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22775-ana">
+                    <f name="lemma">
+                        <string>nombreux</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADJ"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22786-ana">
+                    <f name="lemma">
+                        <string>relation</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="NOM"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock>
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e22805" target="#d1t2357-2" ana="#d2e22805-ana"/>
+                    <span xml:id="d2e22816" target="#d1t2357-3" ana="#d2e22816-ana"/>
+                    <span xml:id="d2e22834" target="#d1t2357-5" ana="#d2e22834-ana"/>
+                    <span xml:id="d2e22845" target="#d1t2359-2" ana="#d2e22845-ana"/>
+                    <span xml:id="d2e22856" target="#d1t2361-2" ana="#d2e22856-ana"/>
+                    <span xml:id="d2e22867" target="#d1t2363-2" ana="#d2e22867-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e22805-ana">
+                    <f name="lemma">
+                        <string>mais</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="KON"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22816-ana">
+                    <f name="lemma">
+                        <string>là</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22834-ana">
+                    <f name="lemma">
+                        <string>il</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:cls"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22845-ana">
+                    <f name="lemma">
+                        <string>être</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="VER:impf"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22856-ana">
+                    <f name="lemma">
+                        <string>divorcé</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADJ"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22867-ana">
+                    <f name="lemma">
+                        <string>et</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="KON"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock>
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e3258" target="#d1t2372-2" ana="#d2e3258-ana"/>
+                    <span xml:id="d2e3269" target="#d1t2372-3" ana="#d2e3269-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e3258-ana">
+                    <f name="lemma">
+                        <string>nombreux</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADJ"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3269-ana">
+                    <f name="lemma">
+                        <string>relation</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="NOM"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock>
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e3287" target="#d1t2378-2" ana="#d2e3287-ana"/>
+                    <span xml:id="d2e3298" target="#d1t2378-3" ana="#d2e3298-ana"/>
+                    <span xml:id="d2e3316" target="#d1t2378-5" ana="#d2e3316-ana"/>
+                    <span xml:id="d2e3327" target="#d1t2378-6" ana="#d2e3327-ana"/>
+                    <span xml:id="d2e3339" target="#d1t2378-7" ana="#d2e3339-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e3287-ana">
+                    <f name="lemma">
+                        <string>mais</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="KON"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3298-ana">
+                    <f name="lemma">
+                        <string>là</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3316-ana">
+                    <f name="lemma">
+                        <string>il</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:cls"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3327-ana">
+                    <f name="lemma">
+                        <string>être</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="VER:impf"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3339-ana">
+                    <f name="lemma">
+                        <string>divorcé</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADJ"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock>
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e22885" target="#d1t2384-2" ana="#d2e22885-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e22885-ana">
+                    <f name="lemma">
+                        <string>ouais</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="FNO"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock>
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e3357" target="#d1t2394-2" ana="#d2e3357-ana"/>
+                    <span xml:id="d2e3368" target="#d1t2400-2" ana="#d2e3368-ana"/>
+                    <span xml:id="d2e49" target="#d1t2400-3" ana="#d2e49-ana"/>
+                    <span xml:id="d2e3379" target="#d1t2403-3" ana="#d2e3379-ana"/>
+                    <span xml:id="d2e3390" target="#d1t2405-2" ana="#d2e3390-ana"/>
+                    <span xml:id="d2e3401" target="#d1t2405-3" ana="#d2e3401-ana"/>
+                    <span xml:id="d2e3412" target="#d1t2405-4" ana="#d2e3412-ana"/>
+                    <span xml:id="d2e3423" target="#d1t2405-5" ana="#d2e3423-ana"/>
+                    <span xml:id="d2e3434" target="#d1t2405-6" ana="#d2e3434-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e3357-ana">
+                    <f name="lemma">
+                        <string>et</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="KON"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3368-ana">
+                    <f name="lemma">
+                        <string>ça</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:dem"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e49-ana">
+                    <f name="lemma">
+                        <string>faire</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="VER:impf"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3379-ana">
+                    <f name="lemma">
+                        <string>longtemps</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3390-ana">
+                    <f name="lemma">
+                        <string>que</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="KON"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3401-ana">
+                    <f name="lemma">
+                        <string>il</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:cls"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3412-ana">
+                    <f name="lemma">
+                        <string>se</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:clo"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3423-ana">
+                    <f name="lemma">
+                        <string>être</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="AUX:impf"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e3434-ana">
+                    <f name="lemma">
+                        <string>se_séparer</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="VER:pper"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock>
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e22904" target="#d1t2537-2" ana="#d2e22904-ana"/>
+                    <span xml:id="d2e22915" target="#d1t2537-3" ana="#d2e22915-ana"/>
+                    <span xml:id="d2e22926" target="#d1t2537-4" ana="#d2e22926-ana"/>
+                    <span xml:id="d2e22937" target="#d1t2537-5" ana="#d2e22937-ana"/>
+                    <span xml:id="d2e22948" target="#d1t2537-6" ana="#d2e22948-ana"/>
+                    <span xml:id="d2e22959" target="#d1t2537-7" ana="#d2e22959-ana"/>
+                    <span xml:id="d2e22970" target="#d1t2537-8" ana="#d2e22970-ana"/>
+                    <span xml:id="d2e22981" target="#d1t2537-9" ana="#d2e22981-ana"/>
+                    <span xml:id="d2e22992" target="#d1t2537-10" ana="#d2e22992-ana"/>
+                    <span xml:id="d2e23003" target="#d1t2537-11" ana="#d2e23003-ana"/>
+                    <span xml:id="d2e736" target="#d1t2537-13" ana="#d2e736-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e22904-ana">
+                    <f name="lemma">
+                        <string>ouais</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="FNO"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22915-ana">
+                    <f name="lemma">
+                        <string>avec</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRP"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22926-ana">
+                    <f name="lemma">
+                        <string>son</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="DET:pos"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22937-ana">
+                    <f name="lemma">
+                        <string>femme</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="NOM"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22948-ana">
+                    <f name="lemma">
+                        <string>ça</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:dem"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22959-ana">
+                    <f name="lemma">
+                        <string>bien</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22970-ana">
+                    <f name="lemma">
+                        <string>ça</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="PRO:dem"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22981-ana">
+                    <f name="lemma">
+                        <string>faire</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="VER:pres"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e22992-ana">
+                    <f name="lemma">
+                        <string>@card@</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="NUM"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e23003-ana">
+                    <f name="lemma">
+                        <string>an</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="NOM"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e736-ana">
+                    <f name="lemma">
+                        <string>à~peu~près</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+        </listAnnotation>
+    </so:standOff>
+    <text>
+        <front>
+            <timeline unit="s">
+                <when xml:id="interv92_48133" absolute="00:00:00.48133"/>
+                <when xml:id="interv92_50791" absolute="00:00:00.50791"/>
+                <when xml:id="interv92_53079" absolute="00:00:00.53079"/>
+                <when xml:id="interv92_53895" absolute="00:00:00.53895"/>
+                <when xml:id="interv92_54708" absolute="00:00:00.54708"/>
+                <when xml:id="interv92_54592" absolute="00:00:00.54592"/>
+                <when xml:id="interv92_55766" absolute="00:00:00.55766"/>
+                <when xml:id="interv92_55592" absolute="00:00:00.55592"/>
+                <when xml:id="interv92_56021" absolute="00:00:00.56021"/>
+                <when xml:id="interv92_56266" absolute="00:00:00.56266"/>
+                <when xml:id="interv92_59389" absolute="00:00:00.59389"/>
+                <when xml:id="interv92_60031" absolute="00:00:00.60031"/>
+                <when xml:id="interv92_62504" absolute="00:00:00.62504"/>
+            </timeline>
+        </front>
+        <body>
+            <u xml:id="u-92-d1e2292"
+                who="#JER"
+                start="#interv92_48133"
+                end="#interv92_50791">
+                <seg xml:id="d1e2343">
+                    <vocal>
+                        <desc>euh ffff</desc>
+                    </vocal>
+                    <w xml:id="d1t2347-3">il</w>
+                    <w xml:id="d1t2347-4">a</w>
+                    <w xml:id="d1t2347-5">eu</w>
+                    <w xml:id="d1t2347-6">de</w>
+                    <w xml:id="d1t2347-7">de</w>
+                    <w xml:id="d1t2347-8">nombreuses</w>
+                    <w xml:id="d1t2347-9">relations</w>
+                    <pc>.</pc>
+                </seg>
+            </u>
+            <u xml:id="u-92-d1e2302"
+                who="#JER"
+                start="#interv92_50791"
+                end="#interv92_53079"
+                trans="latching">
+                <seg xml:id="d1e2356">
+                    <w xml:id="d1t2357-2">mais</w>
+                    <w xml:id="d1t2357-3">là</w>
+                    <pc>,</pc>
+                    <w xml:id="d1t2357-5">il</w>
+                    <shift feature="tempo" new="slow"/>
+                    <w xml:id="d1t2359-2">était</w>
+                    <shift feature="tempo" new="normal"/>
+                    <w xml:id="d1t2361-2">divorcé</w>
+                    <pause type="short"/>
+                    <w xml:id="d1t2363-2">et</w>
+                    <pc>.</pc>
+                </seg>
+            </u>
+            <u xml:id="u-92-d1e2311"
+                who="#S92"
+                start="#interv92_53895"
+                end="#interv92_54708">
+                <seg xml:id="d1e2371">
+                    <w xml:id="d1t2372-2">nombreuses</w>
+                    <w xml:id="d1t2372-3">relations</w>
+                    <pc>.</pc>
+                </seg>
+            </u>
+            <u xml:id="u-92-d1e2317"
+                who="#S92"
+                start="#interv92_54592"
+                end="#interv92_55766"
+                trans="latching">
+                <seg xml:id="d1e2377">
+                    <w xml:id="d1t2378-2">mais</w>
+                    <w xml:id="d1t2378-3">là</w>
+                    <pc>,</pc>
+                    <w xml:id="d1t2378-5">il</w>
+                    <w xml:id="d1t2378-6">était</w>
+                    <w xml:id="d1t2378-7">divorcé</w>
+                    <pc>.</pc>
+                </seg>
+            </u>
+            <u xml:id="u-92-d1e2323"
+                who="#JER"
+                start="#interv92_55592"
+                end="#interv92_56021">
+                <seg xml:id="d1e2383">
+                    <w xml:id="d1t2384-2">ouais</w>
+                    <pc>.</pc>
+                </seg>
+            </u>
+            <u xml:id="u-92-d1e2333"
+                who="#S92"
+                start="#interv92_56266"
+                end="#interv92_59389">
+                <seg xml:id="d1e2393">
+                    <w xml:id="d1t2394-2">et</w>
+                    <shift feature="tempo" new="slow"/>
+                    <vocal>
+                        <desc>euh</desc>
+                    </vocal>
+                    <shift feature="tempo" new="normal"/>
+                    <w xml:id="d1t2400-2">ça</w>
+                    <w xml:id="d1t2400-3">faisait</w>
+                    <w xml:id="d1t2403-3">longtemps</w>
+                    <seg xml:id="d1e2404">
+                        <w xml:id="d1t2405-2">qu'</w>
+                        <w xml:id="d1t2405-3">il</w>
+                        <w xml:id="d1t2405-4">s'</w>
+                        <w xml:id="d1t2405-5">était</w>
+                        <w xml:id="d1t2405-6">séparé</w>
+                    </seg>
+                    <pc>?</pc>
+                </seg>
+            </u>
+            <u xml:id="u-92-d1e2467"
+                who="#JER"
+                start="#interv92_60031"
+                end="#interv92_62504">
+                <seg xml:id="d1e2536">
+                    <w xml:id="d1t2537-2">ouais</w>
+                    <w xml:id="d1t2537-3">avec</w>
+                    <w xml:id="d1t2537-4">sa</w>
+                    <w xml:id="d1t2537-5">femme</w>
+                    <w xml:id="d1t2537-6">ça</w>
+                    <w xml:id="d1t2537-7">bien</w>
+                    <w xml:id="d1t2537-8">ça</w>
+                    <w xml:id="d1t2537-9">fait</w>
+                    <w xml:id="d1t2537-10">deux</w>
+                    <w xml:id="d1t2537-11">ans</w>
+                    <pc>,</pc>
+                    <w xml:id="d1t2537-13">à peu près</w>
+                    <pc>.</pc>
+                </seg>
+            </u>
+      </body>
+   </text>
+</TEI>
