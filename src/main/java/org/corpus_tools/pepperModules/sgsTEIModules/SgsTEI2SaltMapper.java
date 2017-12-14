@@ -664,7 +664,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 									anaId2SynToken.put(anaId, synNode);									
 									synNodeTokens.add(synNode);
 									synTargetId2SToken.put(moSynAna2SynTargetId.get(anaId), synNode);
-									debugMessage("putting", moSynAna2SynTargetId.get(anaId), synNode);
+									docGraph.createRelation(synNode, sTok, SALT_TYPE.SDOMINANCE_RELATION, "");
 								}
 								speaker2synStart.put(speaker, synStart);
 							}							
