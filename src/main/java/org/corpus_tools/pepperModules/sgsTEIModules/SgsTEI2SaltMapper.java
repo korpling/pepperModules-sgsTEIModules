@@ -34,6 +34,7 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SLayer;
 import org.corpus_tools.salt.core.SNode;
 import org.slf4j.Logger;
@@ -130,19 +131,29 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private void buildSyntax() {			
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
-			IdMapper synTargetId2SynNodeId = utils.reversedMapper(synNodeId2synTargetId);			
-			//Build lowest layer of inner nodes
-			for (Entry<String, SToken> e : synTargetId2SToken.entrySet()) {
+			debugMessage(synNodeId2synTargetId);
+			IdMapper synTargetId2SynNodeId = utils.reversedMapper( synNodeId2synTargetId );	
+			debugMessage(synNodeId2SNode);		
+			for (Entry<String, SToken> e : synTargetId2SToken.entrySet()) {//create terminals
 				String synTargetId = e.getKey();
-				String synNodeId = synTargetId2SynNodeId.get( synTargetId );
-				SToken leaf = e.getValue();
-				SStructure node = docGraph.createStructure(leaf);
-				if (synNodeId != null) {
-					addNodeAnnotations(node, synNodeId);
+				String synNodeId = synTargetId2SynNodeId.get( synTargetId );	
+				if (synNodeId == null) {
+					debugMessage(synTargetId, "causes trouble");
 				}
+				if (targetId2governorIds.containsKey( synNodeId2synTargetId.get( synNodeId ))) {
+					SToken leaf = e.getValue();
+					SStructure node = docGraph.createStructure(leaf);
+					if (synNodeId != null) {
+						addNodeAnnotations(node, synNodeId);
+					}
+					synNodeId2SNode.put(synNodeId, node);
+				} else {
+					debugMessage(synNodeId, "not addressed and thus not built");
+				}			
 			}
 			debugMessage(synNodeId2SNode);
-			for (Entry<String, List<Pair<String, String>>> namedLinks : syntaxLinks.entrySet()) {
+			for (Entry<String, List<Pair<String, String>>> namedLinks : syntaxLinks.entrySet()) {//create non-terminals
+				debugMessage(namedLinks);
 				String synNodeId = namedLinks.getKey();
 				SNode node = synNodeId2SNode.get(synNodeId);
 				if (node == null) {
@@ -166,8 +177,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private void addNodeAnnotations(SNode node, String synNodeId) {
 			for (Pair<String, String> kvPair : annotations.get( synNodeId2AnaId.get( synNodeId ) )) {
 				node.createAnnotation(null, kvPair.getKey(), kvPair.getValue());
-			}				
-			debugMessage("Putting", synNodeId, "with", node);
+			}
 			synNodeId2SNode.put(synNodeId, node);
 		}
 
@@ -318,10 +328,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				if (READ_MODE.SYNTAX.equals(mode)) {		
 					String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					String instValue = attributes.getValue(ATT_INST);
-					instValue = instValue == null || instValue.isEmpty()? null : instValue.substring(1);
 					String anaValue = attributes.getValue(ATT_ANA);
 					anaValue = anaValue == null || anaValue.isEmpty()? null : anaValue.substring(1); 
-					synNodeId2synTargetId.put(id, instValue);					
+					if (instValue != null) {
+						synNodeId2synTargetId.put(id, instValue.substring(1));					
+					}
 					synNodeId2AnaId.put(id, anaValue);
 				}
 				else if (READ_MODE.REFERENCES.equals(mode)) {
@@ -653,7 +664,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 							normTokens.add(sTok);
 							addTimelineRelation(sTok, timeslot[0], timeslot[1]);
 							if (tokId != null) {
-								debugMessage("Building syn nodes as text");
 								List<String> anaIds = tokenId2MoSynAnaIds.get(tokId);
 								for (int t = timeslot[0]; t < timeslot[1]; t++) {									
 									SToken synNode = createSynNode(synDS, synStart, ++synStart, t);									
@@ -693,9 +703,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					addOrderRelations(pauseTokens, pauseName);	
 				}
 				addOrderRelations(synNodeTokens, synName);				
-			}			
-			
-			buildSyntax();
+			}						
+			buildSyntax();			
+			Set<SNode> dominatedNodes = new HashSet<>();
+			for (String targetNodeId : targetId2governorIds.keySet()) {
+				dominatedNodes.add( synNodeId2SNode.get(targetNodeId) );
+			}
+			for (SStructure struct : docGraph.getStructures()) {
+				if (struct.getInRelations().isEmpty()) {
+					debugMessage(struct.getId(), "has no in-relations.", String.format("(%b)", dominatedNodes.contains(struct)) );					
+				}
+			}
 		}
 
 		private SToken createSynNode(STextualDS syntacticDS, int start, int end, int timeslot) {			
