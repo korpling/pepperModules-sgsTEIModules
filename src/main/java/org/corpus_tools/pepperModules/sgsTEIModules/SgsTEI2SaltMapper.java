@@ -3,24 +3,30 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
-import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
+import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.IdMapper;
+import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.READ_MODE;
+import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextBuffer;
+import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextSegment;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
-import org.corpus_tools.salt.common.SDominanceRelation;
 import org.corpus_tools.salt.common.SOrderRelation;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
@@ -28,9 +34,8 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
-import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SLayer;
-import org.corpus_tools.salt.core.SProcessingAnnotation;
+import org.corpus_tools.salt.core.SNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -70,118 +75,152 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		/** This is the element stack representing the hierarchy of elements to be closed. */
 		private Stack<String> stack;
 		/** This variable is keeping track of read characters */
-		private TextBuffer textBuffer;
+		private final TextBuffer textBuffer;
 		/** what are we currently reading? */
 		private READ_MODE mode; 
 		
-		/*here variables for collecting information*/		
-		/** this maps time slot ids to actual times */
-		private HashMap<String, Long> id2TimeMap;
-		/** text tracker, list of triples (tokenId, diplValue, normValue), id==null means pause; array list keeps order */
-		private ArrayList<TextSegment> textTracker;
-		/** speaker and time tracker, each entry is (SPEAKER_NAME, index of last token in utterance, (START-TIME, END-TIME)) */
-		private ArrayList<MutableTriple<String, Integer, Pair<String, String>>> speakerTimeTracker;
-		/** this variable maps speaker names to STextualDSs-triples (dipl, norm, pause)*/
-		private HashMap<String, Triple<STextualDS, STextualDS, STextualDS>> speaker2DSMap;
-		/**mapping from markable-id to List of annotations (order is important) */
-		private HashMap<String, List<Pair<String, String>>> morphosyntax;
-		/** this collects the morphosyntactical levels */
-		private Set<String> morphoLevels;
-		/**mapping from tokens to markables*/
-		private HashMap<String, List<String>> tokenId2markableAnaId; //FIXME this is buggy, one token can have several analyses
-		/*WORKAROUND, this does not fix it, but helps for now for syntax*/
-		HashMap<String, String> analysisId2tokenId = new HashMap<>(); //FIXME
+		/* misc */
 		/**variable keeping track of last markables annotation list, last annotation can simple be taken from end of the list*/
 		private List<Pair<String, String>> currentAnnotations;
-		/** mapping between markableId and markableAnaId */
-		private HashMap<String, String> markable2ana;
+		/** this maps the analysis id to a key-value-pair. Insertion order is relevant for further processing. */
+		private HashMap<String, List<Pair<String, String>>> annotations;
+		
+		/* primary data */
+		/** text tracker, list of triples (tokenId, diplValue, normValue), id==null means pause; array list keeps order */
+		private List<TextSegment> textTracker;
+		/** speaker and time tracker, each entry is (SPEAKER_NAME, index of last token in utterance, (START-TIME, END-TIME)) */
+		private List<MutableTriple<String, Integer, Pair<String, String>>> speakerTimeTracker;
+			
+		/* morphosyntax */
+		/** This variable maps tokenIds to their morphosyntactic analyses (ids) */
+		private Map<String, List<String>> tokenId2MoSynAnaIds;
+		/** this maps a morphosyntactical annotation id to the id addressed by syntactic nodes */
+		private IdMapper moSynAna2SynTargetId;
+		/** this queue collects tokens mentioned as targets to detect empty nodes (collects pairs of (syntactic target id, token id) */
+		private Queue<Pair<String, String>> targetSequence;
 		
 		/* syntax */
-		/** this variable collects the syntax structures; map id 2 structure */
-		private HashMap<String, SStructure> nodeId2Structure;
+		/** collects the terminals and non-terminals and maps their ids to the syntactical target on the morphosyntactical level */
+		private IdMapper synNodeId2synTargetId;
+		/** this variable maps synTargetIds (ids of morphosyntax spans) to the syntactical {@link SToken} objects */
+		private Map<String, SToken> synTargetId2SToken;
 		/** this variable collects the link relations between syntax nodes, mapping from source node to list of pairs (target, function) */
-		private HashMap<String, List<Pair<String, String>>> syntaxLinks;
-		/** this variable collects the node (not link) annotations, maps ana-ID to annotation */
-		private HashMap<String, List<Pair<String, String>>> nodeAnnotations;
+		private Map<String, List<Pair<String, String>>> syntaxLinks;
 		/** syntax layer to facilitate adding the nodes and relations */
 		private SLayer syntaxLayer;
-		
+		/** this variable collects information about which node is pointing at a target (targetSynNodeId -> List<sourceSynNodeId>)*/
+		private Map<String, Set<String>> targetId2governorIds;
+		/** this finally connects the nodes after they were build, synNodeId -> SNode */
+		private Map<String, SNode> synNodeId2SNode;
+		/** maps synt. node. id to annotation id */
+		private IdMapper synNodeId2AnaId;
+
 		/* references */ 
 		/** this variable logs the spans for referring expressions, map id->target*/
-		private HashMap<String, String> referenceSpans;
+		private IdMapper referenceSpans;
 		/** this tracks the interpretations, maps id to instance id*/
-		private HashMap<String, List<String>> refInterpId2Inst;
+		private Map<String, List<String>> refInterpId2Inst;
 		/** this maps instanceId to their referential analysis id */
-		private HashMap<String, String> refInstId2AnaId;
-		/** this variable maps annotation id to annotations (reference) */
-		private HashMap<String, List<Pair<String, String>>> anaId2Annotations;
+		private IdMapper refInstId2AnaId;
 		/** this variable stores the reference links; maps source to (target, function) */
-		private HashMap<String, List<Pair<String, String>>> referenceLinks;
+		private Map<String, List<Pair<String, String>>> referenceLinks;
 		
 		private static final String WARN_UNKNOWN_LINKS = "Unknown links will be ignored, this might lead to errors in further processing.";
 		private static final String F_ERR_MSG_SYNTAX_NODE_MISSING = "Undefined syntax node: %s";
 		
-		private void buildReferences(Map<String, String> sToken2speaker) {
+		private void buildSyntax() {			
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
-			HashMap<String, SSpan> spanId2SSpan = new HashMap<>();	
-			debugMessage(refInterpId2Inst);			
-			for (Entry<String, List<String>> interpretation : refInterpId2Inst.entrySet()) {				
-				for (String spanId : interpretation.getValue()) {					
-					String targetNodeId = referenceSpans.get(spanId);
-					SStructure targetNode = nodeId2Structure.get(targetNodeId);
-					List<SToken> overlappedTokens = docGraph.getOverlappedTokens(targetNode);					
-					for (SToken tok : docGraph.getSortedTokenByText(overlappedTokens)) {
-						debugMessage(spanId, docGraph.getText(tok));
-					}
-					SSpan entity = docGraph.createSpan(overlappedTokens);
-					entity.setId(spanId);
-					String speaker = sToken2speaker.get(overlappedTokens.get(0).getId());					
-					for (Pair<String, String> anno : anaId2Annotations.get(refInstId2AnaId.get(spanId))) {
-						entity.createAnnotation(null, String.join(DELIMITER, speaker, anno.getLeft()), anno.getRight());
-					}					
-					spanId2SSpan.put(spanId, entity);					
-				}				
+			IdMapper synTargetId2SynNodeId = utils.reversedMapper(synNodeId2synTargetId);			
+			//Build lowest layer of inner nodes
+			for (Entry<String, SToken> e : synTargetId2SToken.entrySet()) {
+				String synTargetId = e.getKey();
+				String synNodeId = synTargetId2SynNodeId.get( synTargetId );
+				SToken leaf = e.getValue();
+				SStructure node = docGraph.createStructure(leaf);
+				if (synNodeId != null) {
+					addNodeAnnotations(node, synNodeId);
+				}
 			}
-//			for (Entry<String, List<Pair<String, String>>> refLinks : referenceLinks.entrySet()) {
-//				for (Pair<String, String> referenceLink : refLinks.getValue()) {
-//					docGraph.createRelation(
-//							spanId2SSpan.get(refLinks.getKey()), 
-//							spanId2SSpan.get(referenceLink.getLeft()), 
-//							SALT_TYPE.SPOINTING_RELATION, 
-//							String.join("=", ATT_TYPE, referenceLink.getRight()));
-//				}
-//			}
+			debugMessage(synNodeId2SNode);
+			for (Entry<String, List<Pair<String, String>>> namedLinks : syntaxLinks.entrySet()) {
+				String synNodeId = namedLinks.getKey();
+				SNode node = synNodeId2SNode.get(synNodeId);
+				if (node == null) {
+					node = createTreeNode(synNodeId);
+					addNodeAnnotations(node, synNodeId);
+				}		
+				for (Pair<String, String> targetAndType : namedLinks.getValue()) {
+					SNode targetNode;
+					String targetNodeId;
+					targetNodeId = targetAndType.getKey();
+					targetNode = synNodeId2SNode.get(targetNodeId);
+					if (targetNode == null) {
+						targetNode = createTreeNode(targetNodeId);
+						addNodeAnnotations(targetNode, targetNodeId);
+					}
+					docGraph.createRelation(node, targetNode, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", "func", targetAndType.getValue()));					
+				}
+			}
 		}
+		
+		private void addNodeAnnotations(SNode node, String synNodeId) {
+			for (Pair<String, String> kvPair : annotations.get( synNodeId2AnaId.get( synNodeId ) )) {
+				node.createAnnotation(null, kvPair.getKey(), kvPair.getValue());
+			}				
+			debugMessage("Putting", synNodeId, "with", node);
+			synNodeId2SNode.put(synNodeId, node);
+		}
+
+		private SNode createTreeNode(String id) {			
+			SNode node = SaltFactory.createSStructure();
+			getDocument().getDocumentGraph().addNode(node);
+			synNodeId2SNode.put(id, node);
+			return node;
+		}
+		
+		private void buildReferences(Map<String, String> sToken2speaker) {}
 		
 		/** records the timeline inside the document */
 		private HashMap<String, Long> timeslotId2Time;
 		
+		private SgsTEIImporterUtils utils;
 		
 		public SgsTEIReader() {
+			/*internal*/
+			utils = new SgsTEIImporterUtils();
 			stack = new Stack<String>();
-			textBuffer = new TextBuffer();
+			textBuffer = utils.getTextBuffer();
 			mode = READ_MODE.BLIND;
 			
+			/*primary data*/
 			textTracker = new ArrayList<>();
-			morphosyntax = new HashMap<>();
-			tokenId2markableAnaId = new HashMap<>();
-			id2TimeMap = new HashMap<>();
-			speakerTimeTracker = new ArrayList<>();
-			nodeId2Structure = new HashMap<>();
-			syntaxLinks = new HashMap<>();
-			nodeAnnotations = new HashMap<>();
-			markable2ana = new HashMap<>();
-			timeslotId2Time = new HashMap<>();
-			speaker2DSMap = new HashMap<>();
-			referenceSpans = new HashMap<>();
-			refInterpId2Inst = new HashMap<>();
-			refInstId2AnaId = new HashMap<>();
-			anaId2Annotations = new HashMap<>();
-			referenceLinks = new HashMap<>();
+			tokenId2MoSynAnaIds = new HashMap<>();
+			speakerTimeTracker = new ArrayList<>();			
 			
+			/*misc*/
+			annotations = new HashMap<>();
+			timeslotId2Time = new HashMap<>();
+			
+			/*morphosyntax*/
+			moSynAna2SynTargetId = utils.createIdMapper();
+			targetSequence = new LinkedList<>();
+			
+			/*syntax*/
+			synNodeId2AnaId = utils.createIdMapper();
+			syntaxLinks = new HashMap<>();
+			targetId2governorIds = new HashMap<>();
+			synTargetId2SToken = new HashMap<>();
+			synNodeId2synTargetId = utils.createIdMapper();
+			synNodeId2SNode = new HashMap<>();
 			syntaxLayer = SaltFactory.createSLayer();			
 			syntaxLayer.setName(TYPE_SYNTAX);
-			getDocument().getDocumentGraph().addLayer(syntaxLayer);			
+			getDocument().getDocumentGraph().addLayer(syntaxLayer);
+			
+			/*reference*/
+			referenceSpans = utils.createIdMapper();
+			refInterpId2Inst = new HashMap<>();
+			refInstId2AnaId = utils.createIdMapper();
+			referenceLinks = new HashMap<>();						
 		}
 		
 		private void debugMessage(Object... elements) {
@@ -231,18 +270,23 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SPAN.equals(localName)) {
 				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
+					String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					String targetValue = attributes.getValue(ATT_TARGET);
 					String anaValue = attributes.getValue(ATT_ANA);
-					if (targetValue != null && anaValue != null) {
+					if (targetValue != null) {
 						String tgt = targetValue.substring(1);
-						if (!tokenId2markableAnaId.containsKey(tgt)) {
-							tokenId2markableAnaId.put(tgt, new ArrayList<String>());
+						if (!tokenId2MoSynAnaIds.containsKey(tgt)) {
+							tokenId2MoSynAnaIds.put(tgt, new ArrayList<String>());
 						}
-						tokenId2markableAnaId.get(tgt).add(anaValue.substring(1));
-						//WORKAROUNDs FIXME
-						markable2ana.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_ANA).substring(1));
-						analysisId2tokenId.put(attributes.getValue(ATT_ANA).substring(1), attributes.getValue(ATT_TARGET).substring(1));
+						if (anaValue != null) {
+							tokenId2MoSynAnaIds.get(tgt).add( anaValue.substring(1) );
+							moSynAna2SynTargetId.put(anaValue.substring(1), id);
+						}
+						targetSequence.add(Pair.of(id, tgt));
+					} else {
+						targetSequence.add(Pair.of(id, targetValue));
 					}
+					
 				}
 				else if (READ_MODE.REFERENCES.equals(mode)) {
 					referenceSpans.put(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TARGET).substring(1));
@@ -257,38 +301,28 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					currentAnnotations.get(currentAnnotations.size() - 1).setValue(attributes.getValue(ATT_VALUE));
 				}
 			}
-			else if (TAG_F.equals(localName)) { // TODO one behaviour for all
+			else if (TAG_F.equals(localName)) {
 				if (READ_MODE.MORPHOSYNTAX.equals(mode) || READ_MODE.SYNTAX.equals(mode) || READ_MODE.REFERENCES.equals(mode)) {
 					String level = attributes.getValue(ATT_NAME);
 					currentAnnotations.add(MutablePair.<String, String>of(level, null));
-					if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-						morphoLevels.add(level);
-					}
 				}
 			}
-			else if (TAG_FS.equals(localName)) { // TODO one behaviour for all! variable anaId2Annotations could serve all purposes, since ids are unique
-				if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-					currentAnnotations = new ArrayList<Pair<String, String>>();
-					String markableId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-					morphosyntax.put(markableId, currentAnnotations);
-				}
-				else if (READ_MODE.SYNTAX.equals(mode)) {
+			else if (TAG_FS.equals(localName)) {
+				if (READ_MODE.MORPHOSYNTAX.equals(mode) || READ_MODE.SYNTAX.equals(mode) || READ_MODE.REFERENCES.equals(mode)) {
 					currentAnnotations = new ArrayList<Pair<String, String>>();
 					String analysisId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-					nodeAnnotations.put(analysisId, currentAnnotations);
-				}
-				else if (READ_MODE.REFERENCES.equals(mode)) {
-					currentAnnotations = new ArrayList<Pair<String, String>>();
-					String analysisId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-					anaId2Annotations.put(analysisId, currentAnnotations);
+					annotations.put(analysisId, currentAnnotations);
 				}
 			}
 			else if (TAG_INTERP.equals(localName)) {
 				if (READ_MODE.SYNTAX.equals(mode)) {		
 					String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 					String instValue = attributes.getValue(ATT_INST);
-					instValue = instValue == null || instValue.isEmpty()? null : instValue.substring(1); //This will treat empty terminals as non-terminals
-					nodeId2Structure.put(id, createTreenode(id, instValue, attributes.getValue(ATT_ANA).substring(1)));
+					instValue = instValue == null || instValue.isEmpty()? null : instValue.substring(1);
+					String anaValue = attributes.getValue(ATT_ANA);
+					anaValue = anaValue == null || anaValue.isEmpty()? null : anaValue.substring(1); 
+					synNodeId2synTargetId.put(id, instValue);					
+					synNodeId2AnaId.put(id, anaValue);
 				}
 				else if (READ_MODE.REFERENCES.equals(mode)) {
 					String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));					
@@ -303,7 +337,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 			}
 			else if (TAG_LINK.equals(localName)) {
-				HashMap<String, List<Pair<String, String>>> linkMap = null;
+				Map<String, List<Pair<String, String>>> linkMap = null;
 				if (READ_MODE.SYNTAX.equals(mode)) {
 					linkMap = syntaxLinks;				
 				}
@@ -319,6 +353,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						linkMap.put(sourceId, new ArrayList<Pair<String, String>>());
 					}
 					linkMap.get(sourceId).add(Pair.of(targetId, type));
+					if (READ_MODE.SYNTAX.equals(mode)) {
+						String sourceSynTargetId = synNodeId2synTargetId.get(sourceId);
+						String targetSynTargetId = synNodeId2synTargetId.get(targetId);
+						if (!targetId2governorIds.containsKey(targetSynTargetId)) {
+							targetId2governorIds.put(targetSynTargetId, new HashSet<String>());
+						}
+						targetId2governorIds.get(targetSynTargetId).add(sourceSynTargetId);
+					}
 				} else {
 					logger.warn(WARN_UNKNOWN_LINKS);
 				}
@@ -329,7 +371,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_TEXT.equals(localName)) {
 				mode = READ_MODE.TEXT;
 			}
-
 			stack.push(localName);
 		}
 		
@@ -347,23 +388,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		}
 		
 		private TextSegment newToken(String tokenId) {
-			textTracker.add(new TextSegment(tokenId, "", "", null));
+			textTracker.add(utils.createTextSegment(tokenId, "", "", null));
 			return getCurrentToken();
 		}
 		
 		private TextSegment getCurrentToken() {
 			return textTracker.get(textTracker.size() - 1);
-		}
-		
-		private SStructure createTreenode(String id, String instValue, String anaValue) {
-			SStructure node = SaltFactory.createSStructure();			
-			node.createProcessingAnnotation(null, ATT_ANA, anaValue);
-			if (instValue != null) { // is terminal node
-				node.createProcessingAnnotation(null, ATT_INST, instValue);				
-			}			
-			node.createProcessingAnnotation(null, ATT_ID, id);
-			node.setId(id);
-			return node;
 		}
 		
 		private void writeBufferToToken(boolean dipl, boolean norm, boolean overwrite) {
@@ -430,21 +460,58 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 		}
 		
-		/* AFTER READING */
+		/* (BURN) AFTER READING */
 		
-		private static final String SPACE = " ";
-		
-		private static final String NORM = "norm";
-		
-		private static final String DIPL = "dipl";
-		
+		private static final String SPACE = " ";		
+		private static final String NORM = "norm";		
+		private static final String DIPL = "dipl";		
 		private static final String PAUSE = "pause";
+		private static final String SYN = "pnorm";
 		
-		private void buildGraph() {
+				
+		/**
+		 * Heuristic method to track down token indexes that demand the insertion of an empty node first
+		 * @return
+		 */		
+		private HashMap<Integer, String> getInsertionIndexes() {
+			HashMap<Integer, String> retVal = new HashMap<>();
+			Set<String> seenIds = new HashSet<>();
+			String synTargetId;
+			for (int i = 0; i < textTracker.size() && !targetSequence.isEmpty(); i++) {
+				String id = textTracker.get(i).getId();
+				if (targetSequence.peek().getValue() != null && targetSequence.peek().getValue().equals(id)) {
+					Pair<String, String> p = targetSequence.poll();
+					seenIds.add( p.getKey() );
+					while (!targetSequence.isEmpty() && p.getValue() != null && p.getValue().equals(targetSequence.peek().getValue())) {						
+						p = targetSequence.poll();
+					}
+				}
+				else if (id != null && targetSequence.peek().getValue() == null && targetSequence.peek().getKey() != null) { //TODO third might be irrelevant
+					synTargetId = targetSequence.poll().getKey();
+					retVal.put(i, synTargetId);
+					seenIds.add( synTargetId );
+				}
+				else if (id == null && targetSequence.peek().getValue() == null && targetSequence.peek().getKey() != null) {					
+					Set<String> governingNodes = targetId2governorIds.get(targetSequence.peek().getKey());
+					Set<String> intersec = new HashSet<>(governingNodes);
+					intersec.retainAll(seenIds);
+					synTargetId = targetSequence.poll().getKey();
+					if (intersec.isEmpty()) { //is following
+						retVal.put(i + 1, synTargetId);
+					} else { //is preceding
+						retVal.put(i, synTargetId);
+					}
+					seenIds.add( synTargetId );					
+				}
+			}
+			return retVal;
+		}
+		
+		private void buildGraph() {		
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			STimeline timeline = docGraph.createTimeline();
-			{//create all necessary timeslots (maximum, overlaps decrease this number, but remaining timesteps are not a problem
-				timeline.increasePointOfTime(textTracker.size());				
+			{
+				timeline.increasePointOfTime(textTracker.size());		
 			}
 			String speaker = null;
 			int firstTokenIx = 0;
@@ -453,17 +520,19 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			long startsAt = 0L;
 			long endedAt = 0L;
 			
-			HashMap<Integer, Integer> tokenIndex2timelineSlot = new HashMap<>();
+			HashMap<Integer, Integer[]> tokenIndex2timelineSlots = new HashMap<>();
 			HashMap<String, ArrayList<Integer>> speaker2TokenIndexes = new HashMap<>();
 			HashMap<String, Triple<StringBuilder, StringBuilder, StringBuilder>> speaker2Text = new HashMap<>();
-			List<int[][]> tokenLimits = new ArrayList<>(); //shape (n, 4, 2) where n = number of tokens FIXME this does not work, int is not initialized with null
-			HashMap<Integer, Integer> timeslot2nMarkables = new HashMap<>();
-			
+			List<Integer[][]> tokenLimits = new ArrayList<>(); //shape (n, 4, 2) where n = number of tokens
+						
 			boolean overlap = false;
-			int offset = 0;			
-			for (MutableTriple<String, Integer, Pair<String, String>> utteranceObject : speakerTimeTracker) {
+			int lastEndTimeslot = 0;
+			HashMap<String, Integer> speaker2synStart = new HashMap<>();
+			HashMap<Integer, String> insertEmptyFirst = getInsertionIndexes();
+			for (Triple<String, Integer, Pair<String, String>> utteranceObject : speakerTimeTracker) {
 				speaker = utteranceObject.getLeft();							
-				lastTokenIx = utteranceObject.getMiddle();			
+				lastTokenIx = utteranceObject.getMiddle();				
+				speaker2synStart.put(speaker, 0);
 				
 				//init speaker
 				if (!speaker2TokenIndexes.containsKey(speaker)) {
@@ -480,16 +549,24 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				startsAt = timeslotId2Time.get(utteranceObject.getRight().getLeft());			
 				overlap = startsAt < endedAt;
 				if (overlap) {
-					offset -= 1;
+					lastEndTimeslot -= 1;
 				}
 				
+				int nNodes = 0;
+				Integer[] interval = null;
+				int tOffset = 0;
 				for (int i = firstTokenIx; i <= lastTokenIx; i++) {
-					int [][] limitTuple = new int[4][2];
-					
+					if (insertEmptyFirst.containsKey(i)) {
+						tOffset++;
+					}
+					Integer [][] limitTuple = new Integer[4][2];					
 					tokenLimits.add(limitTuple);
 					tokenIndexes.add(i);					
-					tokenIndex2timelineSlot.put(i, i + offset);
 					tokenObject = textTracker.get(i);
+					List<?> l = tokenId2MoSynAnaIds.get(tokenObject.getId());
+					nNodes = l == null || l.isEmpty()? 1 : l.size();
+					interval = new Integer[]{lastEndTimeslot + tOffset, lastEndTimeslot + nNodes + tOffset};
+					tokenIndex2timelineSlots.put(i, interval);										
 					if (tokenObject.getPause() == null) {
 						//is text
 						String diplT = tokenObject.getDipl();
@@ -503,10 +580,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 							limitTuple[1][0] = normText.length();
 							limitTuple[1][1] = normText.length() + normT.length();
 							normText.append(normT).append(SPACE);
-							List<?> l = tokenId2markableAnaId.get(tokenObject.getId());
-							if (l != null) {
-								timeslot2nMarkables.put(i, l.size());								
-							}
 						}
 					} else {
 						//is pause
@@ -515,22 +588,21 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						limitTuple[2][1] = pauseText.length() + pauseT.length();
 						pauseText.append(pauseT).append(SPACE);
 					}					
+					lastEndTimeslot += nNodes;
 				}				
 				
 				firstTokenIx = lastTokenIx + 1;
 				endedAt = timeslotId2Time.get(utteranceObject.getRight().getRight());
-			}
-			
-			HashMap<String, SToken> tokenId2SToken = new HashMap<>();
-			
+			}			
 			ArrayList<SToken> diplTokens;
 			ArrayList<SToken> normTokens;
 			ArrayList<SToken> pauseTokens;
+			ArrayList<SToken> synNodeTokens;
 			
 			HashMap<String, String> sTokId2speaker = new HashMap<>();
-			
-			for (Entry<String, Triple<StringBuilder, StringBuilder, StringBuilder>> e : speaker2Text.entrySet()) {
-				speaker = e.getKey();				
+			HashMap<String, SToken> anaId2SynToken = new HashMap<>(); 
+			for (Entry<String, Triple<StringBuilder, StringBuilder, StringBuilder>> e : speaker2Text.entrySet()) {				
+				speaker = e.getKey();	
 				StringBuilder diplText = e.getValue().getLeft();
 				StringBuilder normText = e.getValue().getMiddle();
 				StringBuilder pauseText = e.getValue().getRight(); 
@@ -541,133 +613,105 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				normDS.createMetaAnnotation(null, "speaker", speaker);
 				STextualDS pauseDS = docGraph.createTextualDS(pauseText.toString());
 				pauseDS.createMetaAnnotation(null, "speaker", speaker);
+				String synText = StringUtils.repeat('#', tokenLimits.size()*2); //FIXME determine correct text size
+				STextualDS synDS = docGraph.createTextualDS(synText);
+				synDS.createMetaAnnotation(null, "speaker", speaker);
 				
 				ArrayList<Integer> tokenIndexes = speaker2TokenIndexes.get(speaker);				
 				
 				diplTokens = new ArrayList<>();
 				normTokens = new ArrayList<>();
 				pauseTokens = new ArrayList<>();
+				synNodeTokens = new ArrayList<>();				
 				
-				for (Iterator<Integer> itIx = tokenIndexes.iterator(); itIx.hasNext();) {
-					int tokenIndex = itIx.next();									
-					int[][] limits = tokenLimits.get(tokenIndex);
-					int timeslot = tokenIndex2timelineSlot.get(tokenIndex);
+				for (Iterator<Integer> itIx = tokenIndexes.iterator(); itIx.hasNext();) {					
+					int tokenIndex = itIx.next();
+					int synStart = speaker2synStart.get(speaker);
+					Integer[][] limits = tokenLimits.get(tokenIndex);
+					Integer[] timeslot = tokenIndex2timelineSlots.get(tokenIndex);
+					if (insertEmptyFirst.containsKey(tokenIndex)) {
+						String synTargetId = insertEmptyFirst.get(tokenIndex);
+						SToken synNode = createSynNode(synDS, synStart, ++synStart, timeslot[0] - 1);									
+						//TODO add potential annotations
+						anaId2SynToken.put(synTargetId, synNode);									
+						synNodeTokens.add(synNode);
+						synTargetId2SToken.put(synTargetId, synNode); 
+					}
 					SToken sTok = null;
+					String tokId = textTracker.get(tokenIndex).getId();
 					if (limits[2][0] == null) {
 						// is text
-						if (limits.getLeft() != null) {
+						if (limits[0][0] != null) {
 							//create dipl token
-							sTok = docGraph.createToken(diplDS, limits.getLeft().getLeft(), limits.getLeft().getRight());
+							sTok = docGraph.createToken(diplDS, limits[0][0], limits[0][1]);
 							diplTokens.add(sTok);
-							addTimelineRelation(sTok, timeslot, timeslot + 1);							
+							addTimelineRelation(sTok, timeslot[0], timeslot[1]);							
 						}					
-						if (limits.getMiddle() != null) {
+						if (limits[1][0] != null) {
 							//create and store norm token
-							sTok = docGraph.createToken(normDS, limits.getMiddle().getLeft(), limits.getMiddle().getRight());
+							sTok = docGraph.createToken(normDS, limits[1][0], limits[1][1]);
 							normTokens.add(sTok);
-							addTimelineRelation(sTok, timeslot, timeslot + 1);
-							//add annotations
-							String tokId = textTracker.get(tokenIndex).getId();
+							addTimelineRelation(sTok, timeslot[0], timeslot[1]);
 							if (tokId != null) {
-								tokenId2SToken.put(tokId, sTok);								
-								List<Pair<String, String>> annotations = morphosyntax.get( tokenId2markableAnaId.get(tokId) );
-								for (Pair<String, String> anno : annotations) {
-									anno.setName(String.join(DELIMITER, speaker, anno.getName()));
-									
+								debugMessage("Building syn nodes as text");
+								List<String> anaIds = tokenId2MoSynAnaIds.get(tokId);
+								for (int t = timeslot[0]; t < timeslot[1]; t++) {									
+									SToken synNode = createSynNode(synDS, synStart, ++synStart, t);									
+									String anaId = anaIds.get(t - timeslot[0]);
+									if (anaId != null) {
+										addAnnotations(speaker, synNode, anaId);																		
+									}
+									anaId2SynToken.put(anaId, synNode);									
+									synNodeTokens.add(synNode);
+									synTargetId2SToken.put(moSynAna2SynTargetId.get(anaId), synNode);
+									debugMessage("putting", moSynAna2SynTargetId.get(anaId), synNode);
 								}
-							}
+								speaker2synStart.put(speaker, synStart);
+							}							
 							sTokId2speaker.put(sTok.getId(), speaker);
 						}
 					} else {
 						//create pause token
-						sTok = docGraph.createToken(pauseDS, limits.getRight().getLeft(), limits.getRight().getRight());
+						sTok = docGraph.createToken(pauseDS, limits[2][0], limits[2][1]);
 						pauseTokens.add(sTok);
-						addTimelineRelation(sTok, timeslot, timeslot + 1);
+						addTimelineRelation(sTok, timeslot[0], timeslot[1]);
 					}
 				}
 				String diplName = String.join(DELIMITER, speaker, DIPL);
 				String normName = String.join(DELIMITER, speaker, NORM);
 				String pauseName = String.join(DELIMITER, speaker, PAUSE);
+				String synName = String.join(DELIMITER, speaker, SYN);
 				
 				diplDS.setName(diplName);
 				normDS.setName(normName);
 				pauseDS.setName(pauseName);
-				
+				synDS.setName(synName);
 				addOrderRelations(diplTokens, diplName);
-				addOrderRelations(normTokens, normName);
+				addOrderRelations(normTokens, normName);				
 				if (docGraph.getText(pauseDS).trim().isEmpty()) {
 					docGraph.removeNode(pauseDS);
 				} else {
 					addOrderRelations(pauseTokens, pauseName);	
 				}
-				
+				addOrderRelations(synNodeTokens, synName);				
 			}			
 			
-			buildSyntax(tokenId2SToken);
-//			buildReferences(sTokId2speaker);
+			buildSyntax();
+		}
+
+		private SToken createSynNode(STextualDS syntacticDS, int start, int end, int timeslot) {			
+			SToken sTok = getDocument().getDocumentGraph().createToken(syntacticDS, start, end);			
+			addTimelineRelation(sTok, timeslot, timeslot + 1);			
+			return sTok;
 		}
 		
-		private void buildSyntax(HashMap<String, SToken> tokenId2SToken) {
-			SDocumentGraph docGraph = getDocument().getDocumentGraph();
-			SProcessingAnnotation panno = null;
-			SStructure node = null;
-			HashMap<String, SStructure> nodeId2NewStructure = new HashMap<>();
-			for (Entry<String, SStructure> e : nodeId2Structure.entrySet()) {
-				node = e.getValue();
-				panno = node.getProcessingAnnotation(ATT_INST);
-				if (panno != null) {
-					// if node has an instance, connect them
-					String instanceName = markable2ana.get(panno.getValue_STEXT());
-					SToken targetToken = tokenId2SToken.get(analysisId2tokenId.get(instanceName));					
-					SStructure struct = docGraph.createStructure(targetToken);
-					for (SAnnotation anno : node.getAnnotations()) {
-						struct.addAnnotation(anno);
-					}
-					for (SProcessingAnnotation p_anno : node.getProcessingAnnotations()) {
-						struct.addProcessingAnnotation(p_anno);
-					}					
-					SProcessingAnnotation p_anno = struct.getProcessingAnnotation(ATT_ANA);
-					if (p_anno != null) {
-						List<SAnnotation> annos = nodeAnnotations.get(p_anno.getValue());
-						if (annos != null) {
-							for (SAnnotation anno : annos) {
-								struct.addAnnotation(anno);
-							}
-						}					
-					}
-					nodeId2NewStructure.put(e.getKey(), struct);
-					syntaxLayer.addNode(struct);
-				}				
-			}
-			for (Entry<String, SStructure> e : nodeId2NewStructure.entrySet()) {
-				nodeId2Structure.put(e.getKey(), e.getValue());
-			}
-			for (Entry<String, List<Pair<String, String>>> e : syntaxLinks.entrySet()) {				
-				node = nodeId2Structure.get(e.getKey());
-				if (node == null) {
-					throw new PepperModuleDataException(SgsTEI2SaltMapper.this, String.format(F_ERR_MSG_SYNTAX_NODE_MISSING, e.getKey()));
-				}
-				SStructure target;
-				String type;
-				SDominanceRelation domRel;
-				for (Pair<String, String> relation : e.getValue()) {
-					target = nodeId2Structure.get(relation.getKey());
-					type = relation.getValue();
-					docGraph.addNode(node);
-					docGraph.addNode(target);					
-					domRel = (SDominanceRelation) docGraph.createRelation(node, target, SALT_TYPE.SDOMINANCE_RELATION, null);					
-					domRel.createAnnotation(null, ATT_TYPE, type);
-					syntaxLayer.addRelation(domRel);
-				}
-				SProcessingAnnotation p_anno = node.getProcessingAnnotation(ATT_ANA);
-				if (p_anno != null) {
-					List<SAnnotation> annos = nodeAnnotations.get(p_anno.getValue());
-					if (annos != null) {
-						for (SAnnotation anno : annos) {
-							node.addAnnotation(anno);
-						}
-					}
-					node.removeLabel(p_anno.getQName());
+		private void addAnnotations(String speaker, SToken sTok, String anaId) {
+			if (anaId != null && sTok != null && speaker != null) {				
+				List<Pair<String, String>> annos = annotations.get(anaId);
+				SSpan span = getDocument().getDocumentGraph().createSpan(sTok);
+				for (Pair<String, String> anno : annos) {
+					String annoName = String.join(DELIMITER, speaker, anno.getKey());
+					span.createAnnotation(null, annoName, anno.getValue());						
 				}
 			}
 		}
@@ -689,6 +733,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private void addTimelineRelation(SToken tok, int start, int end) {
 			STimeline timeline = getDocument().getDocumentGraph().getTimeline();
+			if (timeline.getEnd() < end) {
+				timeline.increasePointOfTime(end - timeline.getEnd());
+			}
 			STimelineRelation rel = null;
 			rel = SaltFactory.createSTimelineRelation();
 			rel.setSource(tok);
@@ -699,94 +746,5 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		}
 	}
 	
-	private class TextBuffer{
-		private StringBuilder text;
-		
-		private TextBuffer() {
-			text = new StringBuilder();
-		}
-		
-		private String clear() {
-			String retVal = text.toString();
-			text.delete(0, text.length());
-			return retVal;
-		}
-		
-		private void append(String text) {
-			this.text.append(text);
-		}
-	}
 	
-	private class TextSegment{		
-		private String id;
-		private String dipl;
-		private String norm;
-		private String pause;
-		
-		private TextSegment(String id, String dipl, String norm, String pause) {
-			this.id = id;
-			this.dipl = dipl;
-			this.norm = norm;
-			this.pause = pause;
-		}
-		
-		private String getId() {
-			return this.id;
-		}
-		
-		private void setId(String id) {
-			this.id = id;
-		}
-		
-		private String getDipl() {
-			return this.dipl;
-		}
-		
-		private void setDipl(String dipl) {
-			this.dipl = dipl;
-		}
-		
-		private String getNorm() {
-			return this.norm;
-		}
-		
-		private void setNorm(String norm) {
-			this.norm = norm;
-		}
-		
-		private String getPause() {
-			return this.pause;
-		}
-		
-		private void setPause(String pause) {
-			this.pause = pause;
-		}
-		
-		/** For debug purposes*/
-		@Override
-		public String toString() {
-			return String.join(":", getId(), getDipl(), getNorm(), getPause());
-		}
-	}
-	
-	private enum READ_MODE {
-		TEXT, MORPHOSYNTAX, SYNTAX, REFERENCES, BLIND;
-		
-		public static READ_MODE getMode(String standoffType) {
-			if (TYPE_SYNTAX.equalsIgnoreCase(standoffType)) {
-				return READ_MODE.SYNTAX;
-			}
-			else if (TYPE_MORPHOSYNTAX.equalsIgnoreCase(standoffType)) {
-				return READ_MODE.MORPHOSYNTAX;
-			}
-			else if (TYPE_REFERENCE.equals(standoffType)) {
-				return READ_MODE.REFERENCES;
-			} 
-			else if (TAG_TEXT.equalsIgnoreCase(standoffType)) {
-				return READ_MODE.TEXT;
-			} else {
-				return READ_MODE.BLIND;
-			}
-		}
-	}
 }
