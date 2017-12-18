@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title>Encoding of interview </title>
+                <respStmt>
+                    <resp>Editor</resp>
+                    <name>Aria Adli</name>
+                </respStmt>
+            </titleStmt>
+            <publicationStmt>
+                <distributor>
+                    <persName>
+                        <forename>Aria</forename>
+                        <surname>Adli</surname>
+                    </persName>
+                </distributor>
+                <availability>
+                    <licence notBefore="2013-01-01"
+                        target="http://creativecommons.org/licenses/by/4.0/">
+                        <p>The Creative Commons Attribution 4.0 International (CC BY 4.0) Licence
+                            applies to this document.</p>
+                        <p>The material contained in this document must be quoted as follows:
+                                <q>Copyright Aria Adli, $$name of the corpus, $date of
+                                publication</q>.</p>
+                    </licence>
+                </availability>
+            </publicationStmt>
+            <sourceDesc>
+                <recordingStmt>
+                    <recording>
+                        <media dur="PT13M" mimeType="audio/wav" url="test_22KHz_16Bit_stereo.wav">
+                            <desc>The speech source file for this dialogue</desc>
+                        </media>
+                    </recording>
+                </recordingStmt>
+            </sourceDesc>
+        </fileDesc>
+        <profileDesc>
+            <particDesc>
+                <person xml:id="ARI">
+                    <persName>
+                        <forename>Aria</forename>
+                        <surname>Adli</surname>
+                    </persName>
+                </person>
+                <listPerson type="interviewee">
+                    <person xml:id="S48">
+                        <p>The interviewee, called S01, S02, S03, etc. (i.e. Sxx, where xx stands
+                            for the two-digit number of the subject – the subjects 100, 101 and 102
+                            are coded as Sc0, Sc1 and Sc2),</p>
+                    </person>
+                </listPerson>
+                <listPerson type="interviewer">
+                    <person xml:id="JAB">
+                        <p>the interviewer (called KAV, ARE, JAB, MAR, JER, SEV, FRA, SOP, HEL,
+                            ANT),</p>
+                    </person>
+                </listPerson>
+                <listPerson type="others"/>
+            </particDesc>
+        </profileDesc>
+    </teiHeader>
+    <standOff xmlns="http://standoff.proposal" type="morphosyntax">
+        <teiHeader/>
+        <listAnnotation type="markables">
+            <annotationBlock xmlns="http://www.tei-c.org/ns/1.0">
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e8888" target="#d1e785" ana="#d2e8888-ana"/>
+                    <span xml:id="d2e8899" target="#d1e787" ana="#d2e8899-ana"/>
+                    <span xml:id="d2e8910" target="#d1e789" ana="#d2e8910-ana"/>
+                    <span xml:id="d2e8928" target="#d1e793" ana="#d2e8928-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e8888-ana">
+                    <f name="lemma">
+                        <string>حالا</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e8899-ana">
+                    <f name="lemma">
+                        <string>کرد#کن</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="V2P"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e8910-ana">
+                    <f name="lemma">
+                        <string>شروع</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="NS"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e8928-ana">
+                    <f name="lemma">
+                        <string>خب</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="INT"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock xmlns="http://www.tei-c.org/ns/1.0">
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e8946" target="#d1e870" ana="#d2e8946-ana"/>
+                    <span xml:id="d2e8958" target="#d1e872" ana="#d2e8958-ana"/>
+                    <span xml:id="d2e8969" target="#d1e874" ana="#d2e8969-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e8946-ana">
+                    <f name="lemma">
+                        <string>پرسید#پرس</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="V2P"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e8958-ana">
+                    <f name="lemma">
+                        <string>توانست#توان</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="A2P"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e8969-ana">
+                    <f name="lemma">
+                        <string>حالا</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+            <annotationBlock xmlns="http://www.tei-c.org/ns/1.0">
+                <spanGrp type="wordForm">
+                    <span xml:id="d2e839" target="#d1e955" ana="#d2e839-ana"/>
+                    <span xml:id="d2e850" target="#d1e957" ana="#d2e850-ana"/>
+                    <span xml:id="d2e862" target="#d1e959" ana="#d2e862-ana"/>
+                    <span xml:id="d2e873" target="#d1e961" ana="#d2e873-ana"/>
+                </spanGrp>
+                <fs xml:id="d2e839-ana">
+                    <f name="lemma">
+                        <string>افتاد#افت</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="V3S"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e850-ana">
+                    <f name="lemma">
+                        <string>اتفاق</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="NS"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e862-ana">
+                    <f name="lemma">
+                        <string>چه</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="QW"/>
+                    </f>
+                </fs>
+                <fs xml:id="d2e873-ana">
+                    <f name="lemma">
+                        <string>کلا</string>
+                    </f>
+                    <f name="pos">
+                        <symbol value="ADV"/>
+                    </f>
+                </fs>
+            </annotationBlock>
+        </listAnnotation>
+    </standOff>
+    <text>
+        <front>
+            <timeline unit="s">
+                <when absolute="00:00:00.1173" xml:id="i048_1173"/>
+                <when absolute="00:00:00.3008" xml:id="i048_3008"/>
+                <when absolute="00:00:00.5805" xml:id="i048_5805"/>
+                <when absolute="00:00:00.6984" xml:id="i048_6984"/>
+                <when absolute="00:00:00.13095" xml:id="i048_13095"/>
+                <when absolute="00:00:00.16285" xml:id="i048_16285"/>
+            </timeline>
+        </front>
+        <body>
+            <u xml:id="u--d1e783" end="#i048_3008" start="#i048_1173" who="#JAB">
+                <seg>
+                    <w xml:id="d1e793">خب</w>
+                    <pc xml:id="d1e791">،</pc>
+                    <w xml:id="d1e789">شروع</w>
+                    <w xml:id="d1e787">کنید</w>
+                    <w xml:id="d1e785">حالا</w>
+                    <pc xml:id="d1e783">.</pc>
+                </seg>
+                <seg xml:lang="fa-trans">xob, Soru kon-id hAlA.</seg>
+            </u>
+            <u xml:id="u--d1e854" end="#i048_6984" start="#i048_5805" who="#JAB">
+                <seg>
+                    <w xml:id="d1e874">حالا</w>
+                    <w xml:id="d1e872">میتونید</w>
+                    <w xml:id="d1e870">بپرسید</w>
+                    <pc xml:id="d1e868">.</pc>
+                </seg>
+                <seg xml:lang="fa-trans">hAlA mi-tun-id be-pors-id.</seg>
+            </u>
+            <u xml:id="u--d1e929" end="#i048_16285" start="#i048_13095" who="#S48">
+                <seg>
+                    <w xml:id="d1e961">کلا</w>
+                    <w xml:id="d1e959">چه</w>
+                    <w xml:id="d1e957">اتفاقی</w>
+                    <w xml:id="d1e955">افتاده</w>
+                    <pc xml:id="d1e953">؟</pc>
+                </seg>
+                <seg xml:lang="fa-trans">kolan Ce etefAqi oftAd-e?</seg>
+            </u>
+        </body>
+    </text>
+</TEI>
