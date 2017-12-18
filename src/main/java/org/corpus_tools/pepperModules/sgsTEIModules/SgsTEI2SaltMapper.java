@@ -34,9 +34,9 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
-import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SLayer;
 import org.corpus_tools.salt.core.SNode;
+import org.corpus_tools.salt.core.SRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -85,6 +85,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private List<Pair<String, String>> currentAnnotations;
 		/** this maps the analysis id to a key-value-pair. Insertion order is relevant for further processing. */
 		private HashMap<String, List<Pair<String, String>>> annotations;
+		/** maps timevalue -> speaker */
+		Map<Integer, String> time2speaker;
 		
 		/* primary data */
 		/** text tracker, list of triples (tokenId, diplValue, normValue), id==null means pause; array list keeps order */
@@ -129,6 +131,19 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private static final String WARN_UNKNOWN_LINKS = "Unknown links will be ignored, this might lead to errors in further processing.";
 		private static final String F_ERR_MSG_SYNTAX_NODE_MISSING = "Undefined syntax node: %s";
 		
+		private void buildReferences() {
+			SDocumentGraph docGraph = getDocument().getDocumentGraph();
+			/* build referring expressions */
+			Map<String, SNode> referringExpressions = new HashMap<>();
+			SNode node = null;
+			for (Entry<String, String> e : referenceSpans.entrySet()) {
+				node = SaltFactory.createSStructure();
+				docGraph.addNode(node);
+				docGraph.createRelation(node, synNodeId2SNode.get(e.getValue()), SALT_TYPE.SPOINTING_RELATION, null);
+				referringExpressions.put(e.getKey(), node);
+			}
+		}
+		
 		private void buildSyntax() {			
 			SDocumentGraph docGraph = getDocument().getDocumentGraph();
 			debugMessage(synNodeId2synTargetId);
@@ -136,11 +151,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			debugMessage(synNodeId2SNode);		
 			for (Entry<String, SToken> e : synTargetId2SToken.entrySet()) {//create terminals
 				String synTargetId = e.getKey();
-				String synNodeId = synTargetId2SynNodeId.get( synTargetId );	
-				if (synNodeId == null) {
-					debugMessage(synTargetId, "causes trouble");
-				}
-				if (targetId2governorIds.containsKey( synNodeId2synTargetId.get( synNodeId ))) {
+				String synNodeId = synTargetId2SynNodeId.get( synTargetId );
+				if (synNodeId != null && targetId2governorIds.containsKey( synNodeId2synTargetId.get( synNodeId ))) {
 					SToken leaf = e.getValue();
 					SStructure node = docGraph.createStructure(leaf);
 					if (synNodeId != null) {
@@ -151,6 +163,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					debugMessage(synNodeId, "not addressed and thus not built");
 				}			
 			}
+			Set<SNode> roots = new HashSet<>();
 			debugMessage(synNodeId2SNode);
 			for (Entry<String, List<Pair<String, String>>> namedLinks : syntaxLinks.entrySet()) {//create non-terminals
 				debugMessage(namedLinks);
@@ -171,9 +184,52 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					}
 					docGraph.createRelation(node, targetNode, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", "func", targetAndType.getValue()));					
 				}
+				if (node.getAnnotation("cat").getValue_STEXT().equals("ROOT")) {
+					roots.add(node);
+				}
+			}
+			
+			/** add spanning tokens */
+			if (true) { //TODO put property?
+				Map<String, List<Pair<Integer, Integer>>> spanSequence = new HashMap<>();
+				for (SNode root : roots) {
+					List<SToken> covered = docGraph.getSortedTokenByText(docGraph.getOverlappedTokens(root));
+					Pair<Integer, Integer> startEnd = getTimesOfToken( covered.get(covered.size() / 2) );
+					String speaker = time2speaker.get(startEnd.getLeft());
+					int startTime = getTimesOfToken(covered.get(0)).getLeft();
+					int endTime = getTimesOfToken(covered.get(covered.size() - 1)).getRight();
+					if (!spanSequence.containsKey(speaker)) {
+						spanSequence.put(speaker, new ArrayList<Pair<Integer, Integer>>());
+					}
+					spanSequence.get(speaker).add(Pair.of(startTime, endTime));
+				}				
+				for (Entry<String, List<Pair<Integer, Integer>>> e : spanSequence.entrySet()) {
+					String name = String.join(DELIMITER, e.getKey(), "utterance");
+					int utterances = e.getValue().size();
+					STextualDS ds = docGraph.createTextualDS(StringUtils.repeat("u", utterances));
+					ds.setName(name);
+					List<SToken> tokens = new ArrayList<>();
+					int lastEnd = 0;
+					for (int i = 0; i < utterances; i++) {
+						SToken tok = docGraph.createToken(ds, i, i + 1);
+						addTimelineRelation(tok, e.getValue().get(i).getLeft(), e.getValue().get(i).getRight());
+						lastEnd = e.getValue().get(i).getRight();
+						tokens.add(tok);
+					}
+					addOrderRelations(tokens, name);
+				}
 			}
 		}
 		
+		private Pair<Integer, Integer> getTimesOfToken(SToken sToken) {
+			for (SRelation<?, ?> rel : sToken.getOutRelations()) {
+				if (rel instanceof STimelineRelation) {
+					return Pair.of(((STimelineRelation) rel).getStart(), ((STimelineRelation) rel).getEnd());
+				}
+			}
+			return null;
+		}
+
 		private void addNodeAnnotations(SNode node, String synNodeId) {
 			for (Pair<String, String> kvPair : annotations.get( synNodeId2AnaId.get( synNodeId ) )) {
 				node.createAnnotation(null, kvPair.getKey(), kvPair.getValue());
@@ -187,8 +243,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			synNodeId2SNode.put(id, node);
 			return node;
 		}
-		
-		private void buildReferences(Map<String, String> sToken2speaker) {}
 		
 		/** records the timeline inside the document */
 		private HashMap<String, Long> timeslotId2Time;
@@ -210,6 +264,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			/*misc*/
 			annotations = new HashMap<>();
 			timeslotId2Time = new HashMap<>();
+			time2speaker = new HashMap<>();
 			
 			/*morphosyntax*/
 			moSynAna2SynTargetId = utils.createIdMapper();
@@ -577,7 +632,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					List<?> l = tokenId2MoSynAnaIds.get(tokenObject.getId());
 					nNodes = l == null || l.isEmpty()? 1 : l.size();
 					interval = new Integer[]{lastEndTimeslot + tOffset, lastEndTimeslot + nNodes + tOffset};
-					tokenIndex2timelineSlots.put(i, interval);										
+					tokenIndex2timelineSlots.put(i, interval);
+					registerTimeInterval(interval, speaker);
 					if (tokenObject.getPause() == null) {
 						//is text
 						String diplT = tokenObject.getDipl();
@@ -705,14 +761,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				addOrderRelations(synNodeTokens, synName);				
 			}						
 			buildSyntax();			
-			Set<SNode> dominatedNodes = new HashSet<>();
-			for (String targetNodeId : targetId2governorIds.keySet()) {
-				dominatedNodes.add( synNodeId2SNode.get(targetNodeId) );
-			}
-			for (SStructure struct : docGraph.getStructures()) {
-				if (struct.getInRelations().isEmpty()) {
-					debugMessage(struct.getId(), "has no in-relations.", String.format("(%b)", dominatedNodes.contains(struct)) );					
-				}
+			buildReferences();
+		}
+		
+		/** 
+		 * FIXME does not consider overlaps
+		 * @param interval
+		 * @param speaker
+		 */
+		private void registerTimeInterval(Integer[] interval, String speaker) {
+			for (int t = interval[0]; t < interval[1]; t++) {
+				time2speaker.put(t, speaker);
 			}
 		}
 
