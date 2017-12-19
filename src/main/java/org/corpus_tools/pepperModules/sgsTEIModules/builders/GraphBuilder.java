@@ -31,6 +31,7 @@ public class GraphBuilder {
 	private static final String F_ERR_NODE_NOT_REGISTERED = "Syntactic node is undefined: %s. This might be caused by multiple use of the id or an insufficient id validation mechanism.";
 	private static final String FUNC_NAME = "func";
 	private static final String REF_TYPE_NAME = "type";
+	private static final String ERR_SPEAKER_IS_NULL = "Speaker must not be null.";
 	private final PepperMapper mapper;
 	private SDocumentGraph graph;
 	/** maps speaker specific segmentation name to segmentation */
@@ -43,14 +44,12 @@ public class GraphBuilder {
 	private Map<String, SRelation<?, ?>> graphRelations;
 	/** queue of todos to be done later, since objects occur later */
 	private Stack<Finisher> unfinished;
-	/** the current speaker */
-	private String speaker;
 	/** id provider */
 	private IdProvider idProvider;
 	/** time builder module */
 	private TokenManager tokenManager;
 	/** map segmentation name to textual ds */
-	private Map<String, STextualDS> textualDSs;
+	private Map<String, STextualDS> textualDSs;	
 	
 	public GraphBuilder(PepperMapper pepperMapper) {
 		this.mapper = pepperMapper;
@@ -66,7 +65,7 @@ public class GraphBuilder {
 				if (id == null) {
 					//request for new id
 					do {
-						id = Double.toHexString( Math.random() );
+						id = Double.toHexString( Math.random() ).substring(4, 13);
 					} while (ids.contains(id));
 				} else {
 					//put id
@@ -82,18 +81,12 @@ public class GraphBuilder {
 		this.idProvider = new IdProvider(validator);
 		this.tokenManager = new TokenManager();
 		this.textualDSs = new HashMap<>();
+		/* init */
+		getGraph().createTimeline().increasePointOfTime(1000); //FIXME
 	}
 	
 	public SDocumentGraph getGraph() {
 		return graph;
-	}
-	
-	public void setSpeaker(String name) {
-		this.speaker = name;
-	}
-	
-	public String getSpeaker() {
-		return speaker;
 	}
 	
 	public void registerReferringExpression(String id, String targetNodeId) {		
@@ -101,13 +94,13 @@ public class GraphBuilder {
 		final String targetId = targetNodeId;
 		Finisher finisher = new Finisher() {				
 			@Override
-			public void build() {
+			public void build(Object... args) {
 				List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(targetId) ));
 				SSpan span = getGraph().createSpan(overlappedTokens);
 				registerNode(spanId, span);				
 			}
 		};
-		unfinished.push(finisher);
+//		unfinished.push(finisher);
 	}
 	
 	public void registerDiscourseEntity(String id, String targetNodeId, String annotationId) {		
@@ -115,7 +108,7 @@ public class GraphBuilder {
 		final String anaId = annotationId;
 		Finisher finisher = new Finisher() {			
 			@Override
-			public void build() {
+			public void build(Object... args) {
 				SSpan span = (SSpan) getNode(nodeId);
 				for (SAnnotation anno : getAnnotions(anaId)) {
 					span.addAnnotation(anno);
@@ -123,7 +116,7 @@ public class GraphBuilder {
 				getGraph().addNode(span);
 			}
 		};
-		unfinished.push(finisher);
+//		unfinished.push(finisher);
 	}
 	
 	public void registerAnnotation(String anaId, String name, String value) {
@@ -146,7 +139,7 @@ public class GraphBuilder {
 		final String anaId = analysisId;
 		Finisher finisher = new Finisher() {			
 			@Override
-			public void build() {
+			public void build(Object... args) {
 				SStructure struct = (SStructure) getNode(sId);
 				getGraph().addNode(struct);
 				for (SAnnotation anno : getAnnotions(anaId)) {
@@ -158,7 +151,7 @@ public class GraphBuilder {
 				}
 			}
 		};
-		unfinished.add(finisher);
+//		unfinished.add(finisher);
 	}
 	
 	public void registerSyntaxLink(String id, String type, String sourceId, String targetId) {
@@ -175,7 +168,7 @@ public class GraphBuilder {
 		rel.setSource((SStructure) source);
 		rel.setTarget((SStructuredNode) target);
 		rel.createAnnotation(null, FUNC_NAME, type);
-		registerRelation(id, rel);
+//		registerRelation(id, rel);
 	}
 	
 	public void registerReferenceLink(String id, String type, String sourceId, String targetId) {
@@ -184,13 +177,13 @@ public class GraphBuilder {
 		final String tgtId = targetId;
 		Finisher finisher = new Finisher() {			
 			@Override
-			public void build() {
+			public void build(Object... args) {
 				SNode source = getNode(srcId);
 				SNode target = getNode(tgtId);
 				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, typeValue));
 			}
 		};
-		unfinished.push(finisher);
+//		unfinished.push(finisher);
 	}
 	
 	protected List<SAnnotation> getAnnotions(String anaId) {
@@ -209,15 +202,18 @@ public class GraphBuilder {
 		graphRelations.put(id, sRelation);
 	}
 	
-	public void setTokenText(String id, String text, boolean append) {
+	public void setTokenText(String speaker, String id, String text, boolean append) {
 		tokenManager.setTokenText(id, text, append);
 	}
 	
-	public void registerToken(String id, String segmentationName, String text, String alignWithId) {
-		final String tokenId = idProvider.validate(id);
+	public void registerToken(final String speaker, final String segmentationName, String id, final String text, final String alignWithId) {
+		if (speaker == null) {
+			throw new PepperModuleException(ERR_SPEAKER_IS_NULL);
+		}
+		final String tokenId = idProvider.validate(id);				
 		Finisher finisher = new Finisher() {			
 			@Override
-			public void build() {
+			public void build(Object... args) {
 				int[] textInterval = getTokenLimits(tokenId);
 				int[] timeInterval = getTokenTimes(tokenId);
 				STextualDS ds = getTextualDS(tokenId);
@@ -230,41 +226,53 @@ public class GraphBuilder {
 			}
 		};
 		unfinished.push(finisher);
-		tokenManager.put(tokenId, String.join("_", speaker, segmentationName), alignWithId, text);
+		getManager().put(tokenId, String.join("_", speaker, segmentationName), alignWithId, text);
+		
+	}
+	
+	protected TokenManager getManager() {
+		return tokenManager;
 	}
 
-	public String registerTokenAfter(String id, String afterTokenId, String segmentationName, String text) {
+	public String registerTokenAfter(final String speaker, final String segmentationName, String id, final String afterTokenId, final String text) {
+		if (speaker == null) {
+			throw new PepperModuleException(ERR_SPEAKER_IS_NULL);
+		}
 		final String tokenId = idProvider.validate(id);
 		Finisher finisher = new Finisher() {			
 			@Override
-			public void build() { // FIXME unify, see registerToken (double code :( )
+			public void build(Object... args) { // FIXME unify, see registerToken (double code :( )
 				int[] textInterval = getTokenLimits(tokenId);
 				int[] timeInterval = getTokenTimes(tokenId);
 				STextualDS ds = getTextualDS(tokenId);
 				SToken sToken = SaltFactory.createSToken();
 				sToken.setId(tokenId);
 				getGraph().addNode(sToken);
-				createTextualRelation(sToken, ds, textInterval[0], textInterval[1]);
-				createTimelineRelation(sToken, timeInterval[0], timeInterval[1]);
+				getGraph().addRelation( createTextualRelation(sToken, ds, textInterval[0], textInterval[1]) );
+				getGraph().addRelation( createTimelineRelation(sToken, timeInterval[0], timeInterval[1]) );
 				registerNode(tokenId, sToken);
 			}
 		};
 		unfinished.push(finisher);
-		tokenManager.putAfter(tokenId, afterTokenId, String.join("_", getSpeaker(), segmentationName), text);
+		getManager().putAfter(tokenId, afterTokenId, String.join("_", speaker, segmentationName), text);
 		return tokenId;
 	}
 	
 	protected STextualRelation createTextualRelation(SToken sToken, STextualDS ds, int startIndex, int endIndex) {
-		STextualRelation rel = (STextualRelation) getGraph().createRelation(sToken, ds, SALT_TYPE.STEXTUAL_RELATION, null);
+		STextualRelation rel = SaltFactory.createSTextualRelation();		
 		rel.setStart(startIndex);
 		rel.setEnd(endIndex);
+		rel.setSource(sToken);
+		rel.setTarget(ds);
 		return rel;
 	}
 	
 	protected STimelineRelation createTimelineRelation(SToken sToken, int from, int to) {
-		STimelineRelation rel = (STimelineRelation) getGraph().createRelation(sToken, getGraph().getTimeline(), SALT_TYPE.STIMELINE_RELATION, null);
+		STimelineRelation rel = SaltFactory.createSTimelineRelation();
 		rel.setStart(from);
 		rel.setEnd(to);
+		rel.setSource(sToken);
+		rel.setTarget( getGraph().getTimeline() );
 		return rel;
 	}
 	
@@ -289,10 +297,35 @@ public class GraphBuilder {
 		ds.setName(segmentationName);
 		return ds;
 	}
+	
+	public boolean hasToken(String id) {
+		return tokenManager.holdsToken(id);
+	}
 
 	public void build() {
 		while (!unfinished.isEmpty()) {
 			unfinished.pop().build();			
 		}
+		buildOrderRelations();
+	}
+	
+	private void buildOrderRelations() {
+		for (String name : tokenManager.getSegmentationNames()) {
+			System.out.println(name);
+			buildOrderRelations(name);
+		}
+	}
+
+	private void buildOrderRelations(String name) {
+		List<String> tokenIds = tokenManager.getOrderedTokenIds(name);
+		for (int i = 1; i < tokenIds.size(); i++) {
+			addOrderRelation(tokenIds.get(i - 1), tokenIds.get(i), name);
+		}
+	}
+
+	private void addOrderRelation(String fromId, String toId, String name) {
+		SToken source = (SToken) getGraph().getNode(fromId);
+		SToken target = (SToken) getGraph().getNode(toId);
+		getGraph().createRelation(source, target, SALT_TYPE.SORDER_RELATION, null).setType(name);
 	}
 }
