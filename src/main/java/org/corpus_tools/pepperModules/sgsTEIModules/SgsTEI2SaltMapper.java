@@ -66,7 +66,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private String annotationName;
 		
-		private String annotationId;
+		private String currentId;
 				
 		private static final String SPACE = " ";		
 		private final String NORM = getModuleProperties().getNormName();		
@@ -90,6 +90,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				throws SAXException {
 			localName = qName.substring(qName.lastIndexOf(":") + 1);
 			if (TAG_W.equals(localName)) {
+				currentId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 			}
 			else if (TAG_ADD.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 			}
@@ -98,6 +99,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_PC.equals(localName) && READ_MODE.TEXT.equals(mode)) {		
 			}
 			else if (TAG_U.equals(localName)) {
+				builder.setSpeaker( attributes.getValue(ATT_WHO) );
 			}
 			else if (TAG_SPAN.equals(localName)) {
 				if (READ_MODE.REFERENCE.equals(mode)) {
@@ -112,14 +114,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					builder.registerAnnotation(annotationId, annotationName, attributes.getValue(ATT_VALUE));
+					builder.registerAnnotation(currentId, annotationName, attributes.getValue(ATT_VALUE));
 				}
 			}
 			else if (TAG_F.equals(localName)) {
 				annotationName = attributes.getValue(ATT_NAME);
 			}
 			else if (TAG_FS.equals(localName)) {
-				annotationId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
+				currentId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 			}
 			else if (TAG_INTERP.equals(localName)) {
 				String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
@@ -152,7 +154,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		@Override
 		public void characters(char[] ch, int start, int length) throws SAXException {
 			if (READ_MODE.TEXT.equals(mode) || READ_MODE.MORPHOSYNTAX.equals(mode)) {
-				String next = (new String(Arrays.copyOfRange(ch, start, start + length))).trim(); //TODO figure out if there are cases where trim should not be used;
+				String next = (new String(Arrays.copyOfRange(ch, start, start + length))).trim();
 				textBuffer.append(next);
 			}
 		}
@@ -162,6 +164,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			localName = qName.substring(qName.lastIndexOf(":") + 1);			
 			stack.pop();
 			if (TAG_W.equals(localName)) {
+				currentId = null;
 			}
 			else if (TAG_PC.equals(localName)) {
 			}
@@ -175,11 +178,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				annotationName = null;
 			}
 			else if (TAG_FS.equals(localName)) {
-				annotationId = null;
+				currentId = null;
 			}
 			else if (TAG_STRING.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					builder.registerAnnotation(annotationId, annotationName, textBuffer.clear());
+					builder.registerAnnotation(currentId, annotationName, textBuffer.clear());
 				}
 			}
 			else if (TAG_U.equals(localName)) {

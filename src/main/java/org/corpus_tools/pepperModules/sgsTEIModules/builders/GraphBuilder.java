@@ -4,29 +4,36 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
+import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
+import org.corpus_tools.pepperModules.sgsTEIModules.builders.time.TimeBuilder;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SDominanceRelation;
-import org.corpus_tools.salt.common.SPointingRelation;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.SStructuredNode;
+import org.corpus_tools.salt.common.STextualDS;
+import org.corpus_tools.salt.common.STextualRelation;
+import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.core.SRelation;
 
 public class GraphBuilder {
-	private static final String F_ERR_NODE_NOT_REGISTERED = "Syntactic node is undefined: %s.";
+	private static final String F_ERR_ID_USED = "ID already in use: %s.";
+	private static final String F_ERR_NODE_NOT_REGISTERED = "Syntactic node is undefined: %s. This might be caused by multiple use of the id or an insufficient id validation mechanism.";
 	private static final String FUNC_NAME = "func";
 	private static final String REF_TYPE_NAME = "type";
-	private PepperMapper mapper;
+	private final PepperMapper mapper;
 	private SDocumentGraph graph;
+	/** maps speaker specific segmentation name to segmentation */
 	private Map<String, Segmentation> segmentations;
 	/** maps the file's analysis id to all annotations listed for this id */
 	private Map<String, List<SAnnotation>> annotations;
@@ -36,26 +43,54 @@ public class GraphBuilder {
 	private Map<String, SRelation<?, ?>> graphRelations;
 	/** queue of todos to be done later, since objects occur later */
 	private Stack<Finisher> unfinished;
+	/** the current speaker */
+	private String speaker;
+	/** id provider */
+	private IdProvider idProvider;
+	/** time builder module */
+	private TimeBuilder time;
 	
-	public GraphBuilder(PepperMapper mapper) {
-		this.mapper = mapper;
+	public GraphBuilder(PepperMapper pepperMapper) {
+		this.mapper = pepperMapper;
 		this.graph = mapper.getDocument().getDocumentGraph();
 		this.segmentations = new HashMap<>();
 		this.annotations = new HashMap<>();
 		this.graphNodes = new HashMap<>();
 		this.graphRelations = new HashMap<>();
 		this.unfinished = new Stack<Finisher>();
+		IdValidator validator = new IdValidator() {			
+			@Override
+			public String validate(Set<String> ids, String id) {
+				if (id == null) {
+					//request for new id
+					do {
+						id = Double.toHexString( Math.random() );
+					} while (ids.contains(id));
+				} else {
+					//put id
+					if (ids.contains(id)) {
+						//this should never be the case
+						throw new PepperModuleException(mapper, String.format(F_ERR_ID_USED, id));
+					}
+					ids.add(id);
+				}
+				return id;
+			}
+		};
+		this.idProvider = new IdProvider(validator);
+		this.time = new TimeBuilder( graph.createTimeline() );
 	}
 	
 	public SDocumentGraph getGraph() {
 		return graph;
 	}
 	
-	public void addSegment(String id, String segmentationName, String text, int offset, int timeSpan) {
-		if (!segmentations.containsKey(segmentationName)) {
-			segmentations.put(segmentationName, new Segmentation(graph.getTimeline(), segmentationName, " "));
-		}
-		segmentations.get(segmentationName).addElement(id, text, offset, timeSpan);
+	public void setSpeaker(String name) {
+		this.speaker = name;
+	}
+	
+	public String getSpeaker() {
+		return speaker;
 	}
 	
 	public void registerReferringExpression(String id, String targetNodeId) {		
@@ -171,11 +206,49 @@ public class GraphBuilder {
 		graphRelations.put(id, sRelation);
 	}
 	
+	public void registerToken(String id, String segmentationName, String text, String alignWithId) {
+		final String tokenId = idProvider.validate(id);
+		Finisher finisher = new Finisher() {			
+			@Override
+			public void build() {
+				int[] textInterval = getTokenLimits(tokenId);
+				int[] timeInterval = getTokenTimes(tokenId);
+				STextualDS ds = getTextualDS(tokenId);
+				SToken sToken = SaltFactory.createSToken();
+				sToken.setId(tokenId);
+				getGraph().addNode(sToken);
+				createTextualRelation(sToken, ds, textInterval[0], textInterval[1]);
+				createTimelineRelation(sToken, timeInterval[0], timeInterval[1]);
+				registerNode(tokenId, sToken);
+			}
+		};
+		unfinished.push(finisher);
+		time.put(tokenId, String.join("_", speaker, segmentationName), alignWithId);
+	}
+	
+	protected STextualRelation createTextualRelation(SToken sToken, STextualDS ds, int startIndex, int endIndex) {
+		STextualRelation rel = (STextualRelation) getGraph().createRelation(sToken, ds, SALT_TYPE.STEXTUAL_RELATION, null);
+		rel.setStart(startIndex);
+		rel.setEnd(endIndex);
+		return rel;
+	}
+	
+	protected STimelineRelation createTimelineRelation(SToken sToken, int from, int to) {
+		STimelineRelation rel = (STimelineRelation) getGraph().createRelation(sToken, getGraph().getTimeline(), SALT_TYPE.STIMELINE_RELATION, null);
+		rel.setStart(from);
+		rel.setEnd(to);
+		return rel;
+	}
+	
+	protected int[] getTokenLimits(String tokenId) {return new int[] {0, 1};}
+	
+	protected int[] getTokenTimes(String tokenId) {return new int[] {0, 1};}
+	
+	private STextualDS getTextualDS(String tokenId) {return null;}
+	
 	public void build() {
-		SDocumentGraph graph = getGraph();
 		while (!unfinished.isEmpty()) {
-			Finisher top = unfinished.pop();
-			top.build();
+			unfinished.pop().build();			
 		}
 	}
 }

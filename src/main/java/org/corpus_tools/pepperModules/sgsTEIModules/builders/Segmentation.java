@@ -3,7 +3,10 @@ package org.corpus_tools.pepperModules.sgsTEIModules.builders;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.corpus_tools.pepperModules.sgsTEIModules.builders.time.TimeBuilder;
+import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
+import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SOrderRelation;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STextualRelation;
@@ -16,129 +19,96 @@ public class Segmentation {
 	private List<Segment> segments;
 	private String name; 
 	private String delimiter;
-	private STimeline timeline;
 	private int lastTextEnd;
-	private int lastTimeEnd;
 	
-	protected Segmentation(STimeline timeline, String name, String delimiter) {
-		this.timeline = timeline;
+	protected Segmentation(String name, String delimiter) {
 		this.segments = new ArrayList<>();
 		this.name = name;
 		this.delimiter = delimiter;
 		this.lastTextEnd = 0;
-		this.lastTimeEnd = 0;
 	}
 	
-	protected SLayer build() {
-		SLayer partialGraph = SaltFactory.createSLayer();
-		STextualDS ds = SaltFactory.createSTextualDS();
-		ds.setText( getText() );
-		ds.setName( getName() );
-		alignSegments(partialGraph, ds);		
-		return partialGraph;
-	}
-	
-	protected void addElement(String id, String text, int emptySlotsBefore, int timeSpan) {
-		segments.add( new Segment(id, text, lastTextEnd, lastTextEnd + text.length(), emptySlotsBefore + lastTimeEnd, emptySlotsBefore + lastTimeEnd + timeSpan) );
+	public void addSegment(String id, String text) {
+		segments.add( new Segment(id, text, lastTextEnd, lastTextEnd + text.length()) );
 		lastTextEnd += text.length() + delimiter.length();
-		move(emptySlotsBefore + timeSpan);
 	}
 	
-	protected void addElement(String id, String text) {
-		addElement(id, text, 0, 1);
+	public void build(SDocumentGraph graph) {
+		STextualDS ds = graph.createTextualDS( getText() );
+		ds.setName( getName() );
+		alignTokens(graph, ds);
 	}
 	
-	protected void move(int moveBy) {
-		lastTimeEnd += moveBy;
-	}
-	
-	private void alignSegments(SLayer partialGraph, STextualDS targetDS) {		
-		List<SToken> tokens = new ArrayList<>();
-		for (Segment segment : getSegments()) {
-			tokens.add( alignSegment(segment, partialGraph, targetDS) );
+	private void alignTokens(SDocumentGraph graph, STextualDS ds) {
+		List<SToken> sTokens = new ArrayList<>();
+		for (Segment segment : segments) {
+			sTokens.add( alignToken(graph, ds, segment) );
 		}
-		addOrderRelations(tokens, partialGraph);
+		addOrderRelations(graph, sTokens);
 	}
 	
-	private SToken alignSegment(Segment segment, SLayer partialGraph, STextualDS targetDS) {
-		SToken sToken = SaltFactory.createSToken();
-		sToken.setId( segment.getId() );
-		segment.getTextualRelation().setSource(sToken);
-		segment.getTextualRelation().setTarget(targetDS);
-		segment.getTimelineRelation().setSource(sToken);
-		segment.getTimelineRelation().setTarget( getTimeline() );
-		partialGraph.addNode(sToken);
-		partialGraph.addRelation(segment.getTextualRelation());
-		partialGraph.addRelation(segment.getTimelineRelation());		
+	private SToken alignToken(SDocumentGraph graph, STextualDS ds, Segment segment) {
+		SToken sToken = createSToken(segment);
+		graph.addNode(sToken);
+		STextualRelation rel = (STextualRelation) graph.createRelation(sToken, ds, SALT_TYPE.STEXTUAL_RELATION, null); 
+		rel.setStart(segment.getStart());
+		rel.setEnd(segment.getEnd());
 		return sToken;
 	}
 	
-	private void addOrderRelations(List<SToken> tokens, SLayer partialGraph) {
-		SOrderRelation rel = null;
-		for (int i = 0; i < tokens.size() - 1; i++) {
-			rel = SaltFactory.createSOrderRelation();
-			rel.setSource(tokens.get(i));
-			rel.setTarget(tokens.get(i + 1));
-			rel.setType( getName() );
-			partialGraph.addRelation(rel);
+	private SToken createSToken(Segment segment) {
+		SToken sToken = SaltFactory.createSToken();
+		if (segment.getId() != null) {
+			sToken.setId(segment.getId());
+		}		
+		return sToken;
+	}
+	
+	private void addOrderRelations(SDocumentGraph graph, List<SToken> sTokens) {
+		for (int i = 1; i < sTokens.size(); i++) {
+			graph.createRelation(sTokens.get(i - 1), sTokens.get(i), SALT_TYPE.SORDER_RELATION, null).setType(getName());
 		}
 	}
 	
-	private STimeline getTimeline() {
-		return this.timeline;
+	public String getName() {
+		return name;
 	}
-	
-	protected String getName() {
-		return this.name;
-	}
-	
+
 	private String getText() {
-		List<String> textSegments = new ArrayList<>();
-		for (Segment segment : getSegments()) {
-			textSegments.add( segment.getText() );
+		List<String> tokens = new ArrayList<>();
+		for (Segment segment : segments) {
+			tokens.add(segment.getText());
 		}
-		return String.join(getDelimiter(), textSegments);
-	}
-	
-	private String getDelimiter() {
-		return this.delimiter;
-	}
-	
-	private List<Segment> getSegments() {
-		return this.segments;
+		return String.join(delimiter, tokens);
 	}
 	
 	private class Segment {
 		private String id;
 		private String text;
-		private STextualRelation textualRelation;
-		private STimelineRelation timelineRelation;
+		private int start;
+		private int end;
 		
-		private Segment(String id, String text, int startIndex, int endIndex, int startTime, int endTime) {
+		private Segment(String id, String text, int startIndex, int endIndex) {
 			this.id = id;
 			this.text = text;
-			textualRelation = SaltFactory.createSTextualRelation();
-			textualRelation.setStart(startIndex);
-			textualRelation.setEnd(endIndex);
-			timelineRelation = SaltFactory.createSTimelineRelation();
-			timelineRelation.setStart(startTime);
-			timelineRelation.setEnd(endTime);
+			this.start = startIndex;
+			this.end = endIndex;
 		}
 		
-		private String getId() {
-			return this.id;
-		}
-		
-		private String getText() {
+		public String getText() {
 			return text;
 		}
 		
-		private STextualRelation getTextualRelation() {
-			return textualRelation;
+		public int getStart() {
+			return start;
 		}
 		
-		private STimelineRelation getTimelineRelation() {
-			return timelineRelation;
+		public int getEnd() {
+			return end;
+		}
+		
+		public String getId() {
+			return id;
 		}
 	}
 }
