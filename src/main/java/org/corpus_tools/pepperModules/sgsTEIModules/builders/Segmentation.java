@@ -3,7 +3,7 @@ package org.corpus_tools.pepperModules.sgsTEIModules.builders;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.corpus_tools.pepperModules.sgsTEIModules.builders.time.TimeBuilder;
+import org.corpus_tools.pepperModules.sgsTEIModules.builders.time.TokenManager;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;

@@ -10,7 +10,7 @@ import java.util.Stack;
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
-import org.corpus_tools.pepperModules.sgsTEIModules.builders.time.TimeBuilder;
+import org.corpus_tools.pepperModules.sgsTEIModules.builders.time.TokenManager;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
@@ -48,7 +48,9 @@ public class GraphBuilder {
 	/** id provider */
 	private IdProvider idProvider;
 	/** time builder module */
-	private TimeBuilder time;
+	private TokenManager tokenManager;
+	/** map segmentation name to textual ds */
+	private Map<String, STextualDS> textualDSs;
 	
 	public GraphBuilder(PepperMapper pepperMapper) {
 		this.mapper = pepperMapper;
@@ -78,7 +80,8 @@ public class GraphBuilder {
 			}
 		};
 		this.idProvider = new IdProvider(validator);
-		this.time = new TimeBuilder( graph.createTimeline() );
+		this.tokenManager = new TokenManager();
+		this.textualDSs = new HashMap<>();
 	}
 	
 	public SDocumentGraph getGraph() {
@@ -206,6 +209,10 @@ public class GraphBuilder {
 		graphRelations.put(id, sRelation);
 	}
 	
+	public void setTokenText(String id, String text, boolean append) {
+		tokenManager.setTokenText(id, text, append);
+	}
+	
 	public void registerToken(String id, String segmentationName, String text, String alignWithId) {
 		final String tokenId = idProvider.validate(id);
 		Finisher finisher = new Finisher() {			
@@ -223,7 +230,28 @@ public class GraphBuilder {
 			}
 		};
 		unfinished.push(finisher);
-		time.put(tokenId, String.join("_", speaker, segmentationName), alignWithId);
+		tokenManager.put(tokenId, String.join("_", speaker, segmentationName), alignWithId, text);
+	}
+
+	public String registerTokenAfter(String id, String afterTokenId, String segmentationName, String text) {
+		final String tokenId = idProvider.validate(id);
+		Finisher finisher = new Finisher() {			
+			@Override
+			public void build() { // FIXME unify, see registerToken (double code :( )
+				int[] textInterval = getTokenLimits(tokenId);
+				int[] timeInterval = getTokenTimes(tokenId);
+				STextualDS ds = getTextualDS(tokenId);
+				SToken sToken = SaltFactory.createSToken();
+				sToken.setId(tokenId);
+				getGraph().addNode(sToken);
+				createTextualRelation(sToken, ds, textInterval[0], textInterval[1]);
+				createTimelineRelation(sToken, timeInterval[0], timeInterval[1]);
+				registerNode(tokenId, sToken);
+			}
+		};
+		unfinished.push(finisher);
+		tokenManager.putAfter(tokenId, afterTokenId, String.join("_", getSpeaker(), segmentationName), text);
+		return tokenId;
 	}
 	
 	protected STextualRelation createTextualRelation(SToken sToken, STextualDS ds, int startIndex, int endIndex) {
@@ -240,12 +268,28 @@ public class GraphBuilder {
 		return rel;
 	}
 	
-	protected int[] getTokenLimits(String tokenId) {return new int[] {0, 1};}
+	protected int[] getTokenLimits(String tokenId) {
+		return tokenManager.getIndices(tokenId);
+	}
 	
-	protected int[] getTokenTimes(String tokenId) {return new int[] {0, 1};}
+	protected int[] getTokenTimes(String tokenId) {
+		return tokenManager.getTimeslot(tokenId);
+	}	
 	
-	private STextualDS getTextualDS(String tokenId) {return null;}
+	private STextualDS getTextualDS(String tokenId) {
+		String segName = tokenManager.getSegementationName(tokenId);
+		if (!textualDSs.containsKey(segName)) {
+			textualDSs.put(segName, buildDS(segName));
+		}
+		return textualDSs.get(segName);
+	}
 	
+	private STextualDS buildDS(String segmentationName) {
+		STextualDS ds = getGraph().createTextualDS( tokenManager.getText(segmentationName) );
+		ds.setName(segmentationName);
+		return ds;
+	}
+
 	public void build() {
 		while (!unfinished.isEmpty()) {
 			unfinished.pop().build();			

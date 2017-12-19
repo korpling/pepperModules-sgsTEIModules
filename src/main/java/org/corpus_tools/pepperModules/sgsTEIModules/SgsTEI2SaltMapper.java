@@ -94,9 +94,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_ADD.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 			}
-			else if (TAG_PAUSE.equals(localName) && READ_MODE.TEXT.equals(mode)) {			
+			else if (TAG_PAUSE.equals(localName) && READ_MODE.TEXT.equals(mode)) {
+				String pauseValue = attributes.getValue(ATT_TYPE);
+				if (pauseValue == null) {
+					pauseValue = attributes.getValue(ATT_DURATION);
+				}
+				builder.registerToken(null, PAUSE, pauseValue, null);
 			}
-			else if (TAG_PC.equals(localName) && READ_MODE.TEXT.equals(mode)) {		
+			else if (TAG_PC.equals(localName) && READ_MODE.TEXT.equals(mode)) {	
 			}
 			else if (TAG_U.equals(localName)) {
 				builder.setSpeaker( attributes.getValue(ATT_WHO) );
@@ -106,7 +111,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					builder.registerReferringExpression(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TARGET).substring(1));
 				}				
 				else if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-					
+					String synId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
+					builder.registerToken(synId, SYN, "dummy-value", null);
+					String instanceId = attributes.getValue(ATT_INST);
+					if (instanceId != null) {
+						builder.registerToken(instanceId.substring(1), NORM, null, synId);
+					}
 				}
 			}
 			else if (TAG_STANDOFF.equals(localName)) {
@@ -164,9 +174,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			localName = qName.substring(qName.lastIndexOf(":") + 1);			
 			stack.pop();
 			if (TAG_W.equals(localName)) {
-				currentId = null;
+				if (TAG_SEG.equals(stack.peek())) {
+					String text = textBuffer.clear();
+					builder.setTokenText(currentId, text);
+					builder.registerToken(null, DIPL, text, currentId);
+				}
 			}
 			else if (TAG_PC.equals(localName)) {
+				String text = textBuffer.clear();
+				String id = builder.registerTokenAfter(null, currentId, NORM, text);
+				builder.registerToken(null, DIPL, text, id);
 			}
 			else if (TAG_ADD.equals(localName)) {
 			}
@@ -194,7 +211,5 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private void buildGraph() {		
 		}
-	}
-	
-	
+	}	
 }
