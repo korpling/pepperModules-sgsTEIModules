@@ -355,7 +355,7 @@ public class SgsTEIImporterTest {
 		SDocumentGraph docGraph = doc.createDocumentGraph();
 		STimeline timeline = docGraph.createTimeline();
 		
-		String anaDelimiter = getModuleProperties().getAnalysesDelimiter();		
+		String anaDelimiter = " ";		
 		
 		STextualDS diplDS0 = docGraph.createTextualDS(TEXT_SYNTAX_DIPL_0);
 		STextualDS diplDS1 = docGraph.createTextualDS(TEXT_SYNTAX_DIPL_1);

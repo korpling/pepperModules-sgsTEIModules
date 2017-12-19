@@ -88,7 +88,7 @@ public class SgsTEIImporterUtils implements SgsTEIDictionary{
 	}
 	
 	public enum READ_MODE {
-		TEXT, MORPHOSYNTAX, SYNTAX, REFERENCES, BLIND;		
+		TEXT, MORPHOSYNTAX, SYNTAX, REFERENCE, BLIND;		
 		protected static READ_MODE getMode(String standoffType) {
 			if (TYPE_SYNTAX.equalsIgnoreCase(standoffType)) {
 				return READ_MODE.SYNTAX;
@@ -97,7 +97,7 @@ public class SgsTEIImporterUtils implements SgsTEIDictionary{
 				return READ_MODE.MORPHOSYNTAX;
 			}
 			else if (TYPE_REFERENCE.equals(standoffType)) {
-				return READ_MODE.REFERENCES;
+				return READ_MODE.REFERENCE;
 			} 
 			else if (TAG_TEXT.equalsIgnoreCase(standoffType)) {
 				return READ_MODE.TEXT;
@@ -121,5 +121,15 @@ public class SgsTEIImporterUtils implements SgsTEIDictionary{
 			newMapper.put(e.getValue(), e.getKey());
 		}
 		return newMapper;
+	}
+	
+
+	
+	protected static void debugMessage(Object... elements) {
+		String[] elems = new String[elements.length];
+		for (int i = 0; i < elements.length; i++) {
+			elems[i] = elements[i] == null? "null" : elements[i].toString();
+		}
+		System.out.println(String.join(" ", elems));
 	}
 }
