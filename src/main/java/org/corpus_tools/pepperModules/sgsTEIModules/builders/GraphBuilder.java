@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
@@ -41,15 +40,23 @@ public class GraphBuilder {
 	/** maps speaker specific segmentation name to sequence of token ids */
 	private Map<String, Segmentation> segmentations;
 	/** maps the file's analysis id to all annotations listed for this id */
-	private Map<String, List<SAnnotation>> annotations;
+	private Map<String, Set<SAnnotation>> annotations;
 	/** maps node id (from file) to salt object */
 	private Map<String, SNode> graphNodes;
-	/** queue of todos to be done later, since objects occur later */
-	private Stack<BuildingBrick> unfinished;
 	/** id provider */
 	private IdProvider idProvider;
 	/** maps token id to segmentation name for faster processing */
 	private Map<String, String> tokenId2SegName;
+	/** queue of building steps */
+	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
+	/** step queue */
+	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {BUILD_STEP.TOKEN, BUILD_STEP.SYN_TOKEN, BUILD_STEP.SYNTAX_NODE, BUILD_STEP.SYNTAX_REL, BUILD_STEP.REFERENCE_NODE, BUILD_STEP.REFERENCE_REL, BUILD_STEP.ANNOTATION};
+	/** steps */
+	private enum BUILD_STEP {
+		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_NODE, REFERENCE_REL, ANNOTATION
+	}
+	
+	private final STimeline tl;
 	
 	public GraphBuilder(PepperMapper pepperMapper) {
 		this.mapper = pepperMapper;
@@ -57,7 +64,10 @@ public class GraphBuilder {
 		this.segmentations = new HashMap<>();
 		this.annotations = new HashMap<>();
 		this.graphNodes = new HashMap<>();
-		this.unfinished = new Stack<BuildingBrick>();
+		this.buildQueues = new HashMap<>();
+		for (BUILD_STEP step : STEP_QUEUE) {
+			buildQueues.put(step, new ArrayList<BuildingBrick>());
+		}
 		IdValidator validator = new IdValidator() {			
 			@Override
 			public String validate(Set<String> ids, String id) {
@@ -67,18 +77,23 @@ public class GraphBuilder {
 						id = Double.toHexString( Math.random() ).substring(4, 13);
 					} while (ids.contains(id));
 				} else {
-					//put id
 					if (ids.contains(id)) {
 						//this should never be the case
 						throw new PepperModuleException(mapper, String.format(F_ERR_ID_USED, id));
 					}
-					ids.add(id);
 				}
+				ids.add(id);
 				return id;
 			}
 		};
 		this.idProvider = new IdProvider(validator);
 		this.tokenId2SegName = new HashMap<>();
+		this.tl = pepperMapper.getDocument().getDocumentGraph().createTimeline();
+		this.tl.increasePointOfTime();
+	}
+	
+	private STimeline getTimeline() {
+		return tl;
 	}
 	
 	public SDocumentGraph getGraph() {
@@ -86,7 +101,7 @@ public class GraphBuilder {
 	}
 	
 	public void registerReferringExpression(final String id, final String targetNodeId) {	
-		new BuildingBrick(unfinished) {				
+		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_NODE)) {				
 			@Override
 			public void build(Object... args) {
 				List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(targetNodeId) ));
@@ -100,13 +115,10 @@ public class GraphBuilder {
 	}
 	
 	public void registerDiscourseEntity(final String id, final String nodeId, final String annotationId) {		
-		new BuildingBrick(unfinished) {			
+		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_NODE)) {			
 			@Override
 			public void build(Object... args) {
 				SSpan span = (SSpan) getNode(nodeId);
-				for (SAnnotation anno : getAnnotions(annotationId)) {
-					span.addAnnotation(anno);
-				}
 				getGraph().addNode(span);
 			}
 
@@ -115,27 +127,31 @@ public class GraphBuilder {
 		};
 	}
 	
-	public void registerAnnotation(String anaId, String name, String value) {
-		SAnnotation anno = SaltFactory.createSAnnotation();
-		anno.setName(name);
-		anno.setValue(value);
-		if (!annotations.containsKey(anaId)) {
-			annotations.put(anaId, new ArrayList<SAnnotation>());
-		}
-		annotations.get(anaId).add(anno);
+	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
+		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {			
+			@Override
+			public void immediate() {}			
+			@Override
+			public void build(Object... args) {
+				SAnnotation anno = SaltFactory.createSAnnotation();
+				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(targetId), name) : name);
+				anno.setValue(value);
+				if (!annotations.containsKey(targetId)) {
+					annotations.put(targetId, new HashSet<SAnnotation>());
+				}
+				annotations.get(targetId).add(anno);
+			}
+		};
 	}
 	
 	public void registerSyntaxNode(final String id, final String instanceId, final String analysisId) {		
-		new BuildingBrick(unfinished) {			
+		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_NODE)) {			
 			@Override
 			public void build(Object... args) {
 				SStructure sStructure = SaltFactory.createSStructure();
 				sStructure.setId(id);
 				registerNode(id, sStructure);
 				getGraph().addNode(sStructure);
-				for (SAnnotation anno : getAnnotions(analysisId)) {
-					sStructure.addAnnotation(anno);
-				}
 				if (instanceId != null) {
 					SToken instance = (SToken) getNode(instanceId);
 					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, null);
@@ -148,7 +164,7 @@ public class GraphBuilder {
 	}
 	
 	public void registerSyntaxLink(final String id, final String type, final String sourceId, final String targetId) {		
-		new BuildingBrick(unfinished) {		
+		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_REL)) {		
 			@Override
 			public void immediate() {}
 			
@@ -169,7 +185,7 @@ public class GraphBuilder {
 		final String typeValue = type;
 		final String srcId = sourceId;
 		final String tgtId = targetId;
-		new BuildingBrick(unfinished) {			
+		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REL)) {			
 			@Override
 			public void build(Object... args) {
 				SNode source = getNode(srcId);
@@ -178,15 +194,8 @@ public class GraphBuilder {
 			}
 
 			@Override
-			public void immediate() {
-				// TODO Auto-generated method stub
-				
-			}
+			public void immediate() {}
 		};
-	}
-	
-	protected List<SAnnotation> getAnnotions(String anaId) {
-		return annotations.get(anaId);
 	}
 	
 	protected void registerNode(String id, SNode sNode) {
@@ -198,31 +207,38 @@ public class GraphBuilder {
 		return graphNodes.get(nodeId);
 	}
 	
-	public void registerEvaluator(String speaker, String level, Object evaluator) {
-		String qName = String.join("_", speaker, level);
-		if (evaluator instanceof Map) {
-			final Map<?, ?> e = (Map<?, ?>) evaluator;
-			getSegmentations().get(qName).setEvaluator(new Segmentation.Evaluator() {				
-				@Override
-				public String evaluate(String tokenId) {
-					return e.containsKey(tokenId)? (String) e.get(tokenId) : null;
-				}
-			});
-		} else {
-			getSegmentations().get(qName).setEvaluator((Segmentation.Evaluator) evaluator);
+	public void setGlobalEvaluationMap(final Map<String, String> token2text) {
+		for (Entry<String, Segmentation> e : getSegmentations().entrySet()) {
+			registerEvaluationMap(e.getKey(), token2text);
 		}
 	}
 	
+	public void registerEvaluationMap(String speaker, String level, Map<?, String> evaluationMap) {
+		registerEvaluationMap(getQName(speaker, level), evaluationMap);
+	}
+	
+	private void registerEvaluationMap(String qName, final Map<?, String> evaluationMap) {		
+		getSegmentations().get(qName).setEvaluator(new Segmentation.Evaluator() {				
+			@Override
+			public String evaluate(String tokenId) {
+				return evaluationMap.get(tokenId);
+			}
+		});
+	}
+	
 	public void registerSegmentation(String speaker, String level, String delimiter) {
-		String qName = String.join("_", speaker, level);
-		Segmentation seg = new Segmentation(qName, delimiter);
-		getSegmentations().put(qName, seg);
+		registerSegmentation(getQName(speaker, level), delimiter);		
+	}
+	
+	private void registerSegmentation(String segmentationName, String delimiter) {
+		Segmentation seg = new Segmentation(segmentationName, delimiter);
+		getSegmentations().put(segmentationName, seg);
 	}
 
 	public String registerToken(String id, String speaker, String level) {
 		final String tokenId = idProvider.validate(id);		
-		final String segName = String.join("_", speaker, level);
-		new BuildingBrick(unfinished) {			
+		final String segName = getQName(speaker, level);
+		new BuildingBrick(buildQueues.get(BUILD_STEP.TOKEN)) {			
 			@Override
 			public void build(Object... args) {
 				Segmentation segmentation = getSegmentations().get(segName);
@@ -241,9 +257,10 @@ public class GraphBuilder {
 		return tokenId;
 	}
 
+	@Deprecated
 	public String registerToken(String id, final String lookupId) {
 		final String tokenId = idProvider.validate(id);		
-		new BuildingBrick(unfinished) {			
+		new BuildingBrick(buildQueues.get(BUILD_STEP.TOKEN)) {			
 			@Override
 			public void build(Object... args) {
 				String segName = getSegmentationByTokenId(lookupId);
@@ -264,11 +281,18 @@ public class GraphBuilder {
 	
 	protected void addSegment(String segName, String tokenId) {
 		tokenId2SegName.put(tokenId, segName);
+		if (!getSegmentations().containsKey(segName)) {
+			registerSegmentation(segName, " ");
+		}
 		getSegmentations().get(segName).addSegment(tokenId);
 	}
 
 	private String getSegmentationByTokenId(String tokenId) {
 		return tokenId2SegName.get(tokenId);
+	}
+	
+	private String getSpeakerByTokenId(String tokenId) {
+		return getSegmentationByTokenId(tokenId).split("_")[0];
 	}
 	
 	protected Map<String, Segmentation> getSegmentations() {
@@ -286,15 +310,14 @@ public class GraphBuilder {
 	}
 	
 	protected STimelineRelation addTimelineRelation(SToken sToken, int from, int to) {
-		STimeline timeline = getGraph().getTimeline();
-		if (timeline.getEnd() < to) {
-			timeline.increasePointOfTime();
+		if (getTimeline().getEnd() < to) {
+			getTimeline().increasePointOfTime(to - getTimeline().getEnd());
 		}
 		STimelineRelation rel = SaltFactory.createSTimelineRelation();
 		rel.setStart(from);
 		rel.setEnd(to);
 		rel.setSource(sToken);
-		rel.setTarget(timeline);
+		rel.setTarget( getTimeline() );
 		rel.setGraph( getGraph() );
 		return rel;
 	}
@@ -309,14 +332,15 @@ public class GraphBuilder {
 		}
 		int t = 0;
 		for (Map<String, List<String>> timestep : temporalSequence) {
-			int length = getLength(timestep);			
+			int length = getLength(timestep);
 			for (List<String> tokenIds : timestep.values()) {
 				int step = length / tokenIds.size();
 				int t_ = t;
-				for (int i = 0; i < tokenIds.size(); i++, t_ += step) {
+				for (int i = 0; i < tokenIds.size(); i++) {
 					String tokenId = tokenIds.get(i);
 					SToken tok = (SToken) getNode(tokenId);
 					addTimelineRelation(tok, t_, t_ + step);
+					t_ += step;
 				}				
 			}
 			t += length;
@@ -324,11 +348,11 @@ public class GraphBuilder {
 	}
 	
 	/**
-	 * This method applies element-wise multiplication to the collections elements.
+	 * This method applies element-wise multiplication to the collection's elements.
 	 * @param c
-	 * @return
+	 * @return the product of all elements of c
 	 */
-	private int reduce(Collection<Integer> c) {
+	private int reduceProduct(Collection<Integer> c) {
 		int r = 1;
 		for (Integer i : c) {
 			r *= i;
@@ -341,15 +365,7 @@ public class GraphBuilder {
 		for (Entry<String, List<String>> e : timestep.entrySet()) {
 			lengths.add(e.getValue().size());
 		}
-		return reduce(lengths);
-	}
-
-	public void build(List<Map<String, List<String>>> temporalSequence) {
-		while (!unfinished.isEmpty()) {
-			unfinished.pop().build();			
-		}
-		buildOrderRelations();
-		buildTime(temporalSequence);
+		return reduceProduct(lengths);
 	}
 	
 	private void buildOrderRelations() {
@@ -369,5 +385,36 @@ public class GraphBuilder {
 		SToken source = (SToken) getGraph().getNode(fromId);
 		SToken target = (SToken) getGraph().getNode(toId);
 		getGraph().createRelation(source, target, SALT_TYPE.SORDER_RELATION, null).setType(name);
+	}
+	
+	public String getQName(String speaker, String level) {
+		return String.join("_", speaker, level);
+	}
+	
+	private void addAnnotation(SNode target, SAnnotation annotation) {
+		if (target instanceof SToken) {
+			getGraph().createSpan((SToken) target).addAnnotation(annotation);
+		} else {
+			target.addAnnotation(annotation);
+		}
+	}
+
+	public void build(List<Map<String, List<String>>> temporalSequence) {
+		for (BUILD_STEP step : STEP_QUEUE) {
+			for (BuildingBrick brick : buildQueues.get(step)) {
+				brick.build();
+			}
+		}
+		buildOrderRelations();
+		buildTime(temporalSequence);
+		for (Entry<String, Set<SAnnotation>> e : annotations.entrySet()) {
+			for (SAnnotation a : e.getValue()) {
+				System.out.println(e.getKey());
+				if (e.getKey() != null) {
+					addAnnotation(getGraph().getNode(e.getKey()), a);
+				}
+			}
+		}
+		System.out.println(getGraph().getTextualDSs().size());
 	}
 }

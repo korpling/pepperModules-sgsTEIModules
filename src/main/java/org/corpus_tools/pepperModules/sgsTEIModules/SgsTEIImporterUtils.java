@@ -14,76 +14,25 @@ public class SgsTEIImporterUtils implements SgsTEIDictionary{
 		return textBufferInstance;
 	}
 	
-	protected TextSegment createTextSegment(String id, String dipl, String norm, String pause) {
-		return new TextSegment(id, dipl, norm, pause);
-	}
-	
-	public class TextSegment{		
-		private String id;
-		private String dipl;
-		private String norm;
-		private String pause;
-		
-		protected TextSegment(String id, String dipl, String norm, String pause) {
-			this.id = id;
-			this.dipl = dipl;
-			this.norm = norm;
-			this.pause = pause;
-		}
-		
-		public String getId() {
-			return this.id;
-		}
-		
-		public void setId(String id) {
-			this.id = id;
-		}
-		
-		public String getDipl() {
-			return this.dipl;
-		}
-		
-		public void setDipl(String dipl) {
-			this.dipl = dipl;
-		}
-		
-		public String getNorm() {
-			return this.norm;
-		}
-		
-		public void setNorm(String norm) {
-			this.norm = norm;
-		}
-		
-		public String getPause() {
-			return this.pause;
-		}
-		
-		public void setPause(String pause) {
-			this.pause = pause;
-		}
-		
-		/** For debug purposes*/
-		@Override
-		public String toString() {
-			return String.join(":", getId(), getDipl(), getNorm(), getPause());
-		}
-	}
-	
 	protected class TextBuffer{
-		private StringBuilder text;		
+		private StringBuilder[] text;
 		protected TextBuffer() {
-			text = new StringBuilder();
+			text = new StringBuilder[] {
+				new StringBuilder(),
+				new StringBuilder()
+			};
 		}
 		
-		public String clear() {
-			String retVal = text.toString();
-			text.delete(0, text.length());
+		public String clear(int b) {
+			String retVal = text[b].toString();
+			text[b].delete(0, text[b].length());
 			return retVal;
 		}
 		
-		public void append(String text) {
-			this.text.append(text);
+		public void append(String text, int[] b) {
+			for (int i : b) {
+				this.text[i].append(text);
+			}
 		}
 	}
 	
@@ -106,24 +55,6 @@ public class SgsTEIImporterUtils implements SgsTEIDictionary{
 			}
 		}
 	}
-	
-	/** This class is a simple extension of a String-to-String {@link HashMap} to improve readability. */
-	public class IdMapper extends HashMap<String, String> {}
-
-	public IdMapper createIdMapper() {
-		// TODO Auto-generated method stub
-		return new IdMapper();
-	}
-	
-	public IdMapper reversedMapper(IdMapper mapper) {
-		IdMapper newMapper = createIdMapper();
-		for (Entry<String, String> e : mapper.entrySet()) {
-			newMapper.put(e.getValue(), e.getKey());
-		}
-		return newMapper;
-	}
-	
-
 	
 	protected static void debugMessage(Object... elements) {
 		String[] elems = new String[elements.length];

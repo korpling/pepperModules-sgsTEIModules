@@ -1078,9 +1078,9 @@
                   <w xml:id="d1t2034-2">beaucoup</w>
                   <shift feature="tempo" new="normal"/>
                   <w xml:id="d1t2036-2">aux</w>
-                  <w xml:id="d1t2036-3">autres</w>
+                  <w xml:id="d1t2036-3">aut<add>r</add>es</w>
                   <pc>,</pc>
-                  <w xml:id="d1t2036-5">aux</w>
+                  <w xml:id="d1t2036-5"><add>a</add>ux</w>
                   <w xml:id="d1t2036-6">gens</w>
                   <w xml:id="d1t2036-7">en général</w>
                   <pc>.</pc>
