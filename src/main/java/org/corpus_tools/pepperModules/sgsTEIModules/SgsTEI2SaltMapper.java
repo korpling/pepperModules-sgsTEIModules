@@ -3,14 +3,17 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.READ_MODE;
 import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextBuffer;
-import org.corpus_tools.pepperModules.sgsTEIModules.builders.Finisher;
 import org.corpus_tools.pepperModules.sgsTEIModules.builders.GraphBuilder;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
@@ -64,7 +67,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private SgsTEIImporterUtils utils;
 		
-		private HashMap<READ_MODE, SLayer> layers;
+		private Map<READ_MODE, SLayer> layers;
 		
 		private String annotationName;
 		
@@ -72,8 +75,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private String speaker;
 		
-		private HashMap<String, Finisher> registerLater;
-				
+		private Map<String, String> token2text;
+		
+		private List<Pair<String, String>> synTokens;
+						
 		private final String NORM = getModuleProperties().getNormName();		
 		private final String DIPL = getModuleProperties().getDiplName();
 		private final String PAUSE = getModuleProperties().getPauseName();
@@ -87,7 +92,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			mode = READ_MODE.BLIND;
 			layers = new HashMap<>();
 			builder = new GraphBuilder(SgsTEI2SaltMapper.this);
-			registerLater = new HashMap<>();
+			token2text = new HashMap<>();
 		}
 		
 		@Override
@@ -104,7 +109,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				if (pauseValue == null) {
 					pauseValue = attributes.getValue(ATT_DURATION);
 				}
-				builder.registerToken(speaker, PAUSE, null, pauseValue, null);
+				token2text.put(builder.registerToken(null, speaker, PAUSE), pauseValue);
 			}
 			else if (TAG_PC.equals(localName) && READ_MODE.TEXT.equals(mode)) {	
 			}
@@ -113,26 +118,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SPAN.equals(localName)) {
 				if (READ_MODE.REFERENCE.equals(mode)) {
-					builder.registerReferringExpression(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TARGET).substring(1));
-				}				
+					builder.registerReferringExpression(attributes.getValue( String.join(":", NS_XML, ATT_ID) ), attributes.getValue(ATT_TARGET).substring(1));
+				}
 				else if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
 					final String synId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-					registerLater.put(synId, new Finisher() {
-						@Override
-						public void build(Object... args) {
-							builder.registerToken((String) args[0], SYN, synId, "<node>", null);
-						}						
-					});
 					final String targetId = attributes.getValue(ATT_TARGET);
-					if (targetId != null) {
-						registerLater.put(targetId, new Finisher() {							
-							@Override
-							public void build(Object... args) {
-								builder.registerToken((String) args[0], NORM, targetId.substring(1), null, synId);
-							}
-						});						
-					}
+					synTokens.add(Pair.of(synId, targetId));
 				}
+			}
+			else if (TAG_SPANGRP.equals(localName) && READ_MODE.MORPHOSYNTAX.equals(mode)) {
+				synTokens = new ArrayList<>();
 			}
 			else if (TAG_STANDOFF.equals(localName)) {
 				mode = READ_MODE.getMode(attributes.getValue(ATT_TYPE));
@@ -190,17 +185,18 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			stack.pop();
 			if (TAG_W.equals(localName)) {
 				String text = textBuffer.clear();
-				builder.setTokenText(speaker, currentId, text, true);
-				builder.registerToken(speaker, DIPL, null, text, currentId);
+				token2text.put(builder.registerToken(currentId, speaker, NORM), text);
+				token2text.put(builder.registerToken(null, speaker, DIPL), text);
 			}
 			else if (TAG_PC.equals(localName)) {
 				String text = textBuffer.clear();
-				String id = builder.registerTokenAfter(speaker, NORM, null, currentId, text);
-				builder.registerToken(speaker, DIPL, null, text, id);
+				token2text.put(builder.registerToken(null, speaker, NORM), text);
+				token2text.put(builder.registerToken(null, speaker, DIPL), text);
 			}
 			else if (TAG_ADD.equals(localName)) {
 			}
 			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stack.peek())) {
+				token2text.put(builder.registerToken(null, speaker, DIPL), textBuffer.clear());
 			}
 			else if (TAG_SIC.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 			}
@@ -217,8 +213,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_U.equals(localName)) {
 			}
+			else if (TAG_SPANGRP.equals(localName)) {
+				String lookupId = null;
+				for (Iterator<Pair<String, String>> it = synTokens.iterator(); lookupId == null && it.hasNext(); ) {
+					lookupId = it.next().getRight();
+				}
+				for (Pair<String, String> p : synTokens) {
+					builder.registerToken(p.getLeft(), lookupId);
+				}
+			}
 			else if (TAG_TEI.equals(localName)) {			
-				builder.build();
+				builder.build(null);
 			}
 		}
 	}	
