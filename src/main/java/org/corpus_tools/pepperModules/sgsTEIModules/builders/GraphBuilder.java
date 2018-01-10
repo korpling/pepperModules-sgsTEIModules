@@ -127,24 +127,28 @@ public class GraphBuilder {
 		};
 	}
 	
-	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
+	public void registerAnnotation(final String annotationId, final String name, final String value, final boolean speakerSensitive) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {			
 			@Override
 			public void immediate() {}			
 			@Override
 			public void build(Object... args) {
 				SAnnotation anno = SaltFactory.createSAnnotation();
-				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(targetId), name) : name);
+				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(annotationId), name) : name);
 				anno.setValue(value);
-				if (!annotations.containsKey(targetId)) {
-					annotations.put(targetId, new HashSet<SAnnotation>());
+				if (!annotations.containsKey(annotationId)) {
+					annotations.put(annotationId, new HashSet<SAnnotation>());
 				}
-				annotations.get(targetId).add(anno);
+				annotations.get(annotationId).add(anno);
 			}
 		};
 	}
 	
-	public void registerSyntaxNode(final String id, final String instanceId) {
+	public Map<String, Set<SAnnotation>> getAnnotations() {
+		return annotations;
+	}
+	
+	public void registerSyntaxNode(final String id, final String instanceId, final String analysisId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_NODE)) {			
 			@Override
 			public void build(Object... args) {
@@ -152,6 +156,11 @@ public class GraphBuilder {
 				sStructure.setId(id);
 				registerNode(id, sStructure);
 				getGraph().addNode(sStructure);
+				if (getAnnotations().containsKey(analysisId)) {
+					for (SAnnotation a : getAnnotations().get(analysisId)) {
+						sStructure.addAnnotation(a);
+					}
+				}
 				if (instanceId != null) {
 					SToken instance = (SToken) getNode(instanceId);
 					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, null);
@@ -384,14 +393,6 @@ public class GraphBuilder {
 		}
 		buildOrderRelations();
 		buildTime(temporalSequence);
-		for (Entry<String, Set<SAnnotation>> e : annotations.entrySet()) {
-			for (SAnnotation a : e.getValue()) {
-				System.out.println(e.getKey());
-				if (e.getKey() != null) {
-					addAnnotation(getGraph().getNode(e.getKey()), a);
-				}
-			}
-		}
 		System.out.println(getGraph().getTextualDSs().size());
 	}
 }
