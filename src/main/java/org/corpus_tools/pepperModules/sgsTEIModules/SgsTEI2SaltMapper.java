@@ -11,8 +11,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
+import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
 import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.READ_MODE;
 import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextBuffer;
 import org.corpus_tools.pepperModules.sgsTEIModules.builders.GraphBuilder;
@@ -76,7 +78,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private Map<String, String> token2text;
 		
-		private Queue<String> spanSeq;
+		private Queue<Pair<String, String>> spanSeq;
 		
 		private List<Map<String, List<String>>> sequence;
 		
@@ -141,10 +143,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					if (anaId != null) {
 						anaId2targetId.put(anaId.substring(1), synId);
 					}
-					spanSeq.add(targetId);
-					if (targetId == null) {
-						//empty token
-					} else {
+					spanSeq.add( Pair.of(synId, targetId) );
+					if (targetId != null) {
 						if (!comesWith.containsKey(targetId)) {
 							comesWith.put(targetId, new LinkedHashSet<String>());
 						}
@@ -216,30 +216,54 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		 * @param value if given, buffer is ignored and not deleted
 		 */
 		private void tokenDetected(String id, String speaker, boolean dipl, boolean norm, String value) {
-			Map<String, List<String>> timestep = new HashMap<>();			
-			boolean pause = !dipl && !norm;
-			if (pause) {
-				registerToken(null, speaker, PAUSE, value, timestep);
+			if (READ_MODE.TEXT.equals(mode)) {
+				Map<String, List<String>> timestep = new HashMap<>();
+				boolean pause = !dipl && !norm;
+				String emptyId = checkForEmpty(id);
+				if (emptyId != null) {
+					registerToken(emptyId, speaker, SYN, "$", timestep);
+					sequence.add(timestep);
+					timestep = new HashMap<>();
+				}
+				if (pause) {
+					registerToken(null, speaker, PAUSE, value, timestep);
+				} else {
+					if (dipl) {
+						registerToken(null, speaker, DIPL, textBuffer.clear(0), timestep);
+					}
+					if (norm) {
+						registerToken(id, speaker, NORM, textBuffer.clear(1), timestep);
+					}
+					if (id != null && comesWith.containsKey(id)) {					
+						String qName = builder.getQName(speaker, SYN);
+						if (!timestep.containsKey(qName)) {
+							timestep.put(qName, new ArrayList<String>());
+						}
+						List<String> synchronousIds = timestep.get(qName);
+						for (String synTokenId : comesWith.get(id)) {
+							token2text.put(builder.registerToken(synTokenId, speaker, SYN), "$");
+							synchronousIds.add(synTokenId);
+						}
+					}
+				}
+				sequence.add(timestep);
 			} else {
-				if (dipl) {
-					registerToken(null, speaker, DIPL, textBuffer.clear(0), timestep);
-				}
-				if (norm) {
-					registerToken(id, speaker, NORM, textBuffer.clear(1), timestep);
-				}
-				if (id != null && comesWith.containsKey(id)) {					
-					String qName = builder.getQName(speaker, SYN);
-					if (!timestep.containsKey(qName)) {
-						timestep.put(qName, new ArrayList<String>());
-					}
-					List<String> synchronousIds = timestep.get(qName);
-					for (String synTokenId : comesWith.get(id)) {
-						token2text.put(builder.registerToken(synTokenId, speaker, SYN), "$");
-						synchronousIds.add(synTokenId);
-					}
-				}
+				throw new PepperModuleException();
 			}
-			sequence.add(timestep);
+		}
+		
+		/** 
+		 * 
+		 * @param id
+		 * @return id of empty span to be created, else null
+		 */
+		private String checkForEmpty(String id) {
+			Pair<String, String> spanIds = spanSeq.poll();
+			if (spanIds.getRight() != null) {
+				return null;
+			} else {
+				return spanIds.getLeft();
+			}
 		}
 		
 		private void registerToken(String id, String speaker, String level, String text, Map<String, List<String>> timestep) {
