@@ -198,10 +198,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				anaId2targetIds.put(anaId, new String[] {id});
 				if (READ_MODE.REFERENCE.equals(mode)) {
 					String[] instances = instId.split(" ");
-					for (int i = 0; i < instances.length; i++) {
+					for (int i = 1; i < instances.length; i++) {
 						instances[i] = instances[i].substring(1);
 					}
-					anaId2targetIds.put(anaId, instances);					
+					anaId2targetIds.put(anaId, instances);
+					builder.registerDiscourseEntity(id, instances);
 				}
 				else if (READ_MODE.SYNTAX.equals(mode)) {
 					builder.registerSyntaxNode(id, instId);

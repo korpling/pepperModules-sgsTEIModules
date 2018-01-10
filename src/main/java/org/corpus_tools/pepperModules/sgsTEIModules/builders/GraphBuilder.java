@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Stack;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
@@ -16,18 +15,16 @@ import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
-import org.corpus_tools.salt.common.SDominanceRelation;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
-import org.corpus_tools.salt.common.SStructuredNode;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STextualRelation;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
+import org.corpus_tools.salt.core.SLayer;
 import org.corpus_tools.salt.core.SNode;
-import org.omg.CosNaming.NamingContextExtPackage.AddressHelper;
 
 public class GraphBuilder {
 	private static final String F_ERR_ID_USED = "ID already in use: %s.";
@@ -49,10 +46,10 @@ public class GraphBuilder {
 	/** queue of building steps */
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
-	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {BUILD_STEP.TOKEN, BUILD_STEP.SYN_TOKEN, BUILD_STEP.ANNOTATION, BUILD_STEP.SYNTAX_NODE, BUILD_STEP.SYNTAX_REL, BUILD_STEP.REFERENCE_NODE, BUILD_STEP.REFERENCE_REL};
+	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {BUILD_STEP.TOKEN, BUILD_STEP.SYN_TOKEN, BUILD_STEP.SYNTAX_NODE, BUILD_STEP.SYNTAX_REL, BUILD_STEP.REFERENCE_REFEX, BUILD_STEP.REFERENCE_DE, BUILD_STEP.REFERENCE_REL, BUILD_STEP.ANNOTATION};
 	/** steps */
 	private enum BUILD_STEP {
-		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_NODE, REFERENCE_REL, ANNOTATION
+		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION
 	}
 	
 	private final STimeline tl;
@@ -100,7 +97,7 @@ public class GraphBuilder {
 	}
 	
 	public void registerReferringExpression(final String id, final String targetNodeId) {	
-		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_NODE)) {				
+		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REFEX)) {				
 			@Override
 			public void build(Object... args) {
 				List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(targetNodeId) ));
@@ -112,14 +109,16 @@ public class GraphBuilder {
 			public void immediate() {}
 		};
 	}
-	
-	public void registerDiscourseEntity(final String id, final String[] instanceIds, final String annotationId) {		
-		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_NODE)) {			
+		
+	public void registerDiscourseEntity(final String id, final String[] instanceIds) {		
+		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_DE)) {			
 			@Override
 			public void build(Object... args) {
-				for (String instanceId : instanceIds) {
-					addAnnotations(instanceId);
+				List<SToken> instances = new ArrayList<>();
+				for (String instaneId : instanceIds) {
+					instances.addAll( getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(instaneId))) );
 				}
+				registerNode(id, getGraph().createSpan(instances));
 			}
 
 			@Override
@@ -128,13 +127,18 @@ public class GraphBuilder {
 	}
 	
 	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
-		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {			
+		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {
 			@Override
 			public void immediate() {}			
 			@Override
 			public void build(Object... args) {
 				SAnnotation anno = SaltFactory.createSAnnotation();
-				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(targetId), name) : name);
+				String lookupId = targetId;
+				SNode lookupNode = getNode(lookupId);
+				if (!(lookupNode instanceof SToken)) {
+					lookupId = getGraph().getOverlappedTokens(lookupNode).get(0).getId();
+				}
+				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(lookupId), name) : name);
 				anno.setValue(value);
 				if (!annotations.containsKey(targetId)) {
 					annotations.put(targetId, new HashSet<SAnnotation>());
@@ -161,7 +165,6 @@ public class GraphBuilder {
 					sStructure = SaltFactory.createSStructure();
 					registerNode(id, sStructure);
 				}
-				addAnnotations(id); 
 			}	
 			@Override
 			public void immediate() {}
