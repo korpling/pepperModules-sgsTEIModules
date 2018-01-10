@@ -87,6 +87,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private Map<String, String> anaId2targetId;
 		
 		private int[] bufferMode;
+		
+		private boolean overlap;
 						
 		private final String NORM = getModuleProperties().getNormName();		
 		private final String DIPL = getModuleProperties().getDiplName();
@@ -175,13 +177,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 //					builder.registerDiscourseEntity(id, attributes.getValue(ATT_INST).substring(1), anaId);
 				}
 				else if (READ_MODE.SYNTAX.equals(mode)) {
-//					builder.registerSyntaxNode(id, attributes.getValue(ATT_INST).substring(1), anaId);
+					builder.registerSyntaxNode(id, attributes.getValue(ATT_INST).substring(1));
 				}
 			}
 			else if (TAG_LINK.equals(localName)) {
 				String[] targetSource = attributes.getValue(ATT_TARGET).split(" ");
 				if (READ_MODE.SYNTAX.equals(mode)) {
-//					builder.registerSyntaxLink(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TYPE), targetSource[1].substring(1), targetSource[0].substring(1));
+					builder.registerSyntaxLink(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TYPE), targetSource[1].substring(1), targetSource[0].substring(1));
 				}
 				else if (READ_MODE.REFERENCE.equals(mode)) {
 //					builder.registerReferenceLink(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TYPE), targetSource[1].substring(1), targetSource[0].substring(1));
@@ -216,40 +218,40 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		 * @param value if given, buffer is ignored and not deleted
 		 */
 		private void tokenDetected(String id, String speaker, boolean dipl, boolean norm, String value) {
-			if (READ_MODE.TEXT.equals(mode)) {
-				Map<String, List<String>> timestep = new HashMap<>();
-				boolean pause = !dipl && !norm;
-				String emptyId = checkForEmpty(id);
-				if (emptyId != null) {
-					registerToken(emptyId, speaker, SYN, "$", timestep);
-					sequence.add(timestep);
-					timestep = new HashMap<>();
-				}
-				if (pause) {
-					registerToken(null, speaker, PAUSE, value, timestep);
-				} else {
-					if (dipl) {
-						registerToken(null, speaker, DIPL, textBuffer.clear(0), timestep);
-					}
-					if (norm) {
-						registerToken(id, speaker, NORM, textBuffer.clear(1), timestep);
-					}
-					if (id != null && comesWith.containsKey(id)) {					
-						String qName = builder.getQName(speaker, SYN);
-						if (!timestep.containsKey(qName)) {
-							timestep.put(qName, new ArrayList<String>());
-						}
-						List<String> synchronousIds = timestep.get(qName);
-						for (String synTokenId : comesWith.get(id)) {
-							token2text.put(builder.registerToken(synTokenId, speaker, SYN), "$");
-							synchronousIds.add(synTokenId);
-						}
-					}
-				}
-				sequence.add(timestep);
-			} else {
+			if (!READ_MODE.TEXT.equals(mode)) {
 				throw new PepperModuleException();
 			}
+			Map<String, List<String>> timestep = overlap? sequence.get(sequence.size() - 1) : new HashMap<String, List<String>>();
+			boolean pause = !dipl && !norm;
+			String emptyId = checkForEmpty(id);
+			if (emptyId != null) {
+				registerToken(emptyId, speaker, SYN, "$", timestep);
+				sequence.add(timestep);
+				timestep = new HashMap<>();
+			}
+			if (pause) {
+				registerToken(null, speaker, PAUSE, value, timestep);
+			} else {
+				if (dipl) {
+					registerToken(null, speaker, DIPL, textBuffer.clear(0), timestep);
+				}
+				if (norm) {
+					registerToken(id, speaker, NORM, textBuffer.clear(1), timestep);
+				}
+				if (id != null && comesWith.containsKey(id)) {					
+					String qName = builder.getQName(speaker, SYN);
+					if (!timestep.containsKey(qName)) {
+						timestep.put(qName, new ArrayList<String>());
+					}
+					List<String> synchronousIds = timestep.get(qName);
+					for (String synTokenId : comesWith.get(id)) {
+						token2text.put(builder.registerToken(synTokenId, speaker, SYN), "$");
+						synchronousIds.add(synTokenId);
+					}
+				}
+			}
+			sequence.add(timestep);
+			overlap = false;			
 		}
 		
 		/** 
@@ -270,7 +272,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			String idd = builder.registerToken(id, speaker, level);
 			token2text.put(idd, text);
 			String qName = builder.getQName(speaker, level);
-			timestep.put(qName, new ArrayList<String>());
+			if (!timestep.containsKey(qName)) {
+				timestep.put(qName, new ArrayList<String>());
+			}
 			timestep.get(qName).add(idd);
 		}
 		
