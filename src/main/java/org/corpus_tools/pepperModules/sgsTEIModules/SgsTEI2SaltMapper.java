@@ -173,11 +173,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_INTERP.equals(localName)) {
 				String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 				String anaId = attributes.getValue(ATT_ANA).substring(1);
+				String instId = attributes.getValue(ATT_INST);
 				if (READ_MODE.REFERENCE.equals(mode)) {
 //					builder.registerDiscourseEntity(id, attributes.getValue(ATT_INST).substring(1), anaId);
 				}
 				else if (READ_MODE.SYNTAX.equals(mode)) {
-					builder.registerSyntaxNode(id, attributes.getValue(ATT_INST).substring(1));
+					builder.registerSyntaxNode(id, instId == null? instId : instId.substring(1));
 				}
 			}
 			else if (TAG_LINK.equals(localName)) {

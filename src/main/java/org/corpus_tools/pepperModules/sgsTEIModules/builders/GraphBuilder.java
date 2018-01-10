@@ -144,7 +144,7 @@ public class GraphBuilder {
 		};
 	}
 	
-	public void registerSyntaxNode(final String id, final String instanceId) {		
+	public void registerSyntaxNode(final String id, final String instanceId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_NODE)) {			
 			@Override
 			public void build(Object... args) {
@@ -156,8 +156,7 @@ public class GraphBuilder {
 					SToken instance = (SToken) getNode(instanceId);
 					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, null);
 				}
-			}
-
+			}	
 			@Override
 			public void immediate() {}
 		};
