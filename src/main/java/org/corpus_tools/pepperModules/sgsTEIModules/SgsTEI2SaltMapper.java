@@ -4,13 +4,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Stack;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
@@ -55,7 +59,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 */
 	private class SgsTEIReader extends DefaultHandler2{		
 
-		private static final String PLACEHOLDER = ".";
+		private static final String PLACEHOLDER = "<>";
 
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
 		
@@ -91,6 +95,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private int[] bufferMode;
 		
 		private boolean overlap;
+		
+		private Set<String> syntaxQNames;
+		
+		private Map<String, String> code2time;
+		
+		private Long lastEnd;
 						
 		private final String NORM = getModuleProperties().getNormName();		
 		private final String DIPL = getModuleProperties().getDiplName();
@@ -111,6 +121,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			anaId2targetId = new HashMap<>();
 			bufferMode = new int[] {0, 1};
 			spanSeq = new LinkedList<>();
+			syntaxQNames = new HashSet<>();
+			code2time = new HashMap<>();
+			lastEnd = 0L;
 		}
 		
 		@Override
@@ -134,12 +147,15 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_U.equals(localName)) {
 				speaker = attributes.getValue(ATT_WHO).substring(1);
+				long start = Long.parseLong( code2time.get( attributes.getValue(ATT_START).substring(1) ).replaceAll("\\.|:", "") );
+				overlap = start < lastEnd;
+				lastEnd = Long.parseLong( code2time.get( attributes.getValue(ATT_END).substring(1) ).replaceAll("\\.|:", "") );
 			}
 			else if (TAG_SPAN.equals(localName)) {
 				String targetId = attributes.getValue(ATT_TARGET);
 				targetId = targetId == null? null : targetId.substring(1);
 				if (READ_MODE.REFERENCE.equals(mode)) {
-//					builder.registerReferringExpression(attributes.getValue( String.join(":", NS_XML, ATT_ID) ), attributes.getValue(ATT_TARGET).substring(1));
+					builder.registerReferringExpression(attributes.getValue( String.join(":", NS_XML, ATT_ID) ), attributes.getValue(ATT_TARGET).substring(1));
 				}
 				else if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
 					String synId = attributes.getValue(String.join(":", NS_XML, ATT_ID));					
@@ -179,7 +195,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				instId = instId == null? instId : instId.substring(1);
 				anaId2targetId.put(anaId, id);
 				if (READ_MODE.REFERENCE.equals(mode)) {
-//					builder.registerDiscourseEntity(id, attributes.getValue(ATT_INST).substring(1), anaId);
+					builder.registerDiscourseEntity(id, attributes.getValue(ATT_INST).substring(1), anaId);
 				}
 				else if (READ_MODE.SYNTAX.equals(mode)) {
 					builder.registerSyntaxNode(id, instId);
@@ -191,10 +207,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					builder.registerSyntaxLink(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TYPE), targetSource[1].substring(1), targetSource[0].substring(1));
 				}
 				else if (READ_MODE.REFERENCE.equals(mode)) {
-//					builder.registerReferenceLink(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TYPE), targetSource[1].substring(1), targetSource[0].substring(1));
+					builder.registerReferenceLink(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TYPE), targetSource[1].substring(1), targetSource[0].substring(1));
 				}
 			}
 			else if (TAG_WHEN.equals(localName) && READ_MODE.TEXT.equals(mode)) {
+				String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
+				code2time.put(id, attributes.getValue(ATT_ABSOLUTE));
 			}
 			else if (TAG_TEXT.equals(localName)) {
 				mode = READ_MODE.TEXT;
@@ -211,6 +229,23 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			if (READ_MODE.TEXT.equals(mode) || READ_MODE.MORPHOSYNTAX.equals(mode)) {
 				String next = (new String(Arrays.copyOfRange(ch, start, start + length))).trim();
 				textBuffer.append(next, bufferMode);
+			}
+		}
+		
+		private void normalizeTimes() {
+			int w = 0;
+			for (String val : code2time.values()) {
+				if (val != null) {
+					w = Math.max(w, val.substring(val.indexOf(".")).length());
+				}
+			}
+			for (Entry<String, String> e : code2time.entrySet()) {
+				String k = e.getKey();
+				String v = e.getValue();
+				int we = v.substring(v.indexOf(".")).length(); 
+				if (we < w) {
+					code2time.put(k, v + StringUtils.repeat('0', w - we));
+				}
 			}
 		}
 		
@@ -245,6 +280,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 				if (id != null && comesWith.containsKey(id)) {					
 					String qName = builder.getQName(speaker, SYN);
+					syntaxQNames.add(qName);
 					if (!timestep.containsKey(qName)) {
 						timestep.put(qName, new ArrayList<String>());
 					}
@@ -274,13 +310,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		}
 		
 		private void registerToken(String id, String speaker, String level, String text, Map<String, List<String>> timestep) {
-			String idd = builder.registerToken(id, speaker, level);
-			token2text.put(idd, text);
+			String id_ = builder.registerToken(id, speaker, level);
+			token2text.put(id_, text);
 			String qName = builder.getQName(speaker, level);
 			if (!timestep.containsKey(qName)) {
 				timestep.put(qName, new ArrayList<String>());
 			}
-			timestep.get(qName).add(idd);
+			timestep.get(qName).add(id_);
 		}
 		
 		@Override
@@ -315,10 +351,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, textBuffer.clear(0), READ_MODE.MORPHOSYNTAX.equals(mode));
 				}
 			}
+			else if (TAG_TIMELINE.equals(localName)) {
+				normalizeTimes();
+			}
 			else if (TAG_U.equals(localName)) {
 			}
 			else if (TAG_TEI.equals(localName)) {
 				builder.setGlobalEvaluationMap(token2text);
+				for (String synName : syntaxQNames) {
+					builder.registerEvaluationMap(synName, null);
+				}
 				builder.build(sequence);
 			}
 		}

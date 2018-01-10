@@ -27,6 +27,7 @@ import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SNode;
+import org.omg.CosNaming.NamingContextExtPackage.AddressHelper;
 
 public class GraphBuilder {
 	private static final String F_ERR_ID_USED = "ID already in use: %s.";
@@ -117,7 +118,7 @@ public class GraphBuilder {
 			@Override
 			public void build(Object... args) {
 				SSpan span = (SSpan) getNode(nodeId);
-				getGraph().addNode(span);
+				registerNode(id, span);
 			}
 
 			@Override
@@ -159,11 +160,7 @@ public class GraphBuilder {
 					sStructure = SaltFactory.createSStructure();
 					registerNode(id, sStructure);
 				}
-				if (getAnnotations().containsKey(id)) {
-					for (SAnnotation a : getAnnotations().get(id)) {
-						sStructure.addAnnotation(a);
-					}					
-				} 
+				addAnnotations(id); 
 			}	
 			@Override
 			public void immediate() {}
@@ -184,16 +181,13 @@ public class GraphBuilder {
 		};
 	}
 	
-	public void registerReferenceLink(String id, String type, String sourceId, String targetId) {
-		final String typeValue = type;
-		final String srcId = sourceId;
-		final String tgtId = targetId;
+	public void registerReferenceLink(final String id, final String type, final String sourceId, final String targetId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REL)) {			
 			@Override
 			public void build(Object... args) {
-				SNode source = getNode(srcId);
-				SNode target = getNode(tgtId);
-				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, typeValue));
+				SNode source = getNode(sourceId);
+				SNode target = getNode(targetId);
+				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));
 			}
 
 			@Override
@@ -220,7 +214,7 @@ public class GraphBuilder {
 		registerEvaluationMap(getQName(speaker, level), evaluationMap);
 	}
 	
-	private void registerEvaluationMap(String qName, final Map<?, String> evaluationMap) {		
+	public void registerEvaluationMap(String qName, final Map<?, String> evaluationMap) {		
 		getSegmentations().get(qName).setEvaluator(new Segmentation.Evaluator() {				
 			@Override
 			public String evaluate(String tokenId) {
@@ -373,11 +367,32 @@ public class GraphBuilder {
 		return String.join("_", speaker, level);
 	}
 	
+	private void addAnnotations(String nodeId) {
+		if (getAnnotations().containsKey(nodeId)) {
+			SNode node = getNode(nodeId);
+			for (SAnnotation a : getAnnotations().get(nodeId)) {
+				addAnnotation(node, a);
+			}
+			getAnnotations().remove(nodeId);
+		}
+	}
+	
 	private void addAnnotation(SNode target, SAnnotation annotation) {
 		if (target instanceof SToken) {
 			getGraph().createSpan((SToken) target).addAnnotation(annotation);
 		} else {
 			target.addAnnotation(annotation);
+		}
+	}
+	
+	private void addRemainingAnnotations() {
+		for (Entry<String, Set<SAnnotation>> e : getAnnotations().entrySet()) {
+			SNode node = getNode( e.getKey() );
+			if (node != null) {
+				for (SAnnotation a : e.getValue()) {
+					addAnnotation(node, a);
+				}
+			}
 		}
 	}
 
@@ -389,8 +404,6 @@ public class GraphBuilder {
 		}
 		buildOrderRelations();
 		buildTime(temporalSequence);
-		for (SStructure s : getGraph().getStructures()) {
-			System.out.println("Structure: " + s + "(" + getGraph().getText(s) + ")");
-		}
+		addRemainingAnnotations();
 	}
 }
