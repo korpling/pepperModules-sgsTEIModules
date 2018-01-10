@@ -175,7 +175,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				String anaId = attributes.getValue(ATT_ANA).substring(1);
 				String instId = attributes.getValue(ATT_INST);
 				instId = instId == null? instId : instId.substring(1);
-				anaId2targetId.put(anaId, instId);
+				anaId2targetId.put(anaId, id);
 				if (READ_MODE.REFERENCE.equals(mode)) {
 //					builder.registerDiscourseEntity(id, attributes.getValue(ATT_INST).substring(1), anaId);
 				}

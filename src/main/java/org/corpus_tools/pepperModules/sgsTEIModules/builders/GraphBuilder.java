@@ -163,7 +163,8 @@ public class GraphBuilder {
 				}
 				if (instanceId != null) {
 					SToken instance = (SToken) getNode(instanceId);
-					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, null);
+					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", FUNC_NAME, "head"));
+					System.out.println(id + " dominates " + getGraph().getText(instance));
 				}
 			}	
 			@Override
