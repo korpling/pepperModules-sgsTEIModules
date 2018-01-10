@@ -127,19 +127,19 @@ public class GraphBuilder {
 		};
 	}
 	
-	public void registerAnnotation(final String annotationId, final String name, final String value, final boolean speakerSensitive) {
+	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {			
 			@Override
 			public void immediate() {}			
 			@Override
 			public void build(Object... args) {
 				SAnnotation anno = SaltFactory.createSAnnotation();
-				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(annotationId), name) : name);
+				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(targetId), name) : name);
 				anno.setValue(value);
-				if (!annotations.containsKey(annotationId)) {
-					annotations.put(annotationId, new HashSet<SAnnotation>());
+				if (!annotations.containsKey(targetId)) {
+					annotations.put(targetId, new HashSet<SAnnotation>());
 				}
-				annotations.get(annotationId).add(anno);
+				annotations.get(targetId).add(anno);
 			}
 		};
 	}
@@ -148,7 +148,7 @@ public class GraphBuilder {
 		return annotations;
 	}
 	
-	public void registerSyntaxNode(final String id, final String instanceId, final String analysisId) {
+	public void registerSyntaxNode(final String id, final String instanceId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_NODE)) {			
 			@Override
 			public void build(Object... args) {
@@ -156,8 +156,8 @@ public class GraphBuilder {
 				sStructure.setId(id);
 				registerNode(id, sStructure);
 				getGraph().addNode(sStructure);
-				if (getAnnotations().containsKey(analysisId)) {
-					for (SAnnotation a : getAnnotations().get(analysisId)) {
+				if (getAnnotations().containsKey(id)) {
+					for (SAnnotation a : getAnnotations().get(id)) {
 						sStructure.addAnnotation(a);
 					}
 				}
@@ -274,6 +274,7 @@ public class GraphBuilder {
 	}
 
 	private String getSegmentationByTokenId(String tokenId) {
+		System.out.println(tokenId);
 		return tokenId2SegName.get(tokenId);
 	}
 	

@@ -161,7 +161,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					builder.registerAnnotation(currentId, annotationName, attributes.getValue(ATT_VALUE), READ_MODE.MORPHOSYNTAX.equals(mode));
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, attributes.getValue(ATT_VALUE), READ_MODE.MORPHOSYNTAX.equals(mode));
 				}
 			}
 			else if (TAG_F.equals(localName)) {
@@ -308,7 +308,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_STRING.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					builder.registerAnnotation(currentId, annotationName, textBuffer.clear(0), READ_MODE.MORPHOSYNTAX.equals(mode));
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, textBuffer.clear(0), READ_MODE.MORPHOSYNTAX.equals(mode));
 				}
 			}
 			else if (TAG_U.equals(localName)) {
