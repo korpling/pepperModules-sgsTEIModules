@@ -257,27 +257,27 @@ public class GraphBuilder {
 		return tokenId;
 	}
 
-	@Deprecated
-	public String registerToken(String id, final String lookupId) {
-		final String tokenId = idProvider.validate(id);		
-		new BuildingBrick(buildQueues.get(BUILD_STEP.TOKEN)) {			
-			@Override
-			public void build(Object... args) {
-				String segName = getSegmentationByTokenId(lookupId);
-				addSegment(segName, tokenId);
-				Segmentation segmentation = getSegmentations().get( segName );
-				STextualDS ds = segmentation.getDS( getGraph() );
-				int[] indices = segmentation.getIndices(tokenId);
-				SToken sTok = segmentation.getSToken(tokenId);
-				registerNode(tokenId, sTok);
-				addTextualRelation(sTok, ds, indices[0], indices[1]);
-			}
-
-			@Override
-			public void immediate() {}
-		};
-		return tokenId;
-	}
+//	@Deprecated
+//	public String registerToken(String id, final String lookupId) {
+//		final String tokenId = idProvider.validate(id);		
+//		new BuildingBrick(buildQueues.get(BUILD_STEP.TOKEN)) {			
+//			@Override
+//			public void build(Object... args) {
+//				String segName = getSegmentationByTokenId(lookupId);
+//				addSegment(segName, tokenId);
+//				Segmentation segmentation = getSegmentations().get( segName );
+//				STextualDS ds = segmentation.getDS( getGraph() );
+//				int[] indices = segmentation.getIndices(tokenId);
+//				SToken sTok = segmentation.getSToken(tokenId);
+//				registerNode(tokenId, sTok);
+//				addTextualRelation(sTok, ds, indices[0], indices[1]);
+//			}
+//
+//			@Override
+//			public void immediate() {}
+//		};
+//		return tokenId;
+//	}
 	
 	protected void addSegment(String segName, String tokenId) {
 		tokenId2SegName.put(tokenId, segName);

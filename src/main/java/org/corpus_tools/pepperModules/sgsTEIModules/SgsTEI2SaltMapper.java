@@ -5,11 +5,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Stack;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.READ_MODE;
@@ -75,7 +76,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private Map<String, String> token2text;
 		
-		private List<Pair<String, String>> synTokens;
+		private Queue<String> spanSeq;
 		
 		private List<Map<String, List<String>>> sequence;
 		
@@ -103,6 +104,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			comesWith = new HashMap<>();
 			anaId2targetId = new HashMap<>();
 			bufferMode = new int[] {0, 1};
+			spanSeq = new LinkedList<>();
 		}
 		
 		@Override
@@ -134,16 +136,23 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 //					builder.registerReferringExpression(attributes.getValue( String.join(":", NS_XML, ATT_ID) ), attributes.getValue(ATT_TARGET).substring(1));
 				}
 				else if (READ_MODE.MORPHOSYNTAX.equals(mode)) {
-					String synId = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-					synTokens.add(Pair.of(synId, targetId));
+					String synId = attributes.getValue(String.join(":", NS_XML, ATT_ID));					
 					String anaId = attributes.getValue(ATT_ANA);
 					if (anaId != null) {
 						anaId2targetId.put(anaId.substring(1), synId);
 					}
+					spanSeq.add(targetId);
+					if (targetId == null) {
+						//empty token
+					} else {
+						if (!comesWith.containsKey(targetId)) {
+							comesWith.put(targetId, new LinkedHashSet<String>());
+						}
+						comesWith.get(targetId).add(synId);
+					}
 				}
 			}
 			else if (TAG_SPANGRP.equals(localName) && READ_MODE.MORPHOSYNTAX.equals(mode)) {
-				synTokens = new ArrayList<>();
 			}
 			else if (TAG_STANDOFF.equals(localName)) {
 				mode = READ_MODE.getMode(attributes.getValue(ATT_TYPE));
@@ -209,27 +218,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private void tokenDetected(String id, String speaker, boolean dipl, boolean norm, String value) {
 			Map<String, List<String>> timestep = new HashMap<>();			
 			boolean pause = !dipl && !norm;
-			String qName;			
 			if (pause) {
-				token2text.put(builder.registerToken(null, speaker, PAUSE), value);
-				
+				registerToken(null, speaker, PAUSE, value, timestep);
 			} else {
 				if (dipl) {
-					String diplId = builder.registerToken(null, speaker, DIPL);
-					token2text.put(diplId, textBuffer.clear(0));
-					qName = builder.getQName(speaker, DIPL);
-					timestep.put(qName, new ArrayList<String>());
-					timestep.get(qName).add(diplId);
+					registerToken(null, speaker, DIPL, textBuffer.clear(0), timestep);
 				}
 				if (norm) {
-					String normId = builder.registerToken(id, speaker, NORM);
-					token2text.put(normId, textBuffer.clear(1));
-					qName = builder.getQName(speaker, NORM);
-					timestep.put(qName, new ArrayList<String>());
-					timestep.get(qName).add(normId);
+					registerToken(id, speaker, NORM, textBuffer.clear(1), timestep);
 				}
 				if (id != null && comesWith.containsKey(id)) {					
-					qName = builder.getQName(speaker, SYN);
+					String qName = builder.getQName(speaker, SYN);
 					if (!timestep.containsKey(qName)) {
 						timestep.put(qName, new ArrayList<String>());
 					}
@@ -241,6 +240,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 			}
 			sequence.add(timestep);
+		}
+		
+		private void registerToken(String id, String speaker, String level, String text, Map<String, List<String>> timestep) {
+			String idd = builder.registerToken(id, speaker, level);
+			token2text.put(idd, text);
+			String qName = builder.getQName(speaker, level);
+			timestep.put(qName, new ArrayList<String>());
+			timestep.get(qName).add(idd);
 		}
 		
 		@Override
@@ -276,19 +283,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 			}
 			else if (TAG_U.equals(localName)) {
-			}
-			else if (TAG_SPANGRP.equals(localName) || READ_MODE.MORPHOSYNTAX.equals(mode)) {
-				for (Pair<String, String> p : synTokens) {
-					String tokenTargetId = p.getRight(); 
-					if (tokenTargetId != null) {
-						if (!comesWith.containsKey(p.getRight())) {
-							comesWith.put(p.getRight(), new LinkedHashSet<String>());
-						}
-						comesWith.get( p.getRight() ).add( p.getLeft() );
-					} else {
-						//TODO deal with null tokens!
-					}
-				}
 			}
 			else if (TAG_TEI.equals(localName)) {
 				builder.setGlobalEvaluationMap(token2text);
