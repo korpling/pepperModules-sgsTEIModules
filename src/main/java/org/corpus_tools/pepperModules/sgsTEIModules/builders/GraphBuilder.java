@@ -180,11 +180,7 @@ public class GraphBuilder {
 			public void build(Object... args) {
 				SNode source = getNode(sourceId);
 				SNode target = getNode(targetId);
-				SDominanceRelation rel = SaltFactory.createSDominanceRelation();
-				rel.setId(id);
-				rel.setSource((SStructure) source);
-				rel.setTarget((SStructuredNode) target);
-				rel.createAnnotation(null, FUNC_NAME, type);
+				getGraph().createRelation(source, target, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", FUNC_NAME, type));
 			}
 		};
 	}

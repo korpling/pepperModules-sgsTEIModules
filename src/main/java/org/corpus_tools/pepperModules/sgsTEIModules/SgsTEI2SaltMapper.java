@@ -236,10 +236,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				registerToken(null, speaker, PAUSE, value, timestep);
 			} else {
 				if (dipl) {
-					registerToken(null, speaker, DIPL, textBuffer.clear(0), timestep);
+					registerToken(null, speaker, DIPL, textBuffer.clear(1), timestep);
 				}
 				if (norm) {
-					registerToken(id, speaker, NORM, textBuffer.clear(1), timestep);
+					registerToken(id, speaker, NORM, textBuffer.clear(0), timestep);
 				}
 				if (id != null && comesWith.containsKey(id)) {					
 					String qName = builder.getQName(speaker, SYN);
