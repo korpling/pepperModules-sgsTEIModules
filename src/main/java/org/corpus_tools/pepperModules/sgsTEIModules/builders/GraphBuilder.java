@@ -150,21 +150,17 @@ public class GraphBuilder {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_NODE)) {			
 			@Override
 			public void build(Object... args) {
-				SStructure sStructure = SaltFactory.createSStructure();
-				System.out.println("ID before: " + sStructure.getId());
-				sStructure.setId(id);
-				System.out.println("ID after: " + sStructure.getId());
-				registerNode(id, sStructure);
-				sStructure.setGraph( getGraph() );
-				if (getAnnotations().containsKey(id)) {
-					for (SAnnotation a : getAnnotations().get(id)) {
-						sStructure.addAnnotation(a);
-					}
-				}
 				if (instanceId != null) {
-					SToken instance = (SToken) getNode(instanceId);
-					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, null);
-					System.out.println("Built relation from " + id + " to " + instance);
+					SToken instance = (SToken) getGraph().getNode(instanceId);
+					SStructure sStructure = getGraph().createStructure(instance);
+					registerNode(id, sStructure);
+					if (getAnnotations().containsKey(id)) {
+						for (SAnnotation a : getAnnotations().get(id)) {
+							sStructure.addAnnotation(a);
+						}
+					}
+				} else {
+					registerNode(id, SaltFactory.createSStructure());
 				}
 			}	
 			@Override
@@ -179,7 +175,7 @@ public class GraphBuilder {
 			
 			@Override
 			public void build(Object... args) {
-				SNode source = getNode(sourceId);
+				SNode source = getNode(sourceId);				
 				SNode target = getNode(targetId);
 				getGraph().createRelation(source, target, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", FUNC_NAME, type));
 			}
