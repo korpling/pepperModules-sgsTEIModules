@@ -30,13 +30,11 @@ import org.corpus_tools.salt.core.SNode;
 
 public class GraphBuilder {
 	private static final String F_ERR_ID_USED = "ID already in use: %s.";
-	private static final String F_ERR_NODE_NOT_REGISTERED = "Syntactic node is undefined: %s. This might be caused by multiple use of the id or an insufficient id validation mechanism.";
 	private static final String FUNC_NAME = "func";
 	private static final String REF_TYPE_NAME = "type";
-	private static final String ERR_SPEAKER_IS_NULL = "Speaker must not be null.";
 	private static final String ERR_NO_TEMPORAL_INFO = "No temporal information available.";
 	private final PepperMapper mapper;
-	private SDocumentGraph graph;
+	private final SDocumentGraph graph;
 	/** maps speaker specific segmentation name to sequence of token ids */
 	private Map<String, Segmentation> segmentations;
 	/** maps the file's analysis id to all annotations listed for this id */
@@ -153,9 +151,11 @@ public class GraphBuilder {
 			@Override
 			public void build(Object... args) {
 				SStructure sStructure = SaltFactory.createSStructure();
+				System.out.println("ID before: " + sStructure.getId());
 				sStructure.setId(id);
+				System.out.println("ID after: " + sStructure.getId());
 				registerNode(id, sStructure);
-				getGraph().addNode(sStructure);
+				sStructure.setGraph( getGraph() );
 				if (getAnnotations().containsKey(id)) {
 					for (SAnnotation a : getAnnotations().get(id)) {
 						sStructure.addAnnotation(a);
@@ -163,8 +163,8 @@ public class GraphBuilder {
 				}
 				if (instanceId != null) {
 					SToken instance = (SToken) getNode(instanceId);
-					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", FUNC_NAME, "head"));
-					System.out.println(id + " dominates " + getGraph().getText(instance));
+					getGraph().createRelation(sStructure, instance, SALT_TYPE.SDOMINANCE_RELATION, null);
+					System.out.println("Built relation from " + id + " to " + instance);
 				}
 			}	
 			@Override
@@ -391,6 +391,8 @@ public class GraphBuilder {
 		}
 		buildOrderRelations();
 		buildTime(temporalSequence);
-		System.out.println(getGraph().getTextualDSs().size());
+		for (SStructure s : getGraph().getStructures()) {
+			System.out.println("Structure: " + s + "(" + getGraph().getText(s) + ")");
+		}
 	}
 }

@@ -55,6 +55,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 */
 	private class SgsTEIReader extends DefaultHandler2{		
 
+		private static final String PLACEHOLDER = ".";
+
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
 		
 		/** This is the element stack representing the hierarchy of elements to be closed. */
@@ -228,7 +230,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			boolean pause = !dipl && !norm;
 			String emptyId = checkForEmpty(id);
 			if (emptyId != null) {
-				registerToken(emptyId, speaker, SYN, "$", timestep);
+				registerToken(emptyId, speaker, SYN, PLACEHOLDER, timestep);
 				sequence.add(timestep);
 				timestep = new HashMap<>();
 			}
@@ -248,7 +250,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					}
 					List<String> synchronousIds = timestep.get(qName);
 					for (String synTokenId : comesWith.get(id)) {
-						token2text.put(builder.registerToken(synTokenId, speaker, SYN), "$");
+						token2text.put(builder.registerToken(synTokenId, speaker, SYN), PLACEHOLDER);
 						synchronousIds.add(synTokenId);
 					}
 				}
