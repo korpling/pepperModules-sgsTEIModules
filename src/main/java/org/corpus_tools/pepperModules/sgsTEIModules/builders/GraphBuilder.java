@@ -113,12 +113,13 @@ public class GraphBuilder {
 		};
 	}
 	
-	public void registerDiscourseEntity(final String id, final String nodeId, final String annotationId) {		
+	public void registerDiscourseEntity(final String id, final String[] instanceIds, final String annotationId) {		
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_NODE)) {			
 			@Override
 			public void build(Object... args) {
-				SSpan span = (SSpan) getNode(nodeId);
-				registerNode(id, span);
+				for (String instanceId : instanceIds) {
+					addAnnotations(instanceId);
+				}
 			}
 
 			@Override
