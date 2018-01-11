@@ -250,13 +250,14 @@ public class GraphBuilder {
 		getSegmentations().put(segmentationName, seg);
 	}
 	
-	public String registerSpan(String id, final List<String> tokenIds) {
+	public String registerSpan(String id, List<String> tokenIds) {
 		final String spanId = idProvider.validate(id);
+		final List<String> idList = new ArrayList<>(tokenIds);
 		new BuildingBrick(buildQueues.get(BUILD_STEP.FURTHER_SPANS)) {			
 			@Override
 			public void build() {
 				List<SToken> tokens = new ArrayList<>();
-				for (String tId : tokenIds) {
+				for (String tId : idList) {
 					tokens.add( (SToken) getNode(tId) );
 				}
 				SSpan span = getGraph().createSpan(tokens);
