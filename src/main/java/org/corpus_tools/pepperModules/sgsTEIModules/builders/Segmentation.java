@@ -99,6 +99,11 @@ public class Segmentation {
 		return ds;
 	}
 	
+	public int getDistance(String id0, String id1) {
+		List<String> seq = getSequence();
+		return seq.indexOf(id1) - seq.indexOf(id0);
+	}
+	
 	protected Evaluator getEvaluator() {
 		return this.evaluator;
 	}

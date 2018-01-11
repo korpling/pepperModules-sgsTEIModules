@@ -101,10 +101,8 @@ public class GraphBuilder {
 			@Override
 			public void build() {
 				/* re-register syntactic node with new id */
-				List<SStructuredNode> overlappedTokens = new ArrayList<>();
-				overlappedTokens.addAll( getGraph().getOverlappedTokens( getNode(targetNodeId)) );				
-				SStructure refex = getGraph().createStructure(overlappedTokens);
-				registerNode(id, refex);				
+				List<SToken> overlappedTokens = getGraph().getOverlappedTokens( getNode(targetNodeId));
+				registerNode(id, getGraph().createSpan(overlappedTokens) );	
 			}
 		};
 	}
@@ -112,15 +110,34 @@ public class GraphBuilder {
 	public void registerDiscourseEntity(final String id, final String[] instanceIds) {		
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_DE)) {			
 			@Override
-			public void build() {				
-				for (String instanceId : instanceIds) {
+			public void build() {			
+				/* current solution: first (mentioned) instance will be used by reflink, the others will be connected via p-rels*/
+				for (int i = 0; i < instanceIds.length; i++) {
+					SNode instance = getNode(instanceIds[i]);
 					for (SAnnotation anno : getAnnotations().get(id)) {
-						addAnnotation(getNode(instanceId), anno);
+						addAnnotation(instance, anno);				
 					}
-				}
-				getAnnotations().remove(id);
+					if (i > 0) {
+						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
+						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
+					}
+				}				
+				getAnnotations().remove(id);				
+				registerNode(id, getNode(instanceIds[0]));				
 			}
 		};
+	}
+	
+	protected void addDistanceAnnotation(String lastMentionId, String mentionId) {
+		List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(lastMentionId)));
+		SToken lastMention = overlappedTokens.get(overlappedTokens.size() - 1);
+		SToken mention = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(mentionId))).get(0);
+		int val = getSegmentations().get( getSegmentationByTokenId(mention.getId()) ).getDistance(lastMention.getId(), mention.getId());		 
+		addAnnotation(mention, "given", Integer.toString(val));
+	}
+	
+	protected void addCorefRel(String fromId, String toId) {
+		getGraph().createRelation(getNode(fromId), getNode(toId), SALT_TYPE.SPOINTING_RELATION, null).setType("coreference");
 	}
 	
 	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
@@ -180,12 +197,9 @@ public class GraphBuilder {
 			@Override
 			public void build() {
 				System.out.println("Will fail to build ref link from " + sourceId + " to " + targetId);
-				if (false) {
-					System.out.println("REFLNK:" + sourceId);
-					SNode source = getNode(sourceId);
-					SNode target = getNode(targetId);
-					getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));
-				}
+				SNode source = getNode(sourceId);
+				SNode target = getNode(targetId);
+				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));				
 			}
 		};
 	}
@@ -375,6 +389,13 @@ public class GraphBuilder {
 		} else {
 			target.addAnnotation(annotation);
 		}
+	}
+	
+	private void addAnnotation(SNode target, String name, String value) {
+		SAnnotation annotation = SaltFactory.createSAnnotation();
+		annotation.setName(name);
+		annotation.setValue(value);
+		addAnnotation(target, annotation);
 	}
 	
 	private void addRemainingAnnotations() {
