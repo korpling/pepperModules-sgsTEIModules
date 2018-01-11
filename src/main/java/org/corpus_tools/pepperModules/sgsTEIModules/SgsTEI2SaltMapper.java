@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
@@ -44,7 +43,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		SDocumentGraph docGraph = SaltFactory.createSDocumentGraph();
 		getDocument().setDocumentGraph(docGraph);
 		SgsTEIReader reader = new SgsTEIReader();
-		System.out.println(getResourceURI());
 		this.readXMLResource(reader, getResourceURI());
 		return (DOCUMENT_STATUS.COMPLETED);
 	}
@@ -241,7 +239,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				mode = READ_MODE.TEXT;
 				textBuffer.clear(0);
 				textBuffer.clear(1);
-				System.out.println(comesWith);
 			}
 			stack.push(localName);
 		}
@@ -270,7 +267,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					code2time.put(k, v + StringUtils.repeat('0', w - we));
 				}
 			}
-			System.out.println(String.join(SystemUtils.LINE_SEPARATOR, code2time.values()));
 		}
 		
 		private boolean isSpeakerSensitive() {

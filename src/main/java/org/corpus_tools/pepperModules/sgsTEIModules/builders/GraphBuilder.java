@@ -206,7 +206,6 @@ public class GraphBuilder {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REL)) {			
 			@Override
 			public void build() {
-				System.out.println("Will fail to build ref link from " + sourceId + " to " + targetId);
 				SNode source = getNode(sourceId);
 				SNode target = getNode(targetId);
 				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));				
@@ -256,11 +255,9 @@ public class GraphBuilder {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.UTTERANCES)) {			
 			@Override
 			public void build() {
-				System.out.println("Build u-span " + spanId + " with " + tokenIds);
 				List<SToken> tokens = new ArrayList<>();
 				for (String tId : tokenIds) {
 					tokens.add( (SToken) getNode(tId) );
-					System.out.println("Collecting for u: " + tokens.get(tokens.size() - 1) + " " + getGraph().getText(tokens.get(tokens.size() - 1)));
 				}
 				SSpan span = getGraph().createSpan(tokens);
 				registerNode(spanId, span);
@@ -297,7 +294,6 @@ public class GraphBuilder {
 	}
 
 	private String getSegmentationByTokenId(String tokenId) {
-		System.out.println(tokenId);
 		return tokenId2SegName.get(tokenId);
 	}
 	
@@ -402,14 +398,11 @@ public class GraphBuilder {
 	}
 	
 	private void addAnnotations(String nodeId) {
-		System.out.println("CALL for adding annos for " + nodeId);
 		if (getAnnotations().containsKey(nodeId)) {
-			System.out.println("Doing it!");
 			SNode node = getNode(nodeId);
 			for (SAnnotation a : getAnnotations().get(nodeId)) {
 				addAnnotation(node, a);
 			}
-			System.out.println(getGraph().getText(node));
 			getAnnotations().remove(nodeId);
 		}
 	}
@@ -449,6 +442,5 @@ public class GraphBuilder {
 		buildOrderRelations();
 		buildTime(temporalSequence);
 		addRemainingAnnotations();
-		System.out.println(getAnnotations());
 	}
 }
