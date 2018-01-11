@@ -18,6 +18,7 @@ public interface SgsTEIDictionary {
 	public static final String TAG_PC = "pc";
 	public static final String TAG_SEG = "seg";
 	public static final String TAG_SIC = "sic";
+	public static final String TAG_SHIFT = "shift";
 	public static final String TAG_SPAN = "span";
 	public static final String TAG_SPANGRP = "spanGrp";
 	public static final String TAG_STANDOFF = "standOff";
@@ -34,13 +35,15 @@ public interface SgsTEIDictionary {
 	public static final String ATT_ABSOLUTE = "absolute";
 	public static final String ATT_ANA = "ana";
 	public static final String ATT_DURATION = "duration";
-	public static final String ATT_END = "end";	
+	public static final String ATT_END = "end";
+	public static final String ATT_FEATURE = "feature";
 	public static final String ATT_ID = "id";
 	public static final String ATT_INST = "inst";
 	public static final String ATT_LANG = "lang";
 	public static final String ATT_NAME = "name";
 	public static final String ATT_START = "start";
 	public static final String ATT_TARGET = "target";
+	public static final String ATT_TRANS = "trans";
 	public static final String ATT_TYPE = "type";
 	public static final String ATT_VALUE = "value";
 	public static final String ATT_WHO = "who";

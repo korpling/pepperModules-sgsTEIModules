@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -62,6 +63,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 
 		private static final String UTT_NAME = "utterance";
 
+		private static final String NAME_TRANSLATION = "translation";
+
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
 		
 		/** This is the element stack representing the hierarchy of elements to be closed. */
@@ -107,7 +110,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private String uid;
 		
-		private Set<String> utteranceTokens;
+		private List<String> utteranceTokens;
+		
+		private Map<String, String> featureValues;
+		
+		private Map<String, Integer> featureSpanStart;
 						
 		private final String NORM = getModuleProperties().getNormName();		
 		private final String DIPL = getModuleProperties().getDiplName();
@@ -133,6 +140,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			lastEnd = 0L;
 			utteranceValue = null;
 			uid = null;
+			featureValues = new HashMap<>();
+			featureSpanStart = new HashMap<>();
 		}
 		
 		@Override
@@ -153,12 +162,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				token2text.put(builder.registerToken(null, speaker, PAUSE), pauseValue);
 			}
 			else if (TAG_U.equals(localName) && READ_MODE.TEXT.equals(mode)) {
-				speaker = attributes.getValue(ATT_WHO).substring(1);
-				long start = Long.parseLong( code2time.get( attributes.getValue(ATT_START).substring(1) ).replaceAll("\\.|:", "") );
-				overlap = start < lastEnd;
-				lastEnd = Long.parseLong( code2time.get( attributes.getValue(ATT_END).substring(1) ).replaceAll("\\.|:", "") );
-				uid = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-				utteranceTokens = new LinkedHashSet<>();
+				utterance(attributes);
 			}
 			else if (TAG_SPAN.equals(localName)) {
 				String targetId = attributes.getValue(ATT_TARGET);
@@ -228,6 +232,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					builder.registerReferenceLink(attributes.getValue(String.join(":", NS_XML, ATT_ID)), attributes.getValue(ATT_TYPE), targetSource[1].substring(1), targetSource[0].substring(1));
 				}
 			}
+			else if (TAG_SHIFT.equals(localName) && READ_MODE.TEXT.equals(mode)) {
+				String feature = attributes.getValue(ATT_FEATURE);
+				if (feature != null) {
+					feature(feature, attributes.getValue(ATT_VALUE));
+				}
+			}
 			else if (TAG_WHEN.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 				code2time.put(id, attributes.getValue(ATT_ABSOLUTE));
@@ -241,6 +251,30 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				textBuffer.clear(1);
 			}
 			stack.push(localName);
+		}
+		
+		private void feature(String feature, String value) {
+			if (featureSpanStart.containsKey(feature)) {
+				int start = featureSpanStart.get(feature);
+				String spanId = builder.registerSpan(null, utteranceTokens.subList(start, utteranceTokens.size()));
+				builder.registerAnnotation(spanId, feature, value, isSpeakerSensitive());
+			}
+			featureSpanStart.put(feature, utteranceTokens.size());
+		}
+		
+		private void utterance(Attributes attributes) {
+			speaker = attributes.getValue(ATT_WHO).substring(1);
+			long start = Long.parseLong( code2time.get( attributes.getValue(ATT_START).substring(1) ).replaceAll("\\.|:", "") );
+			overlap = start < lastEnd;
+			lastEnd = Long.parseLong( code2time.get( attributes.getValue(ATT_END).substring(1) ).replaceAll("\\.|:", "") );
+			uid = attributes.getValue(String.join(":", NS_XML, ATT_ID));
+			utteranceTokens = new ArrayList<>();
+			String translation = attributes.getValue(ATT_TRANS);
+			if (translation != null) {
+				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());
+			}
+			featureSpanStart = new HashMap<>();
+			featureValues = new HashMap<>();
 		}
 		
 		/* warning: this method should always concatenate, since sometimes several calls are used for text-node (built in multiple steps) */
@@ -388,7 +422,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 			}
 			else if (TAG_U.equals(localName) && READ_MODE.TEXT.equals(mode)) {
-				uid = builder.registerUtterance(uid, utteranceTokens);
+				uid = builder.registerSpan(uid, utteranceTokens);
 				builder.registerAnnotation(uid, UTT_NAME, utteranceValue == null? uid : utteranceValue, isSpeakerSensitive());
 				utteranceValue = null;
 			}

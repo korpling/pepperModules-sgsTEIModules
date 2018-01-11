@@ -55,11 +55,11 @@ public class GraphBuilder {
 			BUILD_STEP.ANNOTATION, 
 			BUILD_STEP.REFERENCE_DE, 
 			BUILD_STEP.REFERENCE_REL, 
-			BUILD_STEP.UTTERANCES
+			BUILD_STEP.FURTHER_SPANS
 	};
 	/** steps */
 	private enum BUILD_STEP {
-		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, UTTERANCES
+		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS
 	}
 	
 	private final STimeline tl;
@@ -250,9 +250,9 @@ public class GraphBuilder {
 		getSegmentations().put(segmentationName, seg);
 	}
 	
-	public String registerUtterance(String id, final Set<String> tokenIds) {
+	public String registerSpan(String id, final List<String> tokenIds) {
 		final String spanId = idProvider.validate(id);
-		new BuildingBrick(buildQueues.get(BUILD_STEP.UTTERANCES)) {			
+		new BuildingBrick(buildQueues.get(BUILD_STEP.FURTHER_SPANS)) {			
 			@Override
 			public void build() {
 				List<SToken> tokens = new ArrayList<>();
