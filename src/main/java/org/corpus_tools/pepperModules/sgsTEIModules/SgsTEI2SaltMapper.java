@@ -258,7 +258,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		}
 		
 		private boolean isSpeakerSensitive() {
-			return READ_MODE.MORPHOSYNTAX.equals(mode);// || READ_MODE.REFERENCE.equals(mode);
+			return false;
+//			return READ_MODE.MORPHOSYNTAX.equals(mode);// || READ_MODE.REFERENCE.equals(mode);
 		}
 		
 		/**
