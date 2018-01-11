@@ -277,8 +277,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			if (translation != null) {
 				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());
 			}
-			featureSpanStart = new HashMap<>();
-			featureValues = new HashMap<>();
 		}
 		
 		/* warning: this method should always concatenate, since sometimes several calls are used for text-node (built in multiple steps) */
