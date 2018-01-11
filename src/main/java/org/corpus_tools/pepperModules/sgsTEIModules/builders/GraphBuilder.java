@@ -101,7 +101,10 @@ public class GraphBuilder {
 			@Override
 			public void build() {
 				/* re-register syntactic node with new id */
-				registerNode(id, getNode(targetNodeId));				
+				List<SStructuredNode> overlappedTokens = new ArrayList<>();
+				overlappedTokens.addAll( getGraph().getOverlappedTokens( getNode(targetNodeId)) );				
+				SStructure refex = getGraph().createStructure(overlappedTokens);
+				registerNode(id, refex);				
 			}
 		};
 	}
@@ -176,9 +179,13 @@ public class GraphBuilder {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REL)) {			
 			@Override
 			public void build() {
-				SNode source = getNode(sourceId);
-				SNode target = getNode(targetId);
-				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));
+				System.out.println("Will fail to build ref link from " + sourceId + " to " + targetId);
+				if (false) {
+					System.out.println("REFLNK:" + sourceId);
+					SNode source = getNode(sourceId);
+					SNode target = getNode(targetId);
+					getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));
+				}
 			}
 		};
 	}
@@ -235,6 +242,7 @@ public class GraphBuilder {
 				addTextualRelation(sTok, ds, indices[0], indices[1]);
 			}
 		};
+		addSegment(segName, tokenId);
 		return tokenId;
 	}
 	

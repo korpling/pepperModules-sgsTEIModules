@@ -90,7 +90,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private Map<String, Collection<String>> comesWith;
 		
-		private Map<String, String[]> anaId2targetIds;
+		private Map<String, String> anaId2targetId;
 		
 		private int[] bufferMode;
 		
@@ -118,7 +118,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			token2text = new HashMap<>();
 			sequence = new ArrayList<>();
 			comesWith = new HashMap<>();
-			anaId2targetIds = new HashMap<>();
+			anaId2targetId = new HashMap<>();
 			bufferMode = new int[] {0, 1};
 			spanSeq = new LinkedList<>();
 			syntaxQNames = new HashSet<>();
@@ -161,7 +161,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					String synId = attributes.getValue(String.join(":", NS_XML, ATT_ID));					
 					String anaId = attributes.getValue(ATT_ANA);
 					if (anaId != null) {
-						anaId2targetIds.put(anaId.substring(1), new String[] {synId});
+						anaId2targetId.put(anaId.substring(1), synId);
 					}
 					spanSeq.add( Pair.of(synId, targetId) );
 					if (targetId != null) {
@@ -179,9 +179,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					for (String id : anaId2targetIds.get(currentId)) {
-						builder.registerAnnotation(id, annotationName, attributes.getValue(ATT_VALUE), isSpeakerSensitive());
-					}
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, attributes.getValue(ATT_VALUE), isSpeakerSensitive());					
 				}
 			}
 			else if (TAG_F.equals(localName)) {
@@ -195,13 +193,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				String anaId = attributes.getValue(ATT_ANA).substring(1);
 				String instId = attributes.getValue(ATT_INST);
 				instId = instId == null? instId : instId.substring(1);
-				anaId2targetIds.put(anaId, new String[] {id});
+				anaId2targetId.put(anaId, id);
 				if (READ_MODE.REFERENCE.equals(mode)) {
 					String[] instances = instId.split(" ");
 					for (int i = 1; i < instances.length; i++) {
 						instances[i] = instances[i].substring(1);
 					}
-					anaId2targetIds.put(anaId, instances);
+					anaId2targetId.put(anaId, id);
 					builder.registerDiscourseEntity(id, instances);
 				}
 				else if (READ_MODE.SYNTAX.equals(mode)) {
@@ -362,9 +360,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_STRING.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					for (String id : anaId2targetIds.get(currentId)) {
-						builder.registerAnnotation(id, annotationName, textBuffer.clear(0), isSpeakerSensitive());
-					}
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, textBuffer.clear(0), isSpeakerSensitive());					
 				}
 			}
 			else if (TAG_TIMELINE.equals(localName)) {
