@@ -180,7 +180,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
 					for (String id : anaId2targetIds.get(currentId)) {
-						builder.registerAnnotation(id, annotationName, attributes.getValue(ATT_VALUE), READ_MODE.MORPHOSYNTAX.equals(mode) || READ_MODE.REFERENCE.equals(mode));
+						builder.registerAnnotation(id, annotationName, attributes.getValue(ATT_VALUE), isSpeakerSensitive());
 					}
 				}
 			}
@@ -221,6 +221,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				String id = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 				code2time.put(id, attributes.getValue(ATT_ABSOLUTE));
 			}
+			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stack.peek())) {
+				bufferMode = new int[] {1};
+			}
 			else if (TAG_TEXT.equals(localName)) {
 				mode = READ_MODE.TEXT;
 				textBuffer.clear(0);
@@ -254,6 +257,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					code2time.put(k, v + StringUtils.repeat('0', w - we));
 				}
 			}
+		}
+		
+		private boolean isSpeakerSensitive() {
+			return READ_MODE.MORPHOSYNTAX.equals(mode);// || READ_MODE.REFERENCE.equals(mode);
 		}
 		
 		/**
@@ -356,7 +363,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_STRING.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
 					for (String id : anaId2targetIds.get(currentId)) {
-						builder.registerAnnotation(id, annotationName, textBuffer.clear(0), READ_MODE.MORPHOSYNTAX.equals(mode) || READ_MODE.REFERENCE.equals(mode));
+						builder.registerAnnotation(id, annotationName, textBuffer.clear(0), isSpeakerSensitive());
 					}
 				}
 			}

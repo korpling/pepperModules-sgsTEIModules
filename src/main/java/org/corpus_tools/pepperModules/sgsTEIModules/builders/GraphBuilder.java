@@ -17,13 +17,13 @@ import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
+import org.corpus_tools.salt.common.SStructuredNode;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STextualRelation;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
-import org.corpus_tools.salt.core.SLayer;
 import org.corpus_tools.salt.core.SNode;
 
 public class GraphBuilder {
@@ -46,7 +46,7 @@ public class GraphBuilder {
 	/** queue of building steps */
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
-	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {BUILD_STEP.TOKEN, BUILD_STEP.SYN_TOKEN, BUILD_STEP.SYNTAX_NODE, BUILD_STEP.SYNTAX_REL, BUILD_STEP.REFERENCE_REFEX, BUILD_STEP.REFERENCE_DE, BUILD_STEP.REFERENCE_REL, BUILD_STEP.ANNOTATION};
+	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {BUILD_STEP.TOKEN, BUILD_STEP.SYN_TOKEN, BUILD_STEP.SYNTAX_NODE, BUILD_STEP.SYNTAX_REL, BUILD_STEP.REFERENCE_REFEX, BUILD_STEP.ANNOTATION, BUILD_STEP.REFERENCE_DE, BUILD_STEP.REFERENCE_REL};
 	/** steps */
 	private enum BUILD_STEP {
 		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION
@@ -99,43 +99,35 @@ public class GraphBuilder {
 	public void registerReferringExpression(final String id, final String targetNodeId) {	
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REFEX)) {				
 			@Override
-			public void build(Object... args) {
-				List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(targetNodeId) ));
-				SSpan span = getGraph().createSpan(overlappedTokens);
-				registerNode(id, span);				
+			public void build() {
+				/* re-register syntactic node with new id */
+				registerNode(id, getNode(targetNodeId));				
 			}
-
-			@Override
-			public void immediate() {}
 		};
 	}
 		
 	public void registerDiscourseEntity(final String id, final String[] instanceIds) {		
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_DE)) {			
 			@Override
-			public void build(Object... args) {
-				List<SToken> instances = new ArrayList<>();
-				for (String instaneId : instanceIds) {
-					instances.addAll( getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(instaneId))) );
+			public void build() {				
+				for (String instanceId : instanceIds) {
+					for (SAnnotation anno : getAnnotations().get(id)) {
+						addAnnotation(getNode(instanceId), anno);
+					}
 				}
-				registerNode(id, getGraph().createSpan(instances));
+				getAnnotations().remove(id);
 			}
-
-			@Override
-			public void immediate() {}
 		};
 	}
 	
 	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
-		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {
+		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {		
 			@Override
-			public void immediate() {}			
-			@Override
-			public void build(Object... args) {
+			public void build() {
 				SAnnotation anno = SaltFactory.createSAnnotation();
 				String lookupId = targetId;
 				SNode lookupNode = getNode(lookupId);
-				if (!(lookupNode instanceof SToken)) {
+				if (speakerSensitive && !(lookupNode instanceof SToken)) {
 					lookupId = getGraph().getOverlappedTokens(lookupNode).get(0).getId();
 				}
 				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(lookupId), name) : name);
@@ -155,7 +147,7 @@ public class GraphBuilder {
 	public void registerSyntaxNode(final String id, final String instanceId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_NODE)) {			
 			@Override
-			public void build(Object... args) {
+			public void build() {
 				SStructure sStructure = null;
 				if (instanceId != null) {
 					SToken instance = (SToken) getGraph().getNode(instanceId);
@@ -165,19 +157,14 @@ public class GraphBuilder {
 					sStructure = SaltFactory.createSStructure();
 					registerNode(id, sStructure);
 				}
-			}	
-			@Override
-			public void immediate() {}
+			}
 		};
 	}
 	
 	public void registerSyntaxLink(final String id, final String type, final String sourceId, final String targetId) {		
-		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_REL)) {		
+		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_REL)) {
 			@Override
-			public void immediate() {}
-			
-			@Override
-			public void build(Object... args) {
+			public void build() {
 				SNode source = getNode(sourceId);				
 				SNode target = getNode(targetId);
 				getGraph().createRelation(source, target, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", FUNC_NAME, type));
@@ -188,14 +175,11 @@ public class GraphBuilder {
 	public void registerReferenceLink(final String id, final String type, final String sourceId, final String targetId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REL)) {			
 			@Override
-			public void build(Object... args) {
+			public void build() {
 				SNode source = getNode(sourceId);
 				SNode target = getNode(targetId);
 				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));
 			}
-
-			@Override
-			public void immediate() {}
 		};
 	}
 	
@@ -228,7 +212,7 @@ public class GraphBuilder {
 	}
 	
 	private void registerSegmentation(String speaker, String level, String delimiter) {
-		registerSegmentation(getQName(speaker, level), delimiter);		
+		registerSegmentation(getQName(speaker, level), delimiter);
 	}
 	
 	private void registerSegmentation(String segmentationName, String delimiter) {
@@ -241,18 +225,14 @@ public class GraphBuilder {
 		final String segName = getQName(speaker, level);
 		new BuildingBrick(buildQueues.get(BUILD_STEP.TOKEN)) {			
 			@Override
-			public void build(Object... args) {
+			public void build() {
 				Segmentation segmentation = getSegmentations().get(segName);
+				System.out.println("GET SEG: " + segName + " is " + segmentation);
 				STextualDS ds = segmentation.getDS( getGraph() );
 				int[] indices = segmentation.getIndices(tokenId);
 				SToken sTok = segmentation.getSToken(tokenId);
 				registerNode(tokenId, sTok);
 				addTextualRelation(sTok, ds, indices[0], indices[1]);
-			}
-
-			@Override
-			public void immediate() {
-				addSegment(segName, tokenId);
 			}
 		};
 		return tokenId;

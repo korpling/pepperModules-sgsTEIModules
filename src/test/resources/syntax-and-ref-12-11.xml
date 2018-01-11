@@ -1075,6 +1075,9 @@
                   <w xml:id="d1t2032-4">s'</w>
                   <w xml:id="d1t2032-5">intéressait</w>
                   <shift feature="tempo" new="slow"/>
+				  <vocal>
+					<desc>mm</desc>
+				  </vocal>
                   <w xml:id="d1t2034-2">beaucoup</w>
                   <shift feature="tempo" new="normal"/>
                   <w xml:id="d1t2036-2">aux</w>
