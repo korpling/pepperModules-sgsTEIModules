@@ -46,10 +46,20 @@ public class GraphBuilder {
 	/** queue of building steps */
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
-	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {BUILD_STEP.TOKEN, BUILD_STEP.SYN_TOKEN, BUILD_STEP.SYNTAX_NODE, BUILD_STEP.SYNTAX_REL, BUILD_STEP.REFERENCE_REFEX, BUILD_STEP.ANNOTATION, BUILD_STEP.REFERENCE_DE, BUILD_STEP.REFERENCE_REL};
+	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {
+			BUILD_STEP.TOKEN, 
+			BUILD_STEP.SYN_TOKEN, 
+			BUILD_STEP.UTTERANCES, 
+			BUILD_STEP.SYNTAX_NODE, 
+			BUILD_STEP.SYNTAX_REL, 
+			BUILD_STEP.REFERENCE_REFEX, 
+			BUILD_STEP.ANNOTATION, 
+			BUILD_STEP.REFERENCE_DE, 
+			BUILD_STEP.REFERENCE_REL
+	};
 	/** steps */
 	private enum BUILD_STEP {
-		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION
+		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, UTTERANCES
 	}
 	
 	private final STimeline tl;
@@ -239,6 +249,23 @@ public class GraphBuilder {
 	private void registerSegmentation(String segmentationName, String delimiter) {
 		Segmentation seg = new Segmentation(segmentationName, delimiter);
 		getSegmentations().put(segmentationName, seg);
+	}
+	
+	public String registerUtterance(String id, final List<String> tokenIds) {
+		final String spanId = idProvider.validate(id);
+		new BuildingBrick(buildQueues.get(BUILD_STEP.UTTERANCES)) {			
+			@Override
+			public void build() {
+				List<SToken> tokens = new ArrayList<>();
+				for (String tId : tokenIds) {
+					tokens.add( (SToken) getNode(tId) );
+				}
+				SSpan span = getGraph().createSpan(tokens);
+				span.setId(spanId);
+				registerNode(spanId, span);
+			}
+		};
+		return spanId;
 	}
 
 	public String registerToken(String id, String speaker, String level) {

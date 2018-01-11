@@ -37,7 +37,7 @@ public class SgsTEIImporterUtils implements SgsTEIDictionary{
 	}
 	
 	public enum READ_MODE {
-		TEXT, MORPHOSYNTAX, SYNTAX, REFERENCE, BLIND;		
+		TEXT, TRANSLITERATION, MORPHOSYNTAX, SYNTAX, REFERENCE, BLIND;		
 		protected static READ_MODE getMode(String standoffType) {
 			if (TYPE_SYNTAX.equalsIgnoreCase(standoffType)) {
 				return READ_MODE.SYNTAX;
