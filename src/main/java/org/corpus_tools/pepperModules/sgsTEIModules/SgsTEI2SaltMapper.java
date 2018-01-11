@@ -235,7 +235,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_SHIFT.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				String feature = attributes.getValue(ATT_FEATURE);
 				if (feature != null) {
-					feature(feature, attributes.getValue(ATT_VALUE));
+					feature(feature, attributes.getValue(ATT_NEW));
 				}
 			}
 			else if (TAG_WHEN.equals(localName) && READ_MODE.TEXT.equals(mode)) {

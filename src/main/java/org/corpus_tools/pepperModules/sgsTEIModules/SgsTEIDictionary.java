@@ -41,6 +41,7 @@ public interface SgsTEIDictionary {
 	public static final String ATT_INST = "inst";
 	public static final String ATT_LANG = "lang";
 	public static final String ATT_NAME = "name";
+	public static final String ATT_NEW = "new";
 	public static final String ATT_START = "start";
 	public static final String ATT_TARGET = "target";
 	public static final String ATT_TRANS = "trans";
