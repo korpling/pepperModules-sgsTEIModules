@@ -115,6 +115,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private Map<String, String> featureValues;
 		
 		private Map<String, Integer> featureSpanStart;
+		
+		private List<String> overallSequence;
 						
 		private final String NORM = getModuleProperties().getNormName();		
 		private final String DIPL = getModuleProperties().getDiplName();
@@ -142,6 +144,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			uid = null;
 			featureValues = new HashMap<>();
 			featureSpanStart = new HashMap<>();
+			overallSequence = new ArrayList<>();
 		}
 		
 		@Override
@@ -233,7 +236,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 			}
 			else if (TAG_SHIFT.equals(localName) && READ_MODE.TEXT.equals(mode)) {
-				String feature = attributes.getValue(ATT_FEATURE);
+				String feature = attributes.getValue(ATT_FEATURE);				
 				if (feature != null) {
 					feature(feature, attributes.getValue(ATT_NEW));
 				}
@@ -256,10 +259,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private void feature(String feature, String value) {
 			if (featureSpanStart.containsKey(feature)) {
 				int start = featureSpanStart.get(feature);
-				String spanId = builder.registerSpan(null, utteranceTokens.subList(start, utteranceTokens.size()));
+				String spanId = builder.registerSpan(null, overallSequence.subList(start, overallSequence.size()));
 				builder.registerAnnotation(spanId, feature, featureValues.get(feature), isSpeakerSensitive());
 			}
-			featureSpanStart.put(feature, utteranceTokens.size());
+			featureSpanStart.put(feature, overallSequence.size());
 			featureValues.put(feature, value);
 		}
 		
@@ -349,11 +352,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						token2text.put(builder.registerToken(synTokenId, speaker, SYN), PLACEHOLDER);
 						synchronousIds.add(synTokenId);
 					}
-					utteranceTokens.addAll(synchronousIds);
+					add2Sequences(synchronousIds);
 				}
 			}
 			sequence.add(timestep);
 			overlap = false;			
+		}
+		
+		private void add2Sequences(List<String> ids) {
+			utteranceTokens.addAll(ids);
+			overallSequence.addAll(ids);
 		}
 		
 		/** 
