@@ -257,7 +257,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			if (featureSpanStart.containsKey(feature)) {
 				int start = featureSpanStart.get(feature);
 				String spanId = builder.registerSpan(null, utteranceTokens.subList(start, utteranceTokens.size()));
-				builder.registerAnnotation(spanId, feature, featureValues.get(value), isSpeakerSensitive());
+				builder.registerAnnotation(spanId, feature, featureValues.get(feature), isSpeakerSensitive());
 			}
 			featureSpanStart.put(feature, utteranceTokens.size());
 			featureValues.put(feature, value);
