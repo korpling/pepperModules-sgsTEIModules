@@ -48,14 +48,14 @@ public class GraphBuilder {
 	/** step queue */
 	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {
 			BUILD_STEP.TOKEN, 
-			BUILD_STEP.SYN_TOKEN, 
-			BUILD_STEP.UTTERANCES, 
+			BUILD_STEP.SYN_TOKEN,
 			BUILD_STEP.SYNTAX_NODE, 
 			BUILD_STEP.SYNTAX_REL, 
 			BUILD_STEP.REFERENCE_REFEX, 
 			BUILD_STEP.ANNOTATION, 
 			BUILD_STEP.REFERENCE_DE, 
-			BUILD_STEP.REFERENCE_REL
+			BUILD_STEP.REFERENCE_REL, 
+			BUILD_STEP.UTTERANCES
 	};
 	/** steps */
 	private enum BUILD_STEP {
@@ -251,18 +251,20 @@ public class GraphBuilder {
 		getSegmentations().put(segmentationName, seg);
 	}
 	
-	public String registerUtterance(String id, final List<String> tokenIds) {
+	public String registerUtterance(String id, final Set<String> tokenIds) {
 		final String spanId = idProvider.validate(id);
 		new BuildingBrick(buildQueues.get(BUILD_STEP.UTTERANCES)) {			
 			@Override
 			public void build() {
+				System.out.println("Build u-span " + spanId + " with " + tokenIds);
 				List<SToken> tokens = new ArrayList<>();
 				for (String tId : tokenIds) {
 					tokens.add( (SToken) getNode(tId) );
+					System.out.println("Collecting for u: " + tokens.get(tokens.size() - 1) + " " + getGraph().getText(tokens.get(tokens.size() - 1)));
 				}
 				SSpan span = getGraph().createSpan(tokens);
-				span.setId(spanId);
 				registerNode(spanId, span);
+				addAnnotations(spanId);
 			}
 		};
 		return spanId;
@@ -275,7 +277,6 @@ public class GraphBuilder {
 			@Override
 			public void build() {
 				Segmentation segmentation = getSegmentations().get(segName);
-				System.out.println("GET SEG: " + segName + " is " + segmentation);
 				STextualDS ds = segmentation.getDS( getGraph() );
 				int[] indices = segmentation.getIndices(tokenId);
 				SToken sTok = segmentation.getSToken(tokenId);
@@ -401,11 +402,14 @@ public class GraphBuilder {
 	}
 	
 	private void addAnnotations(String nodeId) {
+		System.out.println("CALL for adding annos for " + nodeId);
 		if (getAnnotations().containsKey(nodeId)) {
+			System.out.println("Doing it!");
 			SNode node = getNode(nodeId);
 			for (SAnnotation a : getAnnotations().get(nodeId)) {
 				addAnnotation(node, a);
 			}
+			System.out.println(getGraph().getText(node));
 			getAnnotations().remove(nodeId);
 		}
 	}
@@ -445,5 +449,6 @@ public class GraphBuilder {
 		buildOrderRelations();
 		buildTime(temporalSequence);
 		addRemainingAnnotations();
+		System.out.println(getAnnotations());
 	}
 }

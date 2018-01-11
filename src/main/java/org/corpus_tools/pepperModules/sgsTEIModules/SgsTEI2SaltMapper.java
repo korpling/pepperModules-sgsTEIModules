@@ -109,7 +109,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private String uid;
 		
-		private List<String> utteranceTokens;
+		private Set<String> utteranceTokens;
 						
 		private final String NORM = getModuleProperties().getNormName();		
 		private final String DIPL = getModuleProperties().getDiplName();
@@ -154,13 +154,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 				token2text.put(builder.registerToken(null, speaker, PAUSE), pauseValue);
 			}
-			else if (TAG_U.equals(localName)) {
+			else if (TAG_U.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				speaker = attributes.getValue(ATT_WHO).substring(1);
 				long start = Long.parseLong( code2time.get( attributes.getValue(ATT_START).substring(1) ).replaceAll("\\.|:", "") );
 				overlap = start < lastEnd;
 				lastEnd = Long.parseLong( code2time.get( attributes.getValue(ATT_END).substring(1) ).replaceAll("\\.|:", "") );
 				uid = attributes.getValue(String.join(":", NS_XML, ATT_ID));
-				utteranceTokens = new ArrayList<>();
+				utteranceTokens = new LinkedHashSet<>();
 			}
 			else if (TAG_SPAN.equals(localName)) {
 				String targetId = attributes.getValue(ATT_TARGET);
@@ -318,6 +318,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						token2text.put(builder.registerToken(synTokenId, speaker, SYN), PLACEHOLDER);
 						synchronousIds.add(synTokenId);
 					}
+					utteranceTokens.addAll(synchronousIds);
 				}
 			}
 			sequence.add(timestep);
@@ -346,7 +347,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				timestep.put(qName, new ArrayList<String>());
 			}
 			timestep.get(qName).add(id_);
-			utteranceTokens.add(id);
 		}
 		
 		@Override
@@ -357,13 +357,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				//TODO differentiate a little more
 				tokenDetected(currentId, speaker, true, true, null);
 			}
-			else if (TAG_PC.equals(localName)) {
+			else if (TAG_PC.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				tokenDetected(null, speaker, true, true, null);
 			}
 			else if (TAG_ADD.equals(localName)) {
 				bufferMode = new int[] {0, 1};
 			}
-			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stack.peek())) {
+			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stack.peek()) && READ_MODE.TEXT.equals(mode)) {
 				tokenDetected(null, speaker, true, false, null);
 				bufferMode = new int[] {0, 1};
 			}
@@ -384,14 +384,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_TIMELINE.equals(localName)) {
 				normalizeTimes();
 			}
-			else if (TAG_SEG.equals(localName) && READ_MODE.TEXT.equals(mode)) {
+			else if (TAG_SEG.equals(localName)) {
 				if (READ_MODE.TRANSLITERATION.equals(mode)) {
 					utteranceValue = textBuffer.clear(0);
 					textBuffer.clear(1);
 					mode = READ_MODE.TEXT;
 				}
 			}
-			else if (TAG_U.equals(localName)) {
+			else if (TAG_U.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				uid = builder.registerUtterance(uid, utteranceTokens);
 				builder.registerAnnotation(uid, UTT_NAME, utteranceValue == null? uid : utteranceValue, isSpeakerSensitive());
 				utteranceValue = null;
