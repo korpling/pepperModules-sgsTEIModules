@@ -256,11 +256,20 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			stack.push(localName);
 		}
 		
+		private void finishFeatures() {
+			for (Entry<String, Integer> f : featureSpanStart.entrySet()) {
+				buildFeature(f.getKey(), featureValues.get(f.getKey()), overallSequence.subList(f.getValue(), overallSequence.size()));
+			}
+		}
+		
+		private void buildFeature(String feature, String value, List<String> tokenIds) {
+			String spanId = builder.registerSpan(null, tokenIds);
+			builder.registerAnnotation(spanId, feature, value, isSpeakerSensitive());
+		}
+		
 		private void feature(String feature, String value) {
 			if (featureSpanStart.containsKey(feature)) {
-				int start = featureSpanStart.get(feature);
-				String spanId = builder.registerSpan(null, overallSequence.subList(start, overallSequence.size()));
-				builder.registerAnnotation(spanId, feature, featureValues.get(feature), isSpeakerSensitive());
+				buildFeature(feature, featureValues.get(feature), overallSequence.subList(featureSpanStart.get(feature), overallSequence.size()));
 			}
 			featureSpanStart.put(feature, overallSequence.size());
 			featureValues.put(feature, value);
@@ -438,6 +447,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				for (String synName : syntaxQNames) {
 //					builder.registerEvaluationMap(synName, null);
 				}
+				finishFeatures();
 				builder.build(sequence);
 			}
 		}
