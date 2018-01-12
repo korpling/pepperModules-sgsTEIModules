@@ -401,8 +401,15 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					boolean useAnnotation = comesWith.get(id).size() > 1;
 					for (String synTokenId : comesWith.get(id)) {
 						String regId = builder.registerToken(synTokenId, speaker, SYN);
-						if (!useAnnotation) {
-							token2text.put(regId, normValue);
+						{
+							/* this little section influences the naming of syntactic SUBtokens */
+							if (!useAnnotation) {
+								token2text.put(regId, normValue);
+							}
+							else if (!token2text.containsKey(regId)) {
+								// was not yet registers thus needs a dummy value (that should indicate that something went wrong)
+								token2text.put(regId, F_FALLBACK_TEMPLATE.format(F_FALLBACK_TEMPLATE, "?"));
+							}
 						}
 						synchronousIds.add(regId);
 					}
