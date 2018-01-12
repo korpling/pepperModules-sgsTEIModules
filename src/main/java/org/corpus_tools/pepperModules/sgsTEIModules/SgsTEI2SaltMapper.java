@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
-import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -25,7 +24,6 @@ import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextBuff
 import org.corpus_tools.pepperModules.sgsTEIModules.builders.GraphBuilder;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
-import org.corpus_tools.salt.core.SLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -59,7 +57,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 */
 	private class SgsTEIReader extends DefaultHandler2{		
 
-		private static final String PLACEHOLDER = "<>";
+		private final String EMPTY_VALUE = Character.toString( (char) 2205 );
 
 		private static final String UTT_NAME = "utterance";
 
@@ -77,8 +75,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private GraphBuilder builder;
 		
 		private SgsTEIImporterUtils utils;
-		
-		private Map<READ_MODE, SLayer> layers;
 		
 		private String annotationName;
 		
@@ -100,7 +96,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private boolean overlap;
 		
-		private Set<String> syntaxQNames;
+		private Set<Pair<String, String>> syntaxQNames;
 		
 		private Map<String, String> code2time;
 		
@@ -117,6 +113,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private Map<String, Integer> featureSpanStart;
 		
 		private List<String> overallSequence;
+		
+		private String fallbackName;
 						
 		private final String NORM = getModuleProperties().getNormName();		
 		private final String DIPL = getModuleProperties().getDiplName();
@@ -129,7 +127,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			stack = new Stack<String>();
 			textBuffer = utils.getTextBuffer();
 			mode = READ_MODE.BLIND;
-			layers = new HashMap<>();
 			builder = new GraphBuilder(SgsTEI2SaltMapper.this);
 			token2text = new HashMap<>();
 			sequence = new ArrayList<>();
@@ -199,7 +196,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, attributes.getValue(ATT_VALUE), isSpeakerSensitive());					
+					String annotationValue = attributes.getValue(ATT_VALUE);
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue, isSpeakerSensitive());
+					if (fallbackName.equals(annotationName)) {
+						token2text.put(anaId2targetId.get(currentId), annotationValue);
+					}
 				}
 			}
 			else if (TAG_F.equals(localName)) {
@@ -248,7 +249,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stack.peek())) {
 				bufferMode = new int[] {1};
 			}
+			else if (TAG_TEI.equals(localName)) {
+				fallbackName = getModuleProperties().getFallbackAnnotationName();
+			}
 			else if (TAG_TEXT.equals(localName)) {
+				normalizeTimes();
 				mode = READ_MODE.TEXT;
 				textBuffer.clear(0);
 				textBuffer.clear(1);
@@ -277,14 +282,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private void utterance(Attributes attributes) {
 			speaker = attributes.getValue(ATT_WHO).substring(1);
-			long start = Long.parseLong( code2time.get( attributes.getValue(ATT_START).substring(1) ).replaceAll("\\.|:", "") );
+			long start = getTimeValue( attributes.getValue(ATT_START).substring(1) );
 			overlap = start < lastEnd;
-			lastEnd = Long.parseLong( code2time.get( attributes.getValue(ATT_END).substring(1) ).replaceAll("\\.|:", "") );
+			lastEnd = getTimeValue( attributes.getValue(ATT_END).substring(1) );
 			uid = attributes.getValue(String.join(":", NS_XML, ATT_ID));
 			utteranceTokens = new ArrayList<>();
 			String translation = attributes.getValue(ATT_TRANS);
 			if (translation != null) {
-				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());
+				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());				
 			}
 		}
 		
@@ -297,6 +302,18 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 		}
 		
+		/** 
+		 * This method turns a given timeslot id in a parse {@link Long} value.
+		 * @param timeslotId
+		 * @return
+		 */
+		private long getTimeValue(String timeslotId) {
+			return Long.parseLong( code2time.get(timeslotId).replaceAll("\\.|:", "") );
+		}
+		
+		/**
+		 * This method makes sure, all read timeslot time values have the same number of digits.
+		 */
 		private void normalizeTimes() {
 			int w = 0;
 			for (String val : code2time.values()) {
@@ -314,9 +331,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 		}
 		
+		/**
+		 * Returns the current reader state w.r.t. processing annotations.
+		 * @return
+		 */
 		private boolean isSpeakerSensitive() {
 			return false;
-//			return READ_MODE.MORPHOSYNTAX.equals(mode);// || READ_MODE.REFERENCE.equals(mode);
 		}
 		
 		/**
@@ -335,29 +355,34 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			boolean pause = !dipl && !norm;
 			String emptyId = checkForEmpty(id);
 			if (emptyId != null) {
-				registerToken(emptyId, speaker, SYN, PLACEHOLDER, timestep);
+				registerToken(emptyId, speaker, SYN, EMPTY_VALUE, timestep);
 				sequence.add(timestep);
 				timestep = new HashMap<>();
 			}
 			if (pause) {
 				registerToken(null, speaker, PAUSE, value, timestep);
 			} else {
+				String normValue = textBuffer.clear(0);
 				if (dipl) {
 					registerToken(null, speaker, DIPL, textBuffer.clear(1), timestep);
 				}
 				if (norm) {
-					registerToken(id, speaker, NORM, textBuffer.clear(0), timestep);
+					registerToken(id, speaker, NORM, normValue, timestep);
 				}
 				if (id != null && comesWith.containsKey(id)) {					
 					String qName = builder.getQName(speaker, SYN);
-					syntaxQNames.add(qName);
+					syntaxQNames.add(Pair.of(speaker, SYN));
 					if (!timestep.containsKey(qName)) {
 						timestep.put(qName, new ArrayList<String>());
 					}
 					List<String> synchronousIds = timestep.get(qName);
+					boolean useAnnotation = comesWith.get(id).size() > 1;
 					for (String synTokenId : comesWith.get(id)) {
-						token2text.put(builder.registerToken(synTokenId, speaker, SYN), PLACEHOLDER);
-						synchronousIds.add(synTokenId);
+						String regId = builder.registerToken(synTokenId, speaker, SYN);
+						if (!useAnnotation) {
+							token2text.put(regId, normValue);
+						}
+						synchronousIds.add(regId);
 					}
 					add2Sequences(synchronousIds);
 				}
@@ -424,11 +449,12 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_STRING.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
-					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, textBuffer.clear(0), isSpeakerSensitive());					
+					String annotationValue = textBuffer.clear(0);
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue, isSpeakerSensitive());
+					if (fallbackName.equals(annotationName)) {
+						token2text.put(anaId2targetId.get(currentId), annotationValue);
+					}
 				}
-			}
-			else if (TAG_TIMELINE.equals(localName)) {
-				normalizeTimes();
 			}
 			else if (TAG_SEG.equals(localName)) {
 				if (READ_MODE.TRANSLITERATION.equals(mode)) {
@@ -444,8 +470,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_TEI.equals(localName)) {
 				builder.setGlobalEvaluationMap(token2text);
-				for (String synName : syntaxQNames) {
-//					builder.registerEvaluationMap(synName, null);
+				for (Pair<String, String> synPair : syntaxQNames) {
+					builder.registerSyntaxEvaluator(synPair.getKey(), synPair.getValue());
 				}
 				finishFeatures();
 				builder.build(sequence);

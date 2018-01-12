@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
@@ -17,7 +18,6 @@ import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
-import org.corpus_tools.salt.common.SStructuredNode;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STextualRelation;
 import org.corpus_tools.salt.common.STimeline;
@@ -232,6 +232,17 @@ public class GraphBuilder {
 		registerEvaluationMap(getQName(speaker, level), evaluationMap);
 	}
 	
+	public void registerSyntaxEvaluator(String speaker, String level) {
+		Segmentation segmentation = getSegmentations().get( getQName(speaker, level) );
+		segmentation.setEvaluator(new Segmentation.Evaluator() {			
+			@Override
+			public String evaluate(String tokenId) {
+				
+				return null;
+			}
+		});
+	}
+	
 	public void registerEvaluationMap(String qName, final Map<?, String> evaluationMap) {		
 		getSegmentations().get(qName).setEvaluator(new Segmentation.Evaluator() {				
 			@Override
@@ -239,10 +250,6 @@ public class GraphBuilder {
 				return evaluationMap.get(tokenId);
 			}
 		});
-	}
-	
-	private void registerSegmentation(String speaker, String level, String delimiter) {
-		registerSegmentation(getQName(speaker, level), delimiter);
 	}
 	
 	private void registerSegmentation(String segmentationName, String delimiter) {
@@ -370,7 +377,7 @@ public class GraphBuilder {
 	private int getLength(Map<String, List<String>> timestep) {
 		Set<Integer> lengths = new HashSet<>();
 		for (Entry<String, List<String>> e : timestep.entrySet()) {
-			lengths.add(e.getValue().size());
+			lengths.add( e.getValue().size() );
 		}
 		return reduceProduct(lengths);
 	}
