@@ -310,7 +310,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			utteranceTokens = new ArrayList<>();
 			String translation = attributes.getValue(ATT_TRANS);
 			if (translation != null) {
-				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());				
+				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());
+				builder.registerAnnotation(uid, ATT_WHO, speaker, isSpeakerSensitive());
 			}
 		}
 		
