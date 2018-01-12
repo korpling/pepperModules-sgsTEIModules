@@ -53,73 +53,80 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 *
 	 */
 	private class SgsTEIReader extends DefaultHandler2{		
-
+		/** This constant is used for representing empty tokens on the syntactical token level */
 		private static final String EMPTY_VALUE = "∅";
-		
+		/** This string provides the format to explicitly mark when the fallback is used for syntactical tokens */
 		private static final String F_FALLBACK_TEMPLATE = "{%s}";
-
+		/** The name of the utterance token level (to be prefixed with speaker right now) */
 		private static final String UTT_NAME = "utterance";
-
+		/** The annotation name for the translation annotation (utterance annotation) */
 		private static final String NAME_TRANSLATION = "translation";
-
+		/** Error message when fallback annotation does not exist */
 		private static final String ERR_MSG_FALLBACK = "Fallback annotation does not seem to exist.";
-
-		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
-		
+		/** logger */
+		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);		
 		/** This is the element stack representing the hierarchy of elements to be closed. */
 		private Stack<String> stack;
 		/** This variable is keeping track of read characters */
 		private final TextBuffer textBuffer;
-		/** what are we currently reading? */
+		/** current state of reader */
 		private READ_MODE mode; 
-		/** */
+		/** the graph builder object connected to the current document */
 		private GraphBuilder builder;
-		
+		/** additional utils for reading */
 		private SgsTEIImporterUtils utils;
-		
+		/** currently processed annotation name (most recently read) */
 		private String annotationName;
-		
+		/** most recently read (general) id */
 		private String currentId;
-		
+		/** currently associated speaker */
 		private String speaker;
-		
+		/** mapping from tokenId to token text (all tokenization levels, global map) */
 		private Map<String, String> token2text;
-		
+		/** follows the span sequence to determine the placing of empty nodes */
 		private Queue<Pair<String, String>> spanSeq;
-		
+		/** This is later used to build the timeline relations, one index in the list is one timestep.
+		 *  The map maps from level name to token id. For one timestep, one level can have several ids
+		 *  to allow two tokens on one level being overlapped by only one on another etc. */
 		private List<Map<String, List<String>>> sequence;
-		
+		/** maps from token id to morphosyntax span id to later associate the syntactic tokens with the right speaker */
 		private Map<String, Collection<String>> comesWith;
-		
+		/** maps annotation ids to their target node ids */
 		private Map<String, String> anaId2targetId;
-		
+		/** This array determines, how the text buffer is being written on. Modes: 
+		 * {0}: read as norm only 
+		 * {1}: read as dipl only
+		 * {0, 1}: read as norm and dipl value
+		 *  */
 		private int[] bufferMode;
-		
+		/** current overlap state, computed at utterance start (does new utterance overlap with old?). */
 		private boolean overlap;
-		
-		private Set<Pair<String, String>> syntaxQNames;
-		
+		/** maps a timeslot id to the given textual value (can be evaluated with function {@link SgsTEIReader::getTimeValue}) */
 		private Map<String, String> code2time;
-		
+		/** temporal end value of last utterance */
 		private Long lastEnd;
-		
+		/** value to be given to utterance token (translation or id) */
 		private String utteranceValue;
-		
+		/** most recently read utterance id */
 		private String uid;
-		
+		/** all token ids to be associated with the currently read utterance */
 		private List<String> utteranceTokens;
-		
+		/** values of features given in shift tags */
 		private Map<String, String> featureValues;
-		
+		/** index in overall sequence (value) when feature shift for given feature (key) happened */
 		private Map<String, Integer> featureSpanStart;
-		
+		/** overall sequence of syntactic token ids */
 		private List<String> overallSequence;
-		
+		/** Fallback value for syntactic subtokens. Taken from property. */
 		private String fallbackName;
-						
-		private String NORM;		
+		
+		/** name suffix for norm level */
+		private String NORM;
+		/** name suffix for diplomatic level */
 		private String DIPL;
+		/** name suffix for pause level */
 		private String PAUSE;
+		/** name suffix for syntactic tokenization */
 		private String SYN;
 		
 		public SgsTEIReader() {
@@ -135,7 +142,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			anaId2targetId = new HashMap<>();
 			bufferMode = new int[] {0, 1};
 			spanSeq = new LinkedList<>();
-			syntaxQNames = new HashSet<>();
 			code2time = new HashMap<>();
 			lastEnd = 0L;
 			utteranceValue = null;
@@ -365,11 +371,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		}
 		
 		/**
-		 * 
+		 * This method is called when enough information for (a) token(s) is collected.
 		 * @param id can be null
 		 * @param speaker
-		 * @param dipl
-		 * @param norm
+		 * @param dipl write on diplomatic level
+		 * @param norm write on norm level (if dipl and norm are false, the token will be considered a pause token)
 		 * @param value if given, buffer is ignored and not deleted
 		 */
 		private void tokenDetected(String id, String speaker, boolean dipl, boolean norm, String value) {
@@ -396,7 +402,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				}
 				if (id != null && comesWith.containsKey(id)) {					
 					String qName = builder.getQName(speaker, SYN);
-					syntaxQNames.add(Pair.of(speaker, SYN));
 					if (!timestep.containsKey(qName)) {
 						timestep.put(qName, new ArrayList<String>());
 					}
@@ -424,13 +429,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			overlap = false;			
 		}
 		
+		/** This method enqueues token ids to collecting variables */
 		private void add2Sequences(List<String> ids) {
 			utteranceTokens.addAll(ids);
 			overallSequence.addAll(ids);
 		}
 		
 		/** 
-		 * 
+		 * Determines if an empty token should be inserted first
 		 * @param id
 		 * @return id of empty span to be created, else null
 		 */
@@ -443,6 +449,14 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 		}
 		
+		/** 
+		 * This method registers a token properly and stores all information in the connected variables.
+		 * @param id
+		 * @param speaker
+		 * @param level
+		 * @param text
+		 * @param timestep
+		 */
 		private void registerToken(String id, String speaker, String level, String text, Map<String, List<String>> timestep) {
 			String id_ = builder.registerToken(id, speaker, level);
 			token2text.put(id_, text);

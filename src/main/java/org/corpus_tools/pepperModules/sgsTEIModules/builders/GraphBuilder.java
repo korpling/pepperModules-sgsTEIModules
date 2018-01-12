@@ -26,6 +26,13 @@ import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.core.SRelation;
 
+/**
+ * This class is given all the necessary information to then build the graph.
+ * It stores all the several build steps given as {@link BUILD_STEP}s and {@link BuildingBrick}s
+ * and executes them in proper order. 
+ * @author klotzmaz
+ *
+ */
 public class GraphBuilder {
 	private static final String F_ERR_ID_USED = "ID already in use: %s.";
 	private static final String FUNC_NAME = "func";
@@ -63,7 +70,7 @@ public class GraphBuilder {
 	private enum BUILD_STEP {
 		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS, UTTERANCES, TIME
 	}
-	
+	/** the graphs timeline */
 	private final STimeline tl;
 	
 	public GraphBuilder(PepperMapper pepperMapper) {
@@ -100,14 +107,27 @@ public class GraphBuilder {
 		this.tl.increasePointOfTime();
 	}
 	
+	/**
+	 * 
+	 * @return the graphs {@link STimeline} object.
+	 */
 	private STimeline getTimeline() {
 		return tl;
 	}
 	
+	/** 
+	 * 
+	 * @return the document graph.
+	 */
 	public SDocumentGraph getGraph() {
 		return graph;
 	}
 	
+	/**
+	 * With this method a referring expression can be registered and enqueued in the build process.
+	 * @param id
+	 * @param targetNodeId
+	 */
 	public void registerReferringExpression(final String id, final String targetNodeId) {	
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REFEX)) {				
 			@Override
@@ -118,7 +138,12 @@ public class GraphBuilder {
 			}
 		};
 	}
-		
+	
+	/**
+	 * With this method a discourse entity can be registered and enqueued in the build process.
+	 * @param id
+	 * @param instanceIds
+	 */
 	public void registerDiscourseEntity(final String id, final String[] instanceIds) {		
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_DE)) {			
 			@Override
@@ -140,6 +165,12 @@ public class GraphBuilder {
 		};
 	}
 	
+	/**
+	 * With this method a distance annotation for discourse entities will be computed and added to the graph
+	 * as {@link SAnnotation} object.
+	 * @param lastMentionId
+	 * @param mentionId
+	 */
 	protected void addDistanceAnnotation(String lastMentionId, String mentionId) {
 		List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(lastMentionId)));
 		SToken lastMention = overlappedTokens.get(overlappedTokens.size() - 1);
@@ -148,10 +179,22 @@ public class GraphBuilder {
 		addAnnotation(mention, "given", Integer.toString(val));
 	}
 	
+	/**
+	 * This adds a coreference relation between discourse entities representing the same entity.
+	 * @param fromId
+	 * @param toId
+	 */
 	protected void addCorefRel(String fromId, String toId) {
 		getGraph().createRelation(getNode(fromId), getNode(toId), SALT_TYPE.SPOINTING_RELATION, null).setType("coreference");
 	}
 	
+	/**
+	 * With this method an annotation object can be registered and enqueued in the build process.
+	 * @param targetId
+	 * @param name
+	 * @param value
+	 * @param speakerSensitive
+	 */
 	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {		
 			@Override
@@ -172,10 +215,19 @@ public class GraphBuilder {
 		};
 	}
 	
+	/**
+	 * 
+	 * @return all (so far) collected {@link SAnnotation} objects. The returned object maps target ids to annotations.
+	 */
 	public Map<String, Set<SAnnotation>> getAnnotations() {
 		return annotations;
 	}
 	
+	/**
+	 * With this method a syntax node (not a syntactical token!) can be registered and enqueued in the build process.
+	 * @param id
+	 * @param instanceId
+	 */
 	public void registerSyntaxNode(final String id, final String instanceId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_NODE)) {			
 			@Override
@@ -193,6 +245,13 @@ public class GraphBuilder {
 		};
 	}
 	
+	/**
+	 * With this method a syntax link can be registered and enqueued in the build process.
+	 * @param id
+	 * @param type
+	 * @param sourceId
+	 * @param targetId
+	 */
 	public void registerSyntaxLink(final String id, final String type, final String sourceId, final String targetId) {		
 		new BuildingBrick(buildQueues.get(BUILD_STEP.SYNTAX_REL)) {
 			@Override
@@ -204,6 +263,13 @@ public class GraphBuilder {
 		};
 	}
 	
+	/**
+	 * With this method a reference link can be registered and enqueued in the build process.
+	 * @param id
+	 * @param type
+	 * @param sourceId
+	 * @param targetId
+	 */
 	public void registerReferenceLink(final String id, final String type, final String sourceId, final String targetId) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REL)) {			
 			@Override
@@ -215,25 +281,51 @@ public class GraphBuilder {
 		};
 	}
 	
+	/**
+	 * This method stores created nodes to have them available for access in the later process.
+	 * The node will always be added to the graph for safety reasons.
+	 * @param id
+	 * @param sNode
+	 */
 	protected void registerNode(String id, SNode sNode) {
 		sNode.setGraph( getGraph() );
 		graphNodes.put(id, sNode);
 	}
 	
+	/**
+	 *  Returns an {@link SNode} object (if that graph node has already been registered with the given nodeId).
+	 * @param nodeId
+	 * @return
+	 */
 	protected SNode getNode(String nodeId) {
 		return graphNodes.get(nodeId);
 	}
 	
+	/**
+	 * This method sets a global evaluation map tokenId -> text value for all segmentations.
+	 * @param token2text
+	 */
 	public void setGlobalEvaluationMap(final Map<String, String> token2text) {
 		for (Entry<String, Segmentation> e : getSegmentations().entrySet()) {
 			registerEvaluationMap(e.getKey(), token2text);
 		}
 	}
 	
+	/**
+	 * This method allows to set a specific evaluation map for a single segmentation.
+	 * @param speaker
+	 * @param level
+	 * @param evaluationMap
+	 */
 	public void registerEvaluationMap(String speaker, String level, Map<?, String> evaluationMap) {
 		registerEvaluationMap(getQName(speaker, level), evaluationMap);
 	}
 	
+	/**
+	 * This method allows to set a specific evaluation map for a single segmentation.
+	 * @param qName
+	 * @param evaluationMap
+	 */
 	public void registerEvaluationMap(String qName, final Map<?, String> evaluationMap) {		
 		getSegmentations().get(qName).setEvaluator(new Segmentation.Evaluator() {				
 			@Override
@@ -243,11 +335,22 @@ public class GraphBuilder {
 		});
 	}
 	
+	/**
+	 *  This method is used to register new segmentations when their first token is added to the graph builder.
+	 * @param segmentationName
+	 * @param delimiter
+	 */
 	private void registerSegmentation(String segmentationName, String delimiter) {
 		Segmentation seg = new Segmentation(segmentationName, delimiter);
 		getSegmentations().put(segmentationName, seg);
 	}
 	
+	/**
+	 * This method allows to register a span over tokens.
+	 * @param id
+	 * @param tokenIds
+	 * @return the span id (usable for later annotation and processing)
+	 */
 	public String registerSpan(String id, List<String> tokenIds) {
 		final String spanId = idProvider.validate(id);
 		final List<String> idList = new ArrayList<>(tokenIds);
@@ -266,6 +369,14 @@ public class GraphBuilder {
 		return spanId;
 	}
 	
+	/**
+	 * This method registers an utterance token. Utterance tokens are tokens, that overlap all the tokens belonging to the utterance.
+	 * @param id
+	 * @param tokenIds
+	 * @param speaker
+	 * @param level
+	 * @return
+	 */
 	public String registerUtterance(String id, final List<String> tokenIds, final String speaker, final String level) {
 		final String utteranceId = idProvider.validate(id);
 		new BuildingBrick(buildQueues.get(BUILD_STEP.FURTHER_SPANS)) {			
@@ -287,6 +398,11 @@ public class GraphBuilder {
 		return utteranceId;
 	}
 	
+	/**
+	 * Returns the start and end time of a token
+	 * @param tokenId
+	 * @return
+	 */
 	private int[] getStartEndTime(String tokenId) {
 		SToken sTok = (SToken) getNode(tokenId);
 		for (SRelation<?, ?> rel : sTok.getOutRelations()) {
@@ -296,7 +412,14 @@ public class GraphBuilder {
 		}
 		return null;
 	}
-
+	
+	/**
+	 * This method is used to register token objects.
+	 * @param id
+	 * @param speaker
+	 * @param level
+	 * @return
+	 */
 	public String registerToken(String id, String speaker, String level) {
 		final String tokenId = idProvider.validate(id);		
 		final String segName = getQName(speaker, level);
@@ -315,6 +438,11 @@ public class GraphBuilder {
 		return tokenId;
 	}
 	
+	/**
+	 * Register a segment to its segmentation.
+	 * @param segName
+	 * @param tokenId
+	 */
 	protected void addSegment(String segName, String tokenId) {
 		tokenId2SegName.put(tokenId, segName);
 		if (!getSegmentations().containsKey(segName)) {
@@ -322,19 +450,42 @@ public class GraphBuilder {
 		}
 		getSegmentations().get(segName).addSegment(tokenId);
 	}
-
+	
+	/**
+	 * Return the segmentation a given tokenId belongs to.
+	 * @param tokenId
+	 * @return
+	 */
 	private String getSegmentationByTokenId(String tokenId) {
 		return tokenId2SegName.get(tokenId);
 	}
 	
+	/**
+	 * Return the speaker of a given token Id.
+	 * WARNING: This method sticks to a certain standard of naming and should be instead implemented more dynamically.
+	 * @param tokenId
+	 * @return
+	 */
 	private String getSpeakerByTokenId(String tokenId) {
 		return getSegmentationByTokenId(tokenId).split("_")[0];
 	}
 	
+	/**
+	 * Returns all known segmentations.
+	 * @return
+	 */
 	protected Map<String, Segmentation> getSegmentations() {
 		return segmentations;
 	}
 	
+	/**
+	 * creates an {@link STextualRelation} between a token and its {@link STextualDS}.
+	 * @param sToken
+	 * @param ds
+	 * @param startIndex
+	 * @param endIndex
+	 * @return
+	 */
 	protected STextualRelation addTextualRelation(SToken sToken, STextualDS ds, int startIndex, int endIndex) {
 		STextualRelation rel = SaltFactory.createSTextualRelation();		
 		rel.setStart(startIndex);
@@ -345,6 +496,13 @@ public class GraphBuilder {
 		return rel;
 	}
 	
+	/**
+	 * Creates an {@link STimelineRelation} between a token and the graphs {@link STimeline}.
+	 * @param sToken
+	 * @param from
+	 * @param to
+	 * @return
+	 */
 	protected STimelineRelation addTimelineRelation(SToken sToken, int from, int to) {
 		if (getTimeline().getEnd() < to) {
 			getTimeline().increasePointOfTime(to - getTimeline().getEnd());
@@ -396,6 +554,11 @@ public class GraphBuilder {
 		return r;
 	}
 	
+	/**
+	 * Returns the maximal number of tokens on a single level for one timestep.
+	 * @param timestep
+	 * @return
+	 */
 	private int getLength(Map<String, List<String>> timestep) {
 		Set<Integer> lengths = new HashSet<>();
 		for (Entry<String, List<String>> e : timestep.entrySet()) {
@@ -404,29 +567,52 @@ public class GraphBuilder {
 		return reduceProduct(lengths);
 	}
 	
+	/**
+	 * Build order relations for each segmentation.
+	 */
 	private void buildOrderRelations() {
 		for (String name : segmentations.keySet()) {
 			buildOrderRelations(name);
 		}
 	}
-
+	
+	/**
+	 * Build order relations for a specific segmentation.
+	 * @param segmentationName
+	 */
 	private void buildOrderRelations(String segmentationName) {
 		List<String> sequence = getSegmentations().get(segmentationName).getSequence();
 		for (int i = 1; i < sequence.size(); i++) {
 			addOrderRelation(sequence.get(i - 1), sequence.get(i), segmentationName);
 		}
 	}
-
+	
+	/**
+	 * Add order relation between two tokens.
+	 * @param fromId
+	 * @param toId
+	 * @param name
+	 */
 	private void addOrderRelation(String fromId, String toId, String name) {
 		SToken source = (SToken) getGraph().getNode(fromId);
 		SToken target = (SToken) getGraph().getNode(toId);
 		getGraph().createRelation(source, target, SALT_TYPE.SORDER_RELATION, null).setType(name);
 	}
 	
+	/**
+	 * Build a qName for a token layer.
+	 * @param speaker
+	 * @param level
+	 * @return
+	 */
 	public String getQName(String speaker, String level) {
 		return String.join("_", speaker, level);
 	}
 	
+	/**
+	 * Add all annotations of a node given by its id.
+	 * @param nodeId
+	 */
 	private void addAnnotations(String nodeId) {
 		if (getAnnotations().containsKey(nodeId)) {
 			SNode node = getNode(nodeId);
@@ -437,6 +623,11 @@ public class GraphBuilder {
 		}
 	}
 	
+	/**
+	 * Add annotation to target node.
+	 * @param target
+	 * @param annotation
+	 */
 	private void addAnnotation(SNode target, SAnnotation annotation) {
 		if (target instanceof SToken) {
 			getGraph().createSpan((SToken) target).addAnnotation(annotation);
@@ -445,6 +636,12 @@ public class GraphBuilder {
 		}
 	}
 	
+	/**
+	 * Add {@link SAnnotation} (key, value) to {@link SNode} object.
+	 * @param target
+	 * @param name
+	 * @param value
+	 */
 	private void addAnnotation(SNode target, String name, String value) {
 		SAnnotation annotation = SaltFactory.createSAnnotation();
 		annotation.setName(name);
@@ -452,6 +649,9 @@ public class GraphBuilder {
 		addAnnotation(target, annotation);
 	}
 	
+	/**
+	 * Add all remaining annotations not added during the build process.
+	 */
 	private void addRemainingAnnotations() {
 		for (Entry<String, Set<SAnnotation>> e : getAnnotations().entrySet()) {
 			SNode node = getNode( e.getKey() );
@@ -463,6 +663,10 @@ public class GraphBuilder {
 		}
 	}
 
+	/**
+	 * Main build call. Executes all collected build steps.
+	 * @param temporalSequence
+	 */
 	public void build(final List<Map<String, List<String>>> temporalSequence) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.TIME)) {			
 			@Override
