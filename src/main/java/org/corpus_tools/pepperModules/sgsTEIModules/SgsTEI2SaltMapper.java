@@ -470,9 +470,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_TEI.equals(localName)) {
 				builder.setGlobalEvaluationMap(token2text);
-				for (Pair<String, String> synPair : syntaxQNames) {
-					builder.registerSyntaxEvaluator(synPair.getKey(), synPair.getValue());
-				}
 				finishFeatures();
 				builder.build(sequence);
 			}

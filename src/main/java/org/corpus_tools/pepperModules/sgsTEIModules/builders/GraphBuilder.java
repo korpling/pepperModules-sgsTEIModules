@@ -232,17 +232,6 @@ public class GraphBuilder {
 		registerEvaluationMap(getQName(speaker, level), evaluationMap);
 	}
 	
-	public void registerSyntaxEvaluator(String speaker, String level) {
-		Segmentation segmentation = getSegmentations().get( getQName(speaker, level) );
-		segmentation.setEvaluator(new Segmentation.Evaluator() {			
-			@Override
-			public String evaluate(String tokenId) {
-				
-				return null;
-			}
-		});
-	}
-	
 	public void registerEvaluationMap(String qName, final Map<?, String> evaluationMap) {		
 		getSegmentations().get(qName).setEvaluator(new Segmentation.Evaluator() {				
 			@Override
