@@ -1046,7 +1046,10 @@
                   <w xml:id="d1t1259-9">du</w>
                   <pause type="short"/>
                   <w xml:id="d1t1261-2">du</w>
-                  <w xml:id="d1t1261-3">cadavre</w>
+                  <choice>
+					<orig><w xml:id="d1t1261-3">cadavre</w></orig>
+					<reg>alternative content to be ignored</reg>
+                  </choice>
                   <seg xml:id="d1e1262">
                       <w xml:id="d1t1263-2">qu'</w>
                       <w xml:id="d1t1263-3">on</w>
@@ -1055,8 +1058,13 @@
                       <shift feature="tempo" new="slow"/>
                       <w xml:id="d1t1265-2">au</w>
                       <shift feature="tempo" new="normal"/>
-                      <w xml:id="d1t1267-2">quatrième</w>
-                      <w xml:id="d1t1267-3">étage</w>
+                      <w xml:id="d1t1267-2">quatrième</w>                      
+                      <choice>
+						<sic>ètage</sic>
+						<corr>
+							<w xml:id="d1t1267-3">étage</w>
+						</corr>
+					  </choice> 
                   </seg>
                   <pc>.</pc>
               </seg>

@@ -251,6 +251,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_DESC.equals(localName) && TAG_VOCAL.equals(stack.peek())) {
 				bufferMode = new int[] {1};
 			}
+			else if (TAG_SIC.equals(localName) && READ_MODE.TEXT.equals(mode)) {
+				bufferMode = new int[] {1};
+			}
 			else if (TAG_TEI.equals(localName)) {
 				fallbackName = getModuleProperties().getFallbackAnnotationName();
 			}
@@ -427,8 +430,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			localName = qName.substring(qName.lastIndexOf(":") + 1);		
 			stack.pop();
 			if (TAG_W.equals(localName) && READ_MODE.TEXT.equals(mode)) {
-				//TODO differentiate a little more
-				tokenDetected(currentId, speaker, true, true, null);
+				tokenDetected(currentId, speaker, true, true, null);				
 			}
 			else if (TAG_PC.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				tokenDetected(null, speaker, true, true, null);
@@ -441,7 +443,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				bufferMode = new int[] {0, 1};
 			}
 			else if (TAG_SIC.equals(localName) && READ_MODE.TEXT.equals(mode)) {
-				tokenDetected(null, speaker, true, false, null);
+				bufferMode = new int[] {0};
 			}
 			else if (TAG_F.equals(localName)) {
 				annotationName = null;
@@ -449,7 +451,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_FS.equals(localName)) {
 				currentId = null;
 			}
-			else if (TAG_STRING.equals(localName)) {
+			else if (TAG_STRING.equals(localName)) {				
 				if (TAG_F.equals(stack.peek())) {
 					String annotationValue = textBuffer.clear(0);
 					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue, isSpeakerSensitive());
@@ -457,6 +459,13 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						token2text.put(anaId2targetId.get(currentId), String.format(F_FALLBACK_TEMPLATE, annotationValue));
 					}
 				}
+			}
+			else if (TAG_CHOICE.equals(localName) && READ_MODE.TEXT.equals(mode)) {
+				bufferMode = new int[] {0, 1};
+			}
+			else if (TAG_REG.equals(localName)) {
+				textBuffer.clear(0);
+				textBuffer.clear(1);
 			}
 			else if (TAG_SEG.equals(localName)) {
 				if (READ_MODE.TRANSLITERATION.equals(mode)) {

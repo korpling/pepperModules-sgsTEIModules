@@ -16,6 +16,7 @@ public interface SgsTEIDictionary {
 	public static final String TAG_NUMERIC = "numeric";
 	public static final String TAG_PAUSE = "pause";
 	public static final String TAG_PC = "pc";
+	public static final String TAG_REG = "reg";
 	public static final String TAG_SEG = "seg";
 	public static final String TAG_SIC = "sic";
 	public static final String TAG_SHIFT = "shift";
