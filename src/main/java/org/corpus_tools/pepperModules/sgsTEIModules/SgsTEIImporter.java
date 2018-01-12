@@ -99,6 +99,7 @@ public class SgsTEIImporter extends PepperImporterImpl implements PepperImporter
 		// TODO change the endings in endings of files you want to import, see
 		// also predefined endings beginning with 'ENDING_'
 		getDocumentEndings().add("xml");
+		setProperties(new SgsTEIImporterProperties());
 	}
 	
 	/**

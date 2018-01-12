@@ -15,7 +15,6 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	private static final String PROP_SYN_FALLBACK_ANNO = "syn.fallback.anno";
 	
 	public SgsTEIImporterProperties() {
-		super();
 		addProperty(new PepperModuleProperty<String>(PROP_DIPL_NAME, String.class, "This property determines the diplomatic layer's name.", "dipl", false));
 		addProperty(new PepperModuleProperty<String>(PROP_NORM_NAME, String.class, "This property determines the normed layer's name.", "norm", false));
 		addProperty(new PepperModuleProperty<String>(PROP_PAUSE_NAME, String.class, "This property determines the pause layer's name.", "pause", false));
