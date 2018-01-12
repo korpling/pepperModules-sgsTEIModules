@@ -60,7 +60,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 
 		private static final String EMPTY_VALUE = "∅";
 		
-		private static final String F_FALLBACK_TEMPLATE = "<%s>";
+		private static final String F_FALLBACK_TEMPLATE = "{%s}";
 
 		private static final String UTT_NAME = "utterance";
 
@@ -310,9 +310,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			utteranceTokens = new ArrayList<>();
 			String translation = attributes.getValue(ATT_TRANS);
 			if (translation != null) {
-				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());
-				builder.registerAnnotation(uid, ATT_WHO, speaker, isSpeakerSensitive());
+				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());				
 			}
+			builder.registerAnnotation(uid, ATT_WHO, speaker, isSpeakerSensitive());
 		}
 		
 		/* warning: this method should always concatenate, since sometimes several calls are used for text-node (built in multiple steps) */
