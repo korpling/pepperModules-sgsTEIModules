@@ -502,9 +502,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					mode = READ_MODE.TEXT;
 				}
 			}
-			else if (TAG_U.equals(localName) && READ_MODE.TEXT.equals(mode)) {
-				uid = builder.registerSpan(uid, utteranceTokens);
-				builder.registerAnnotation(uid, UTT_NAME, utteranceValue == null? uid : utteranceValue, isSpeakerSensitive());
+			else if (TAG_U.equals(localName) && READ_MODE.TEXT.equals(mode)) {				
+				uid = builder.registerUtterance(uid, utteranceTokens, speaker, UTT_NAME);
+				token2text.put(uid, utteranceValue == null? uid : utteranceValue);
 				utteranceValue = null;
 			}
 			else if (TAG_TITLE.equals(localName)) {

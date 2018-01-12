@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
@@ -25,6 +24,7 @@ import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SNode;
+import org.corpus_tools.salt.core.SRelation;
 
 public class GraphBuilder {
 	private static final String F_ERR_ID_USED = "ID already in use: %s.";
@@ -262,6 +262,37 @@ public class GraphBuilder {
 			}
 		};
 		return spanId;
+	}
+	
+	public String registerUtterance(String id, final List<String> tokenIds, final String speaker, final String level) {
+		final String utteranceId = idProvider.validate(id);
+		new BuildingBrick(buildQueues.get(BUILD_STEP.FURTHER_SPANS)) {			
+			@Override
+			public void build() {
+				Segmentation segmentation = getSegmentations().get( getQName(speaker, level) );
+				int[] indices = segmentation.getIndices(utteranceId);
+				SToken utteranceToken = segmentation.getSToken(utteranceId);
+				registerNode(utteranceId, utteranceToken);
+				STextualDS ds = segmentation.getDS( getGraph() );
+				addTextualRelation(utteranceToken, ds, indices[0], indices[1]);
+				{
+					/* build time for these tokenizations separately */
+					addTimelineRelation(utteranceToken, getStartEndTime( tokenIds.get(0) )[0], getStartEndTime( tokenIds.get(tokenIds.size() - 1) )[1]);
+				}
+			}
+		};
+		addSegment(getQName(speaker, level), utteranceId);
+		return utteranceId;
+	}
+	
+	private int[] getStartEndTime(String tokenId) {
+		SToken sTok = (SToken) getNode(tokenId);
+		for (SRelation<?, ?> rel : sTok.getOutRelations()) {
+			if (rel instanceof STimelineRelation) {
+				return new int[] {((STimelineRelation) rel).getStart(), ((STimelineRelation) rel).getEnd()};
+			}
+		}
+		return null;
 	}
 
 	public String registerToken(String id, String speaker, String level) {
