@@ -56,7 +56,7 @@ public class SgsTEIImporterUtils implements SgsTEIDictionary{
 		}
 	}
 	
-	protected static void debugMessage(Object... elements) {
+	protected static void message(Object... elements) {
 		String[] elems = new String[elements.length];
 		for (int i = 0; i < elements.length; i++) {
 			elems[i] = elements[i] == null? "null" : elements[i].toString();

@@ -40,15 +40,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		if (getDocument() == null) {
 			setDocument(SaltFactory.createSDocument());
 		}
-		SDocumentGraph docGraph = SaltFactory.createSDocumentGraph();
-		getDocument().setDocumentGraph(docGraph);
+		getDocument().setDocumentGraph( SaltFactory.createSDocumentGraph() );
 		SgsTEIReader reader = new SgsTEIReader();
 		this.readXMLResource(reader, getResourceURI());
 		return (DOCUMENT_STATUS.COMPLETED);
-	}
-	
-	protected SgsTEIImporterProperties getModuleProperties() {
-		return new SgsTEIImporterProperties(); //FIXME
 	}
 		
 	/**
@@ -119,10 +114,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		private String fallbackName;
 						
-		private final String NORM = getModuleProperties().getNormName();		
-		private final String DIPL = getModuleProperties().getDiplName();
-		private final String PAUSE = getModuleProperties().getPauseName();
-		private final String SYN = getModuleProperties().getSynSegName();
+		private String NORM;		
+		private String DIPL;
+		private String PAUSE;
+		private String SYN;
 		
 		public SgsTEIReader() {
 			/*internal*/
@@ -145,6 +140,16 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			featureValues = new HashMap<>();
 			featureSpanStart = new HashMap<>();
 			overallSequence = new ArrayList<>();
+			init();
+		}
+		
+		private void init() {
+			SgsTEIImporterProperties props = (SgsTEIImporterProperties) getProperties();
+			DIPL = props.getDiplName();
+			NORM = props.getNormName();
+			SYN = props.getSynSegName();
+			PAUSE = props.getPauseName();
+			fallbackName = props.getFallbackAnnotationName();
 		}
 		
 		@Override
@@ -256,9 +261,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_SIC.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				bufferMode = new int[] {1};
-			}
-			else if (TAG_TEI.equals(localName)) {
-				fallbackName = getModuleProperties().getFallbackAnnotationName();
 			}
 			else if (TAG_TEXT.equals(localName)) {
 				normalizeTimes();
