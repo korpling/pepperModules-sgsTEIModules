@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
+import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
 import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.READ_MODE;
 import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextBuffer;
@@ -60,6 +61,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private static final String UTT_NAME = "utterance";
 
 		private static final String NAME_TRANSLATION = "translation";
+
+		private static final String ERR_MSG_FALLBACK = "Fallback annotation does not seem to exist.";
 
 		private final Logger logger = LoggerFactory.getLogger(SgsTEIReader.class);
 		
@@ -406,9 +409,10 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 							if (!useAnnotation) {
 								token2text.put(regId, normValue);
 							}
-							else if (!token2text.containsKey(regId)) {
+							if (!token2text.containsKey(regId)) {
 								// was not yet registers thus needs a dummy value (that should indicate that something went wrong)
-								token2text.put(regId, F_FALLBACK_TEMPLATE.format(F_FALLBACK_TEMPLATE, "?"));
+								logger.error(ERR_MSG_FALLBACK);
+								throw new PepperModuleDataException(SgsTEI2SaltMapper.this, ERR_MSG_FALLBACK);
 							}
 						}
 						synchronousIds.add(regId);
