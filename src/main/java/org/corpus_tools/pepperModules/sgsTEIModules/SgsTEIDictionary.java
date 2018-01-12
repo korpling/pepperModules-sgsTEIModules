@@ -13,9 +13,11 @@ public interface SgsTEIDictionary {
 	public static final String TAG_FS = "fs";
 	public static final String TAG_INTERP = "interp";
 	public static final String TAG_LINK = "link";
+	public static final String TAG_LISTPERSON = "listPerson";
 	public static final String TAG_NUMERIC = "numeric";
 	public static final String TAG_PAUSE = "pause";
 	public static final String TAG_PC = "pc";
+	public static final String TAG_PERSON = "person";
 	public static final String TAG_REG = "reg";
 	public static final String TAG_SEG = "seg";
 	public static final String TAG_SIC = "sic";
@@ -28,6 +30,7 @@ public interface SgsTEIDictionary {
 	public static final String TAG_TEI = "TEI";
 	public static final String TAG_TEXT = "text";
 	public static final String TAG_TIMELINE = "timeline";
+	public static final String TAG_TITLE = "title";
 	public static final String TAG_U = "u";
 	public static final String TAG_VOCAL = "vocal";
 	public static final String TAG_W = "w";

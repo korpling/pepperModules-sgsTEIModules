@@ -24,6 +24,7 @@ import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextBuff
 import org.corpus_tools.pepperModules.sgsTEIModules.builders.GraphBuilder;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
+import org.corpus_tools.salt.core.SMetaAnnotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -195,6 +196,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			}
 			else if (TAG_STANDOFF.equals(localName)) {
 				mode = READ_MODE.getMode(attributes.getValue(ATT_TYPE));
+				textBuffer.clear(0);
+				textBuffer.clear(1);
 			}
 			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
@@ -263,6 +266,19 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				textBuffer.clear(0);
 				textBuffer.clear(1);
 			}
+			else if (TAG_LISTPERSON.equals(localName)) {
+				annotationName = attributes.getValue(ATT_TYPE);
+			}
+			else if (TAG_PERSON.equals(localName) && TAG_LISTPERSON.equals(stack.peek())) {
+				String personId = attributes.getValue( String.join(":", NS_XML, ATT_ID) );
+				SMetaAnnotation meta = getDocument().getMetaAnnotation(annotationName);
+				if (meta == null) {
+					getDocument().createMetaAnnotation(null, annotationName, personId);
+				} else {
+					meta.setValue( String.join(", ", meta.getValue_STEXT(), personId) );
+				}
+				annotationName = null;
+			}
 			stack.push(localName);
 		}
 		
@@ -300,11 +316,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		
 		/* warning: this method should always concatenate, since sometimes several calls are used for text-node (built in multiple steps) */
 		@Override
-		public void characters(char[] ch, int start, int length) throws SAXException {
-			if (!READ_MODE.BLIND.equals(mode)) {
-				String next = (new String(Arrays.copyOfRange(ch, start, start + length))).trim();
-				textBuffer.append(next, bufferMode);
-			}
+		public void characters(char[] ch, int start, int length) throws SAXException {			
+			String next = (new String(Arrays.copyOfRange(ch, start, start + length))).trim();
+			textBuffer.append(next, bufferMode);		
 		}
 		
 		/** 
@@ -478,6 +492,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				uid = builder.registerSpan(uid, utteranceTokens);
 				builder.registerAnnotation(uid, UTT_NAME, utteranceValue == null? uid : utteranceValue, isSpeakerSensitive());
 				utteranceValue = null;
+			}
+			else if (TAG_TITLE.equals(localName)) {
+				getDocument().createMetaAnnotation(null, TAG_TITLE, textBuffer.clear(1));
 			}
 			else if (TAG_TEI.equals(localName)) {
 				builder.setGlobalEvaluationMap(token2text);
