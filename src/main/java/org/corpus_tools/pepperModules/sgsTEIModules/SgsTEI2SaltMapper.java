@@ -57,7 +57,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 */
 	private class SgsTEIReader extends DefaultHandler2{		
 
-		private final String EMPTY_VALUE = Character.toString( (char) 2205 );
+		private static final String EMPTY_VALUE = "∅";
 
 		private static final String UTT_NAME = "utterance";
 
