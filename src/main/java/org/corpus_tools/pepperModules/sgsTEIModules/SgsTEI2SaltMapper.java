@@ -58,6 +58,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	private class SgsTEIReader extends DefaultHandler2{		
 
 		private static final String EMPTY_VALUE = "∅";
+		
+		private static final String F_FALLBACK_TEMPLATE = "<%s>";
 
 		private static final String UTT_NAME = "utterance";
 
@@ -199,7 +201,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					String annotationValue = attributes.getValue(ATT_VALUE);
 					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue, isSpeakerSensitive());
 					if (fallbackName.equals(annotationName)) {
-						token2text.put(anaId2targetId.get(currentId), annotationValue);
+						token2text.put(anaId2targetId.get(currentId), String.format(F_FALLBACK_TEMPLATE, annotationValue));
 					}
 				}
 			}
@@ -452,7 +454,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					String annotationValue = textBuffer.clear(0);
 					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue, isSpeakerSensitive());
 					if (fallbackName.equals(annotationName)) {
-						token2text.put(anaId2targetId.get(currentId), annotationValue);
+						token2text.put(anaId2targetId.get(currentId), String.format(F_FALLBACK_TEMPLATE, annotationValue));
 					}
 				}
 			}
