@@ -54,8 +54,7 @@ public class GraphBuilder {
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
 	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {
-			BUILD_STEP.TOKEN, 
-			BUILD_STEP.SYN_TOKEN,
+			BUILD_STEP.TOKEN,
 			BUILD_STEP.TIME,
 			BUILD_STEP.UTTERANCES,
 			BUILD_STEP.SYNTAX_NODE, 
@@ -66,9 +65,10 @@ public class GraphBuilder {
 			BUILD_STEP.REFERENCE_REL, 
 			BUILD_STEP.FURTHER_SPANS
 	};
+	protected static final String BRIDGING_RELATION = "bridging";
 	/** steps */
 	private enum BUILD_STEP {
-		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS, UTTERANCES, TIME
+		TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS, UTTERANCES, TIME
 	}
 	/** the graphs timeline */
 	private final STimeline tl;
@@ -152,7 +152,7 @@ public class GraphBuilder {
 				for (int i = 0; i < instanceIds.length; i++) {
 					SNode instance = getNode(instanceIds[i]);
 					for (SAnnotation anno : getAnnotations().get(id)) {
-						addAnnotation(instance, anno);				
+						addAnnotation(instance, anno);
 					}
 					if (i > 0) {
 						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
@@ -276,7 +276,7 @@ public class GraphBuilder {
 			public void build() {
 				SNode source = getNode(sourceId);
 				SNode target = getNode(targetId);
-				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));				
+				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type)).setType(BRIDGING_RELATION);;				
 			}
 		};
 	}
@@ -379,7 +379,7 @@ public class GraphBuilder {
 	 */
 	public String registerUtterance(String id, final List<String> tokenIds, final String speaker, final String level) {
 		final String utteranceId = idProvider.validate(id);
-		new BuildingBrick(buildQueues.get(BUILD_STEP.FURTHER_SPANS)) {			
+		new BuildingBrick(buildQueues.get(BUILD_STEP.UTTERANCES)) {			
 			@Override
 			public void build() {
 				Segmentation segmentation = getSegmentations().get( getQName(speaker, level) );

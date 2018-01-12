@@ -1081,7 +1081,7 @@
                   <w xml:id="d1t2032-2">quelqu'un</w>
                   <w xml:id="d1t2032-3">qui</w>
                   <w xml:id="d1t2032-4">s'</w>
-                  <w xml:id="d1t2032-5">intéressait</w>
+                  <w xml:id="d1t2032-5">in<add>t</add>éress<add>a</add>it</w>
                   <shift feature="tempo" new="slow"/>
 				  <vocal>
 					<desc>mm</desc>

@@ -59,8 +59,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private static final String F_FALLBACK_TEMPLATE = "{%s}";
 		/** The name of the utterance token level (to be prefixed with speaker right now) */
 		private static final String UTT_NAME = "utterance";
-		/** The annotation name for the translation annotation (utterance annotation) */
-		private static final String NAME_TRANSLATION = "translation";
+		/** The annotation name for the transliteration annotation (utterance annotation) */
+		private static final String NAME_TRANSLATION = "transliteration";
 		/** Error message when fallback annotation does not exist */
 		private static final String ERR_MSG_FALLBACK = "Fallback annotation does not seem to exist.";
 		/** logger */

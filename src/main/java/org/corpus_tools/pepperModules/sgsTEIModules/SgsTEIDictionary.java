@@ -57,6 +57,7 @@ public interface SgsTEIDictionary {
 	public static final String TYPE_REFERENCE = "reference";
 	public static final String TYPE_SYNTAX = "syntax";
 	public static final String TYPE_WORDFORM = "wordForm";
+	public static final String NEW_NORMAL = "normal";
 	/* Namespace uris */
 	public static final String URI_NS_XML = "http://www.tei-c.org/ns/1.0";
 	public static final String URI_NS_SO = "http://standoff.proposal";
