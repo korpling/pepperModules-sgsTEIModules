@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
@@ -144,16 +145,19 @@ public class GraphBuilder {
 	 * @param id
 	 * @param instanceIds
 	 */
-	public void registerDiscourseEntity(final String id, final String[] instanceIds) {		
+	public void registerDiscourseEntity(final String id, final String[] instanceIds) {
+		System.out.println("Requesting DE: " + id + "=" + String.join(",", instanceIds));
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_DE)) {			
 			@Override
-			public void build() {			
+			public void build() {
+				System.out.println("Building DE: " + id + "=" + String.join(",", instanceIds));
 				/* current solution: first (mentioned) instance will be used by reflink, the others will be connected via p-rels*/
 				for (int i = 0; i < instanceIds.length; i++) {
 					SNode instance = getNode(instanceIds[i]);
 					for (SAnnotation anno : getAnnotations().get(id)) {
 						addAnnotation(instance, anno);
-					}
+						System.out.println("TYPE " + instance.getId() + " " + getGraph().getText(instance) + " is given annotation " + String.join("=", anno.getQName(), anno.getValue_STEXT()) + " (" + getGraph().containsNode(instance.getId()));
+					} 
 					if (i > 0) {
 						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
 						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
@@ -681,5 +685,10 @@ public class GraphBuilder {
 		}
 		buildOrderRelations();
 		addRemainingAnnotations();
+		List<String> nodes = new ArrayList<>();
+		for (SNode node : getGraph().getNodes()) {
+			nodes.add( node.getId() );
+		}
+		System.out.println(String.join(SystemUtils.LINE_SEPARATOR, nodes));
 	}
 }
