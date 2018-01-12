@@ -49,6 +49,8 @@ public class GraphBuilder {
 	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {
 			BUILD_STEP.TOKEN, 
 			BUILD_STEP.SYN_TOKEN,
+			BUILD_STEP.TIME,
+			BUILD_STEP.UTTERANCES,
 			BUILD_STEP.SYNTAX_NODE, 
 			BUILD_STEP.SYNTAX_REL, 
 			BUILD_STEP.REFERENCE_REFEX, 
@@ -59,7 +61,7 @@ public class GraphBuilder {
 	};
 	/** steps */
 	private enum BUILD_STEP {
-		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS
+		TOKEN, SYN_TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS, UTTERANCES, TIME
 	}
 	
 	private final STimeline tl;
@@ -288,7 +290,7 @@ public class GraphBuilder {
 	private int[] getStartEndTime(String tokenId) {
 		SToken sTok = (SToken) getNode(tokenId);
 		for (SRelation<?, ?> rel : sTok.getOutRelations()) {
-			if (rel instanceof STimelineRelation) {
+			if (rel instanceof STimelineRelation) {				
 				return new int[] {((STimelineRelation) rel).getStart(), ((STimelineRelation) rel).getEnd()};
 			}
 		}
@@ -461,14 +463,19 @@ public class GraphBuilder {
 		}
 	}
 
-	public void build(List<Map<String, List<String>>> temporalSequence) {
+	public void build(final List<Map<String, List<String>>> temporalSequence) {
+		new BuildingBrick(buildQueues.get(BUILD_STEP.TIME)) {			
+			@Override
+			public void build() {
+				buildTime(temporalSequence);
+			}
+		};
 		for (BUILD_STEP step : STEP_QUEUE) {
 			for (BuildingBrick brick : buildQueues.get(step)) {
 				brick.build();
 			}
 		}
 		buildOrderRelations();
-		buildTime(temporalSequence);
 		addRemainingAnnotations();
 	}
 }
