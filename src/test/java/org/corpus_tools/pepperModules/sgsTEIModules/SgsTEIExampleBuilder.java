@@ -33,7 +33,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 	
 	private SgsTEIExampleBuilder() {
 		FILE_NAMES = new HashMap<>();
-		FILE_NAMES.put(String.class, "syntax-and-ref-12-11.xml");
+		FILE_NAMES.put(String.class, "example_morphology.xml");
 		instance = this;
 	}
 	

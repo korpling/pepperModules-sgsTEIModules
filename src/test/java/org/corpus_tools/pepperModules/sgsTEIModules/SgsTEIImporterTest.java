@@ -92,10 +92,33 @@ public class SgsTEIImporterTest {
 	public void testMorphosyntax() {
 		SDocumentGraph goalGraph = SgsTEIExampleBuilder.getInstance().getSaltGraph();
 		File resourceDir = new File(PepperTestUtil.getTestResources());
+		System.out.println(SgsTEIExampleBuilder.getInstance().getFileNames());
 		File example = new File(resourceDir, SgsTEIExampleBuilder.getInstance().getFileNames().get(String.class));
 		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
 		getFixture().mapSDocument();
-		// ...
+		
+		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
+		assertNotNull(producedGraph);
+		assertEquals(goalGraph.getTextualDSs().size(), producedGraph.getTextualDSs().size());
+		HashMap<String, STextualDS> dsMap = new HashMap<>();
+		for (STextualDS ds : goalGraph.getTextualDSs()) {
+			dsMap.put(ds.getName(), ds);
+		}
+		for (STextualDS producedDS : producedGraph.getTextualDSs()) {
+			STextualDS goalDS = dsMap.get( producedDS.getName() );
+			assertEquals(goalDS.getText(), producedDS.getText());			
+			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence( new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd()) ));
+			List<SToken> producedTokens = producedGraph.getSortedTokenByText( producedGraph.getTokensBySequence( new DataSourceSequence<Number>(producedDS, producedDS.getStart(), producedDS.getEnd()) ));
+			assertEquals(goalTokens.size(), producedTokens.size());
+			for (int i = 0; i < goalTokens.size(); i++) {
+				SToken goalToken = goalTokens.get(i);
+				SToken producedToken = producedTokens.get(i);
+				assertEquals(goalGraph.getText(goalToken), producedGraph.getText(producedToken));
+				System.out.println(goalToken.getAnnotations());
+				System.out.println(producedToken.getAnnotations());
+				assertEquals(goalToken.getAnnotations().size(), producedToken.getAnnotations().size());
+			}			
+		}
 	}
 	
 	@Test
