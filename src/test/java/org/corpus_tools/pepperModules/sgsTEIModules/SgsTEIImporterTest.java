@@ -49,33 +49,9 @@ import org.junit.Test;
  * @author Martin Klotz
  */
 public class SgsTEIImporterTest {
-	public static final String TEXT_DIPL_0 = "bueno , pues hbía visto subir con hombrnoes jóvenes . que subían mm a medianoche . y bajaban a ltas horas de la madrugada . bueno , yo no yo cre mira te voy a decir la verdad . ";
-	public static final String TEXT_DIPL_1 = "¿ crees que podrían mantener alguna relación amorosa ? ";
-	public static final String TEXT_NORM_0 = "bueno , pues había visto subir con hombretones jóvenes . que subían a medianoche . y bajaban a altas horas de la madrugada . bueno , yo no yo creo mira te voy a decir la verdad . ";
-	public static final String TEXT_NORM_1 = "¿ crees que podrían mantener alguna relación amorosa ? ";
-	public static final String TEXT_PAUSE_0 = "long ";
-	public static final String TEXT_PAUSE_1 = "long ";
-	public static final String SPEAKER_0 = "ANT";
-	public static final String SPEAKER_1 = "S02";
-	public static final String SPEAKER_SYNTAX_0 = "S92";
-	public static final String SPEAKER_SYNTAX_1 = "JER";
-	
-	public static final String TEXT_SYNTAX_DIPL_0 = "ben , je viens à propos du , j' imagine que tu sais , du du cadavre qu' on a retrouvé au quatrième étage . ";
-	public static final String TEXT_SYNTAX_DIPL_1 = "c' était quel quelqu'un qui s' intéressait beaucoup aux autres , aux gens en général . ";
-	public static final String TEXT_SYNTAX_NORM_0 = "ben , je viens à propos du , j' imagine que tu sais , du du cadavre qu' on a retrouvé au quatrième étage . ";
-	public static final String TEXT_SYNTAX_NORM_1 = "c' était quelqu'un quelqu'un qui s' intéressait beaucoup aux autres , aux gens en général . ";
-	public static final String TEXT_SYNTAX_PAUSE_0 = "short ";
 	
 	private SgsTEI2SaltMapper fixture = null;
 	
-	private static final String EXAMPLE_FILE = "example.xml";
-	private static final String EXAMPLE_SYNTAX_FILE = "example_syntax.xml";
-	
-	private static final String LEMMA = "lemma";
-	
-	private static final String POS = "pos";
-	
-	private static final String CAT = "cat";
 	
 	/**
 	 * This method is called by the JUnit environment each time before a test
@@ -97,369 +73,25 @@ public class SgsTEIImporterTest {
 		return this.fixture;
 	}
 	
-	private SgsTEIImporterProperties getModuleProperties() {
-		return (SgsTEIImporterProperties) getFixture().getProperties();
-	}
-		
-	private SDocumentGraph getGoalDocumentGraphSyntax() {
-		SDocument doc = SaltFactory.createSDocument();
-		doc.setId("doc");
-		SDocumentGraph docGraph = doc.createDocumentGraph();
-		STimeline timeline = docGraph.createTimeline();
-		
-		String anaDelimiter = " ";		
-		
-		STextualDS diplDS0 = docGraph.createTextualDS(TEXT_SYNTAX_DIPL_0);
-		STextualDS diplDS1 = docGraph.createTextualDS(TEXT_SYNTAX_DIPL_1);
-		STextualDS normDS0 = docGraph.createTextualDS(TEXT_SYNTAX_NORM_0);
-		STextualDS normDS1 = docGraph.createTextualDS(TEXT_SYNTAX_NORM_1);
-		STextualDS pauseDS0 = docGraph.createTextualDS(TEXT_SYNTAX_PAUSE_0);
-		{
-			diplDS0.setName(String.join(DELIMITER, SPEAKER_SYNTAX_0, getModuleProperties().getDiplName()));
-			diplDS1.setName(String.join(DELIMITER, SPEAKER_SYNTAX_1, getModuleProperties().getDiplName()));
-			normDS0.setName(String.join(DELIMITER, SPEAKER_SYNTAX_0, getModuleProperties().getNormName()));
-			normDS1.setName(String.join(DELIMITER, SPEAKER_SYNTAX_1, getModuleProperties().getNormName()));
-			pauseDS0.setName(String.join(DELIMITER, SPEAKER_SYNTAX_0, getModuleProperties().getPauseName()));			
-		}
-		
-		STextualDS diplDS = diplDS0;
-		STextualDS normDS = normDS0;
-		STextualDS pauseDS = pauseDS0;
-
-		List<SToken> diplTokens0 = new ArrayList<>();
-		List<SToken> normTokens0 = new ArrayList<>();
-		List<SToken> pauseTokens0 = new ArrayList<>();
-		
-		List<SToken> diplTokens1 = new ArrayList<>();
-		List<SToken> normTokens1 = new ArrayList<>();
-		
-		int point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 0, 3, point) );
-		normTokens0.add( createToken(docGraph, normDS, 0, 3, point, SPEAKER_SYNTAX_0, "ben", "INT") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 4, 5, point) );
-		normTokens0.add( createToken(docGraph, normDS, 4, 5, point) );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 6, 8, point) );
-		normTokens0.add( createToken(docGraph, normDS, 6, 8, point, SPEAKER_SYNTAX_0, "je", "PRO:cls") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 9, 14, point) );
-		normTokens0.add( createToken(docGraph, normDS, 9, 14, point, SPEAKER_SYNTAX_0, "venir", "VER:pres") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 15, 26, point) );
-		normTokens0.add( createToken(docGraph, normDS, 15, 26, point, SPEAKER_SYNTAX_0, String.join(anaDelimiter, "à~propos~du", "le"), String.join(anaDelimiter, "PRP", "DET:def")) );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 27, 28, point) );
-		normTokens0.add( createToken(docGraph, normDS, 27, 28, point) );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 29, 31, point) );
-		normTokens0.add( createToken(docGraph, normDS, 29, 31, point, SPEAKER_SYNTAX_0, "je", "PRO:cls") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 32, 39, point) );
-		normTokens0.add( createToken(docGraph, normDS, 32, 39, point, SPEAKER_SYNTAX_0, "imaginer", "VER:pres") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 40, 43, point) );
-		normTokens0.add( createToken(docGraph, normDS, 40, 43, point, SPEAKER_SYNTAX_0, "que", "KON") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 44, 46, point) );
-		normTokens0.add( createToken(docGraph, normDS, 44, 46, point, SPEAKER_SYNTAX_0, "tu", "PRO:cls") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 47, 51, point) );
-		normTokens0.add( createToken(docGraph, normDS, 47, 51, point, SPEAKER_SYNTAX_0, "savoir", "VER:pres") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 52, 53, point) );
-		normTokens0.add( createToken(docGraph, normDS, 52, 53, point) );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 54, 56, point) );
-		normTokens0.add( createToken(docGraph, normDS, 54, 56, point, SPEAKER_SYNTAX_0, String.join(anaDelimiter, "de", "le"), String.join(anaDelimiter, "PREP", "DET:def")) );
-
-		point = newPointOfTime(timeline);
-		pauseTokens0.add( createToken(docGraph, pauseDS, 0, 5, point) );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 57, 59, point) );
-		normTokens0.add( createToken(docGraph, normDS, 57, 59, point, SPEAKER_SYNTAX_0, String.join(anaDelimiter, "de", "le"), String.join(anaDelimiter, "PREP", "DET:def")) );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 60, 67, point) );
-		normTokens0.add( createToken(docGraph, normDS, 60, 67, point, SPEAKER_SYNTAX_0, "cadavre", "NOM") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 68, 71, point) );
-		normTokens0.add( createToken(docGraph, normDS, 68, 71, point, SPEAKER_SYNTAX_0, "que", "PRO:rel") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 72, 74, point) );
-		normTokens0.add( createToken(docGraph, normDS, 72, 74, point, SPEAKER_SYNTAX_0, "on", "PRO:cls") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 75, 76, point) );
-		normTokens0.add( createToken(docGraph, normDS, 75, 76, point, SPEAKER_SYNTAX_0, "avoir", "AUX:pres") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 77, 85, point) );
-		normTokens0.add( createToken(docGraph, normDS, 77, 85, point, SPEAKER_SYNTAX_0, "retrouver", "VER:pper") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 86, 88, point) );
-		normTokens0.add( createToken(docGraph, normDS, 86, 88, point, SPEAKER_SYNTAX_0, String.join(anaDelimiter, "à", "le"), String.join(anaDelimiter, "PRP", "DET:def")) );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 89, 98, point) );
-		normTokens0.add( createToken(docGraph, normDS, 89, 98, point, SPEAKER_SYNTAX_0, "quatrième", "ADJ") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 99, 104, point) );
-		normTokens0.add( createToken(docGraph, normDS, 99, 104, point, SPEAKER_SYNTAX_0, "étage", "NOM") );
-
-		point = newPointOfTime(timeline);
-		diplTokens0.add( createToken(docGraph, diplDS, 105, 106, point) );
-		normTokens0.add( createToken(docGraph, normDS, 105, 106, point) );
-
-		diplDS = diplDS1;
-		normDS = normDS1;
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 0, 2, point) );
-		normTokens1.add( createToken(docGraph, normDS, 0, 2, point, SPEAKER_SYNTAX_1, "ce", "PRO:cls") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 3, 8, point) );
-		normTokens1.add( createToken(docGraph, normDS, 3, 8, point, SPEAKER_SYNTAX_1, "être", "VER:impf") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 9, 13, point) );
-		normTokens1.add( createToken(docGraph, normDS, 9, 18, point, SPEAKER_SYNTAX_1, "quel", "DET:int") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 14, 23, point) );
-		normTokens1.add( createToken(docGraph, normDS, 19, 28, point, SPEAKER_SYNTAX_1, "quelqu’un", "PRO:ind") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 24, 27, point) );
-		normTokens1.add( createToken(docGraph, normDS, 29, 32, point, SPEAKER_SYNTAX_1, "qui", "PRO:rel") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 28, 30, point) );
-		normTokens1.add( createToken(docGraph, normDS, 33, 35, point, SPEAKER_SYNTAX_1, "se", "PRO:clo") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 31, 42, point) );
-		normTokens1.add( createToken(docGraph, normDS, 36, 47, point, SPEAKER_SYNTAX_1, "s’intéresser", "VER:impf") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 43, 51, point) );
-		normTokens1.add( createToken(docGraph, normDS, 48, 56, point, SPEAKER_SYNTAX_1, "beaucoup", "ADV") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 52, 55, point) );
-		normTokens1.add( createToken(docGraph, normDS, 57, 60, point, SPEAKER_SYNTAX_1, String.join(anaDelimiter, "à", "le"), String.join(anaDelimiter, "PRP", "DET:def")) );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 56, 62, point) );
-		normTokens1.add( createToken(docGraph, normDS, 61, 67, point, SPEAKER_SYNTAX_1, "autre", "QUA") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 63, 64, point) );
-		normTokens1.add( createToken(docGraph, normDS, 68, 69, point) );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 65, 68, point) );
-		normTokens1.add( createToken(docGraph, normDS, 70, 73, point, SPEAKER_SYNTAX_1, String.join(anaDelimiter, "à", "le"), String.join(anaDelimiter, "PRP", "DET:def")) );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 69, 73, point) );
-		normTokens1.add( createToken(docGraph, normDS, 74, 78, point, SPEAKER_SYNTAX_1, "gens", "NOM") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 74, 84, point) );
-		normTokens1.add( createToken(docGraph, normDS, 79, 89, point, SPEAKER_SYNTAX_1, "en~général", "ADV") );
-
-		point = newPointOfTime(timeline);
-		diplTokens1.add( createToken(docGraph, diplDS, 85, 86, point) );
-		normTokens1.add( createToken(docGraph, normDS, 90, 91, point) );
-		
-		addOrderRelations(docGraph, diplTokens0, SPEAKER_SYNTAX_0, getModuleProperties().getDiplName());
-		addOrderRelations(docGraph, diplTokens1, SPEAKER_SYNTAX_1, getModuleProperties().getDiplName());
-		addOrderRelations(docGraph, normTokens0, SPEAKER_SYNTAX_0, getModuleProperties().getNormName());
-		addOrderRelations(docGraph, normTokens1, SPEAKER_SYNTAX_1, getModuleProperties().getNormName());
-		addOrderRelations(docGraph, pauseTokens0, SPEAKER_SYNTAX_0, getModuleProperties().getPauseName());
-		
-		/* add syntax */
-		SLayer syntaxLayer = SaltFactory.createSLayer();
-		docGraph.addLayer(syntaxLayer);
-		/* speaker 0 */
-		String[] syntacticNodes = {"PRN", "V", "P,D", "N", "PRN", "PRN", "V", "V", "P,D", "A", "N"};
-		Integer[] indexes = {2, 3, 4, 14, 15, 16, 17, 18, 19, 20, 21};
-		List<Integer> indexList = Arrays.asList(indexes);
-		SStructure[][] leafStructures = new SStructure[22][2];
-		
-		for (int i = 0; i < indexes.length; i++) {
-			int ix = indexes[i];
-			if (syntacticNodes[i] == null) {
-				leafStructures[ix][0] = null;
-			} else {
-				String[] cats = syntacticNodes[i].split(",");
-				for (int j = 0; j < cats.length; j++) {
-					leafStructures[ix][j] = docGraph.createStructure(normTokens0.get(ix));
-					leafStructures[ix][j].createAnnotation(null, CAT, cats[j]);
-					syntaxLayer.addNode(leafStructures[ix][j]);
-				}
-			}
-		}
-		
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[21][0], leafStructures[19][1], "det") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[21][0], leafStructures[20][0], "mod") );
-		
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[19][0], leafStructures[21][0], "obj") );
-				
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[15][0], "obj") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[16][0], "suj") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[17][0], "aux_tps") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[18][0], leafStructures[19][0], "mod") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[4][1], "det") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[14][0], leafStructures[18][0], "mod_rel") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[4][0], leafStructures[14][0], "obj") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[2][0], "suj") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[4][0], "mod") );
-
-		SStructure root = SaltFactory.createSStructure();
-		root.createAnnotation(null, CAT, "ROOT");
-		docGraph.addNode(root);
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, root, leafStructures[3][0], "root") ); 
-		syntaxLayer.addNode(root);
-				
-		/* speaker 1 */
-		syntacticNodes = new String[] {"PRN", "V", null, "PRN", "PRN", "PRN", "V", "ADV", "P,D", "Q", null, "P,D", "N", "ADV"};
-		indexes = new Integer[] {0, 1, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13};
-		indexList = Arrays.asList(indexes);
-		leafStructures = new SStructure[14][2];	
-		for (int ix : indexList) {
-			if (syntacticNodes[ix] == null) {
-				leafStructures[ix][0] = null;
-			} else {
-				String[] cats = syntacticNodes[ix].split(",");
-				for (int j = 0; j < cats.length; j++) {
-					leafStructures[ix][j] = docGraph.createStructure(normTokens1.get(ix));
-					leafStructures[ix][j].createAnnotation(null, CAT, cats[j]);
-				}
-			}			
-		}
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[11][1], "det") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[12][0], leafStructures[13][0], "mod") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[11][0], leafStructures[12][0], "obj") );
-
-		SStructure coord = SaltFactory.createSStructure();
-		coord.createAnnotation(null, CAT, "COORD");
-		coord.createAnnotation(null, "form", "elided");
-		docGraph.addNode(coord);
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, coord, leafStructures[11][0], "dep_coord") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[9][0], leafStructures[8][1], "det") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[8][0], leafStructures[9][0], "obj") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[8][0], coord, "coord") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[4][0], "suj") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[5][0], "att") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[7][0], "mod") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[6][0], leafStructures[8][0], "p_obj") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[3][0], leafStructures[6][0], "mod_rel") );
-
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[1][0], leafStructures[0][0], "suj") );
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, leafStructures[1][0], leafStructures[3][0], "ats") );
-
-		root = SaltFactory.createSStructure();
-		root.createAnnotation(null, CAT, "ROOT");
-		docGraph.addNode(root);
-		syntaxLayer.addRelation( createDominanceRelation(docGraph, root, leafStructures[1][0], "root") );
-		syntaxLayer.addNode(root);
-		
-		return docGraph;
-	}
-			
-	private SDominanceRelation createDominanceRelation(SDocumentGraph graph, SStructuredNode source, SStructuredNode target, String edgeLabel) {
-		return (SDominanceRelation) graph.createRelation(source, target, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", SgsTEIDictionary.ATT_TYPE, edgeLabel));
-	}
-	
 	private static final String DELIMITER = "_";
-	
-	private void addAnnotations(SToken tok, String speakerName, String lemmaValue, String posValue) {		
-		tok.createAnnotation(null, String.join(DELIMITER, speakerName, LEMMA), lemmaValue);
-		tok.createAnnotation(null, String.join(DELIMITER, speakerName, POS), posValue);
-	}
-	
-	private void addTimelineRelation(SDocumentGraph docGraph, SToken tok, int point) {
-		STimeline timeline = docGraph.getTimeline();
-		STimelineRelation tRel = SaltFactory.createSTimelineRelation();
-		tRel.setStart(point - 1);
-		tRel.setEnd(point);
-		tRel.setSource(tok);
-		tRel.setTarget(timeline);
-		docGraph.addRelation(tRel);
-	}
-	
-	private int newPointOfTime(STimeline timeline) {
-		timeline.increasePointOfTime();
-		return timeline.getEnd();
-	}
-	
-	private SToken createToken(SDocumentGraph graph, STextualDS ds, int start, int end, int point) {
-		SToken tok = graph.createToken(ds, start, end);
-		addTimelineRelation(graph, tok, point);
-		return tok;
-	}
-	
-	private SToken createToken(SDocumentGraph graph, STextualDS ds, int start, int end, int point, String speakerName, String lemmaValue, String posValue) {
-		SToken tok = createToken(graph, ds, start, end, point);
-		addAnnotations(tok, speakerName, lemmaValue, posValue);
-		return tok;
-	}
-	
-	private void addOrderRelations(SDocumentGraph graph, List<SToken> tokenList, String speakerName, String name) {
-		String qName = String.join(DELIMITER, speakerName, name);
-		SOrderRelation oRel = null;
-		for (int i = 1; i < tokenList.size(); i++) {
-			oRel = SaltFactory.createSOrderRelation();
-			oRel.setSource(tokenList.get(i - 1));
-			oRel.setTarget(tokenList.get(i));
-			oRel.setType(qName);
-			graph.addRelation(oRel);
-		}
-	}	
 	
 	@Test
 	public void testPrimaryData() {
-		SDocumentGraph goalGraph = null;
+		SDocumentGraph goalGraph = SgsTEIExampleBuilder.getInstance().getSaltGraph();
 		File resourceDir = new File(PepperTestUtil.getTestResources());
-		File example = new File(resourceDir, EXAMPLE_FILE);
+		File example = new File(resourceDir, SgsTEIExampleBuilder.getInstance().getFileNames().get(String.class));
 		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
 		getFixture().mapSDocument();
-		// ...
+		
+		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
+		assertEquals(goalGraph.getTextualDSs().size(), producedGraph.getTextualDSs().size());
 	}
 	
 	@Test
 	public void testMorphosyntax() {
-		SDocumentGraph goalGraph = null;
+		SDocumentGraph goalGraph = SgsTEIExampleBuilder.getInstance().getSaltGraph();
 		File resourceDir = new File(PepperTestUtil.getTestResources());
-		File example = new File(resourceDir, EXAMPLE_FILE);
+		File example = new File(resourceDir, SgsTEIExampleBuilder.getInstance().getFileNames().get(String.class));
 		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
 		getFixture().mapSDocument();
 		// ...
@@ -467,47 +99,13 @@ public class SgsTEIImporterTest {
 	
 	@Test
 	public void testSyntax() {
-		SDocumentGraph goalGraph = getGoalDocumentGraphSyntax();
+		SDocumentGraph goalGraph = SgsTEIExampleBuilder.getInstance().getSaltGraph();
 		File resourceDir = new File(PepperTestUtil.getTestResources());
-		File example = new File(resourceDir, EXAMPLE_SYNTAX_FILE);
+		File example = new File(resourceDir, SgsTEIExampleBuilder.getInstance().getFileNames().get(String.class));
 		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
 		getFixture().mapSDocument();
 
 		// ...
-	}
-	
-	private void basicTest(SDocumentGraph goalGraph, SDocumentGraph fixGraph) {
-		assertEquals(goalGraph.getRelations().size(), fixGraph.getRelations().size());
-		assertEquals(goalGraph.getNodes().size(), fixGraph.getNodes().size());		
-	}
-	
-	private void primaryDataTest(SDocumentGraph goalGraph, SDocumentGraph fixGraph) {
-		assertNotNull(fixGraph);		 
-		assertEquals(goalGraph.getTextualDSs().size(), fixGraph.getTextualDSs().size());
-		assertEquals(goalGraph.getTokens().size(), fixGraph.getTokens().size());
-		HashMap<STextualDS, STextualDS> dsMapping = new HashMap<>();
-		HashSet<STextualDS> served = new HashSet<>();
-		for (STextualDS ds : goalGraph.getTextualDSs()) {
-			for (STextualDS fds : fixGraph.getTextualDSs()) {
-				if (!served.contains(fds) && ds.getName() != null && ds.getName().equals(fds.getName())) {
-					dsMapping.put(ds, fds);
-					served.add(fds);
-				}
-			}
-		}
-		for (Entry<STextualDS, STextualDS> e : dsMapping.entrySet()) {
-			STextualDS goalDS = e.getKey();
-			STextualDS fixDS = e.getValue();
-			assertEquals(goalDS.getText(), fixDS.getText());
-			DataSourceSequence<?> goalSeq = new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd());
-			DataSourceSequence<?> fixSeq = new DataSourceSequence<Number>(fixDS, fixDS.getStart(), fixDS.getEnd());
-			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence(goalSeq) );
-			List<SToken> fixTokens = fixGraph.getSortedTokenByText( fixGraph.getTokensBySequence(fixSeq) );
-			assertEquals(goalTokens.size(), fixTokens.size());
-			for (int i = 0; i < goalTokens.size(); i++) {
-				assertEquals(goalGraph.getText(goalTokens.get(i)), fixGraph.getText(fixTokens.get(i)));
-			}
-		}
 	}
 	
 	@Test
