@@ -8,14 +8,17 @@ public interface SaltExampleConstants {
 	public static final String NORM = "norm";
 	public static final String PAUSE = "pause";
 	public static final String SYN = "syn";
+	public static final String UTT = "utterance";
 	/* texts */
 	public static final String DIPL_S92 = "ben , je viens à propos du , j' imagine que tu sais , du du cadavre qu' on a retrouvé au quatrième ètage .";
 	public static final String NORM_S92 = "ben , je viens à propos du , j' imagine que tu sais , du du cadavre qu' on a retrouvé au quatrième étage .";
 	public static final String PAUSE_S92 = "short";
 	public static final String SYN_S92 = "ben je viens {à~propos~de} {le} j' imagine que tu sais {de} {le} {de} {le} cadavre qu' on a retrouvé {à} {le} quatrième étage";
+	public static final String UTT_S92 = "u-92-d1e1251";
 	public static final String DIPL_JER = "c' était quel quelqu'un qui s' inéressit mm beaucoup aux autes , ux gens en général .";
 	public static final String NORM_JER = "c' était quelqu'un quelqu'un qui s' intéressait beaucoup aux autres , aux gens en général .";
 	public static final String SYN_JER = "c' était quelqu'un quelqu'un qui s' intéressait beaucoup {à} {le} autres ∅ {à} {le} gens en général";
+	public static final String UTT_JER = "u-92-d1e1992";
 	//NOTE: there is no pause layer for JER. This way we can check whether the module is capable of dealing with the absence of pauses for one speaker properly.
 	/* indices (start_index, end_index, start_time, end_time) */
 	public static final int[][] DIPL_S92_INDICES = {
@@ -71,7 +74,10 @@ public interface SaltExampleConstants {
 			{105, 109, 24, 25},//{le}
 			{110, 119, 25, 26},//quatrième
 			{120, 125, 26, 27}//étage	
-	};	
+	};
+	public static final int[][] UTT_S92_INDICES = {
+			{0, UTT_S92.length(), 0, 27}	
+	};
 	public static final int[][] DIPL_JER_INDICES = {
 			{0, 2, 28, 29},//c'
 			{3, 8, 29, 30},//était
@@ -86,7 +92,7 @@ public interface SaltExampleConstants {
 			{57, 62, 39, 40},//autes
 			{63, 64, 41, 42},//,
 			{65, 67, 42, 44},//ux
-			{70, 72, 44, 45},//gens
+			{68, 72, 44, 45},//gens
 			{73, 83, 45, 46},//en~général
 			{84, 85, 46, 47}//.
 	};
@@ -124,6 +130,9 @@ public interface SaltExampleConstants {
 			{79, 83, 43, 44},//{le}
 			{84, 88, 44, 45},//gens
 			{89, 99, 45, 46}//en~géneral			
+	};
+	public static final int[][] UTT_JER_INDICES = {
+			{0, UTT_JER.length(), 28, 46}
 	};
 	/* morphological annotations */
 	public static final String[] MORPH_NAMES = {"lemma", "pos"};

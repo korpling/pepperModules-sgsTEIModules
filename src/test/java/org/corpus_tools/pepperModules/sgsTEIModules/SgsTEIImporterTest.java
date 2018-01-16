@@ -2,34 +2,17 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
-import org.corpus_tools.salt.SALT_TYPE;
-import org.corpus_tools.salt.SaltFactory;
-import org.corpus_tools.salt.common.SDocument;
 import org.corpus_tools.salt.common.SDocumentGraph;
-import org.corpus_tools.salt.common.SDominanceRelation;
-import org.corpus_tools.salt.common.SOrderRelation;
-import org.corpus_tools.salt.common.SStructure;
-import org.corpus_tools.salt.common.SStructuredNode;
 import org.corpus_tools.salt.common.STextualDS;
-import org.corpus_tools.salt.common.STimeline;
-import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
-import org.corpus_tools.salt.core.SLayer;
-import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
@@ -79,12 +62,30 @@ public class SgsTEIImporterTest {
 	public void testPrimaryData() {
 		SDocumentGraph goalGraph = SgsTEIExampleBuilder.getInstance().getSaltGraph();
 		File resourceDir = new File(PepperTestUtil.getTestResources());
+		System.out.println(SgsTEIExampleBuilder.getInstance().getFileNames());
 		File example = new File(resourceDir, SgsTEIExampleBuilder.getInstance().getFileNames().get(String.class));
 		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
 		getFixture().mapSDocument();
 		
 		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
+		assertNotNull(producedGraph);
 		assertEquals(goalGraph.getTextualDSs().size(), producedGraph.getTextualDSs().size());
+		HashMap<String, STextualDS> dsMap = new HashMap<>();
+		for (STextualDS ds : goalGraph.getTextualDSs()) {
+			dsMap.put(ds.getName(), ds);
+		}
+		for (STextualDS producedDS : producedGraph.getTextualDSs()) {
+			STextualDS goalDS = dsMap.get( producedDS.getName() );
+			assertEquals(goalDS.getText(), producedDS.getText());			
+			List<SToken> goalTokens = goalGraph.getSortedTokenByText( goalGraph.getTokensBySequence( new DataSourceSequence<Number>(goalDS, goalDS.getStart(), goalDS.getEnd()) ));
+			List<SToken> producedTokens = producedGraph.getSortedTokenByText( producedGraph.getTokensBySequence( new DataSourceSequence<Number>(producedDS, producedDS.getStart(), producedDS.getEnd()) ));
+			assertEquals(goalTokens.size(), producedTokens.size());
+			for (int i = 0; i < goalTokens.size(); i++) {
+				String goalText = goalGraph.getText(goalTokens.get(i));
+				String producedText = producedGraph.getText(producedTokens.get(i));
+				assertEquals(goalText, producedText);
+			}			
+		}
 	}
 	
 	@Test

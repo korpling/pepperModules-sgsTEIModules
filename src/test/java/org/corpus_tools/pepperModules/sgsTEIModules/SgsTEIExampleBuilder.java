@@ -48,7 +48,8 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 	public SDocumentGraph getSaltGraph() {
 		if (salt == null) {
 			salt = SaltFactory.createSDocumentGraph();
-			SaltFactory.createSDocument().setDocumentGraph(salt);			
+			SaltFactory.createSDocument().setDocumentGraph(salt);
+			salt.createTimeline().increasePointOfTime();
 			createSaltGraph();		
 		}
 		return salt;
@@ -65,6 +66,9 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		ds = createTextualDS(graph, SPEAKER_JER, SYN, SYN_JER);
 		createTokens(ds, SYN_JER_INDICES, MORPH_JER);
 		
+		ds = createTextualDS(graph, SPEAKER_JER, UTT, UTT_JER);
+		createTokens(ds, UTT_JER_INDICES, null);
+		
 		ds = createTextualDS(graph, SPEAKER_S92, DIPL, DIPL_S92);
 		createTokens(ds, DIPL_S92_INDICES, null);
 		
@@ -76,6 +80,9 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		
 		ds = createTextualDS(graph, SPEAKER_S92, SYN, SYN_S92);
 		createTokens(ds, SYN_S92_INDICES, MORPH_S92);
+		
+		ds = createTextualDS(graph, SPEAKER_S92, UTT, UTT_S92);
+		createTokens(ds, UTT_S92_INDICES, null);
 	}
 	
 	private STextualDS createTextualDS(SDocumentGraph graph, String speaker, String name, String text) {
@@ -145,8 +152,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 
 	@Override
 	public Map<Class<?>, String> getFileNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return FILE_NAMES;
 	}
 	
 	
