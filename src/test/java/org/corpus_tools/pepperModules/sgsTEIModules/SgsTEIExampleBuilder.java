@@ -15,6 +15,7 @@ import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.util.DataSourceSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,31 +59,31 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 	private void createSaltGraph() {
 		SDocumentGraph graph = salt;
 		STextualDS ds = createTextualDS(graph, SPEAKER_JER, DIPL, DIPL_JER);
-		createTokens(ds, DIPL_JER_INDICES, null);
+		createTokens(ds, DIPL_JER_INDICES, null, null);
 		
 		ds = createTextualDS(graph, SPEAKER_JER, NORM, NORM_JER);
-		createTokens(ds, NORM_JER_INDICES, null);
+		createTokens(ds, NORM_JER_INDICES, null, null);
 		
 		ds = createTextualDS(graph, SPEAKER_JER, SYN, SYN_JER);
-		createTokens(ds, SYN_JER_INDICES, MORPH_JER);
+		createTokens(ds, SYN_JER_INDICES, MORPH_JER, MORPH_NAMES);
 		
 		ds = createTextualDS(graph, SPEAKER_JER, UTT, UTT_JER);
-		createTokens(ds, UTT_JER_INDICES, null);
+		createTokens(ds, UTT_JER_INDICES, UTT_ANNO_JER, UTT_NAMES);
 		
 		ds = createTextualDS(graph, SPEAKER_S92, DIPL, DIPL_S92);
-		createTokens(ds, DIPL_S92_INDICES, null);
+		createTokens(ds, DIPL_S92_INDICES, null, null);
 		
 		ds = createTextualDS(graph, SPEAKER_S92, NORM, NORM_S92);
-		createTokens(ds, NORM_S92_INDICES, null);
+		createTokens(ds, NORM_S92_INDICES, null, null);
 		
 		ds = createTextualDS(graph, SPEAKER_S92, PAUSE, PAUSE_S92);
-		createTokens(ds, PAUSE_S92_INDICES, null);
+		createTokens(ds, PAUSE_S92_INDICES, null, null);
 		
 		ds = createTextualDS(graph, SPEAKER_S92, SYN, SYN_S92);
-		createTokens(ds, SYN_S92_INDICES, MORPH_S92);
+		createTokens(ds, SYN_S92_INDICES, MORPH_S92, MORPH_NAMES);
 		
 		ds = createTextualDS(graph, SPEAKER_S92, UTT, UTT_S92);
-		createTokens(ds, UTT_S92_INDICES, null);
+		createTokens(ds, UTT_S92_INDICES, UTT_ANNO_S92, UTT_NAMES);
 	}
 	
 	private STextualDS createTextualDS(SDocumentGraph graph, String speaker, String name, String text) {
@@ -91,7 +92,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		return ds;
 	}
 	
-	private void createTokens(STextualDS ds, int[][] indices, String[][] annotations) {
+	private void createTokens(STextualDS ds, int[][] indices, String[][] annotations, String[] annotationNames) {
 		SDocumentGraph graph = ds.getGraph();
 		STimeline timeline = graph.getTimeline();
 		SToken sToken = null;
@@ -102,8 +103,10 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 			sToken = graph.createToken(ds, tuple[0], tuple[1]);
 			createTimelineRelation(timeline, sToken, tuple[2], tuple[3]);
 			if (hasAnnotations && annotations[i] != null) {
-				for (int j = 0; j < MORPH_NAMES.length; j++) {
-					sToken.createAnnotation(null, MORPH_NAMES[j], annotations[i][j]);					
+				for (int j = 0; j < annotationNames.length; j++) {
+					if (annotations[i][j] != null) {
+						createAnnotation(sToken, annotationNames[j], annotations[i][j]);					
+					}
 				}
 			}
 			tokens.add(sToken);
@@ -113,6 +116,10 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		}
 	}
 	
+	private void createAnnotation(SToken sToken, String name, String value) {
+		sToken.createAnnotation(null, name, value);
+	}
+
 	private void createTimelineRelation(STimeline timeline, SToken sToken, int start, int end) {
 		timeline.increasePointOfTime(end - start);
 		STimelineRelation rel = SaltFactory.createSTimelineRelation();

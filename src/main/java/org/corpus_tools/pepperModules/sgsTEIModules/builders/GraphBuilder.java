@@ -633,11 +633,7 @@ public class GraphBuilder {
 	 * @param annotation
 	 */
 	private void addAnnotation(SNode target, SAnnotation annotation) {
-		if (target instanceof SToken) {
-			getGraph().createSpan((SToken) target).addAnnotation(annotation);
-		} else {
-			target.addAnnotation(annotation);
-		}
+		target.addAnnotation(annotation);
 	}
 	
 	/**
