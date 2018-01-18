@@ -191,13 +191,12 @@ public interface SaltExampleConstants {
 	/* span annotations */
 	/** each span is given as pair (from, to) whereas <i>from</i> and <i>to</i> are anchors in the timeline*/
 	public static final int[][][] SPANS = {
-			{{0, 1}, {2, 4}, {4, 6}, {7, 23}, {23, 25}, {25, 35}, {35, 37},	{37, 46}}, //tempo
-			
+			{{0, 1}, {2, 4}, {4, 6}, {7, 23}, {23, 25}, {25, 35}, {35, 37},	{37, 46}}, //tempo			
 	};
 	public static final String[] SPAN_NAMES = {
 		"tempo"	
 	};
 	public static final String[][] SPAN_VALUES = {
 			{"slow", "normal", "slow", "normal", "slow", "normal", "slow", "normal"}
-	}
+	};
 }

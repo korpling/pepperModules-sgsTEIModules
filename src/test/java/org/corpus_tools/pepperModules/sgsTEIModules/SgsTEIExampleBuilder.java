@@ -11,10 +11,12 @@ import java.util.Map;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SOrderRelation;
+import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +61,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 	private void createSaltGraph() {
 		SDocumentGraph graph = salt;
 		STextualDS ds = createTextualDS(graph, SPEAKER_JER, DIPL, DIPL_JER);
-		createTokens(ds, DIPL_JER_INDICES, null, null);
+		createTokens(ds, DIPL_JER_INDICES, null, null);		
 		
 		ds = createTextualDS(graph, SPEAKER_JER, NORM, NORM_JER);
 		createTokens(ds, NORM_JER_INDICES, null, null);
@@ -84,6 +86,23 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		
 		ds = createTextualDS(graph, SPEAKER_S92, UTT, UTT_S92);
 		createTokens(ds, UTT_S92_INDICES, UTT_ANNO_S92, UTT_NAMES);
+		
+		createSpans(graph);
+	}
+	
+	private void createSpans(SDocumentGraph graph) {
+		STimeline timeline = graph.getTimeline();
+		for (int i = 0; i < SPANS.length; i++) {
+			int[][] spanGroup = SPANS[i];
+			String annoName = SPAN_NAMES[i];
+			String[] annoValues = SPAN_VALUES[i];
+			for (int j = 0; j < spanGroup.length; j++) {
+				int[] span = spanGroup[j];
+				List<SToken> spanTokens = graph.getTokensBySequence( new DataSourceSequence<Number>(timeline, span[0], span[1]) );
+				SSpan sSpan = graph.createSpan(spanTokens);
+				createAnnotation(sSpan, annoName, annoValues[j]);
+			}
+		}
 	}
 	
 	private STextualDS createTextualDS(SDocumentGraph graph, String speaker, String name, String text) {
@@ -116,8 +135,8 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		}
 	}
 	
-	private void createAnnotation(SToken sToken, String name, String value) {
-		sToken.createAnnotation(null, name, value);
+	private void createAnnotation(SNode sNode, String name, String value) {
+		sNode.createAnnotation(null, name, value);
 	}
 
 	private void createTimelineRelation(STimeline timeline, SToken sToken, int start, int end) {

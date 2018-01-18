@@ -61,4 +61,8 @@ public interface SgsTEIDictionary {
 	/* Namespace uris */
 	public static final String URI_NS_XML = "http://www.tei-c.org/ns/1.0";
 	public static final String URI_NS_SO = "http://standoff.proposal";
+	/* features */
+	public static final String FEAT_TEMPO = "tempo";
+	public static final String[] FEAT_TEMPO_VALUES = {"normal", "slow", "fast"};
+	public static final int FEAT_TEMPO_DEFAULT_INDEX = 0;	
 }
