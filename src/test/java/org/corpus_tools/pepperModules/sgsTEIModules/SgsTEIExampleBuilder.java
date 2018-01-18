@@ -7,16 +7,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SOrderRelation;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
+import org.corpus_tools.salt.common.STextualRelation;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SNode;
+import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,11 +104,28 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 			for (int j = 0; j < spanGroup.length; j++) {
 				int[] span = spanGroup[j];
 				List<SToken> spanTokens = graph.getTokensBySequence( new DataSourceSequence<Number>(timeline, span[0], span[1]) );
-				SSpan sSpan = graph.createSpan(spanTokens);
+				SSpan sSpan = graph.createSpan(getFilteredTokens(spanTokens));
 				createAnnotation(sSpan, annoName, annoValues[j]);
 			}
 		}
 	}
+	
+	private List<SToken> getFilteredTokens(List<SToken> unfiltered) {
+		return unfiltered.stream().filter(predicate).collect(Collectors.<SToken>toList());
+	}
+	
+	private Predicate<SToken> predicate = new Predicate<SToken>() {		
+		@Override
+		public boolean test(SToken t) {
+			SRelation rel = t.getOutRelations().stream().filter(new Predicate<SRelation>() {
+				@Override
+				public boolean test(SRelation rel) {
+					return rel instanceof STextualRelation;
+				}
+			}).findFirst().get();
+			return ((STextualDS) rel.getTarget()).getName().endsWith("_dipl");
+		}
+	};
 	
 	private STextualDS createTextualDS(SDocumentGraph graph, String speaker, String name, String text) {
 		STextualDS ds = graph.createTextualDS(text);

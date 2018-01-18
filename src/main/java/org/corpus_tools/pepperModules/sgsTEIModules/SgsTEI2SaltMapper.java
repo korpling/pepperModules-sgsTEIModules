@@ -4,14 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,11 +18,12 @@ import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
-import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.READ_MODE;
-import org.corpus_tools.pepperModules.sgsTEIModules.SgsTEIImporterUtils.TextBuffer;
 import org.corpus_tools.pepperModules.sgsTEIModules.builders.GraphBuilder;
+import org.corpus_tools.pepperModules.sgsTEIModules.lib.SgsTEIDictionary;
+import org.corpus_tools.pepperModules.sgsTEIModules.lib.importerLib.READ_MODE;
+import org.corpus_tools.pepperModules.sgsTEIModules.utils.importerUtils.FeatureReader;
+import org.corpus_tools.pepperModules.sgsTEIModules.utils.importerUtils.TextBuffer;
 import org.corpus_tools.salt.SaltFactory;
-import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.core.SMetaAnnotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,8 +72,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private READ_MODE mode; 
 		/** the graph builder object connected to the current document */
 		private GraphBuilder builder;
-		/** additional utils for reading */
-		private SgsTEIImporterUtils utils;
 		/** currently processed annotation name (most recently read) */
 		private String annotationName;
 		/** most recently read (general) id */
@@ -111,29 +108,24 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		private String uid;
 		/** all token ids to be associated with the currently read utterance */
 		private List<String> utteranceTokens;
-		/** values of features given in shift tags */
-		private Map<String, String> featureValues;
-		/** index in overall sequence (value) when feature shift for given feature (key) happened */
-		private Map<String, Integer> featureSpanStart;
-		/** overall sequence of syntactic token ids */
-		private List<String> overallSequence;
 		/** Fallback value for syntactic subtokens. Taken from property. */
 		private String fallbackName;
+		/** reads the features observed in reading the actual speech (TEXT) */
+		private FeatureReader featureReader;
 		
 		/** name suffix for norm level */
-		private String NORM;
+		private String normNameBase;
 		/** name suffix for diplomatic level */
-		private String DIPL;
+		private String diplNameBase;
 		/** name suffix for pause level */
-		private String PAUSE;
+		private String pauseNameBase;
 		/** name suffix for syntactic tokenization */
-		private String SYN;
+		private String synNameBase;
 		
 		public SgsTEIReader() {
 			/*internal*/
-			utils = new SgsTEIImporterUtils();
 			stack = new Stack<String>();
-			textBuffer = utils.getTextBuffer();
+			textBuffer = new TextBuffer();
 			mode = READ_MODE.BLIND;
 			builder = new GraphBuilder(SgsTEI2SaltMapper.this);
 			token2text = new HashMap<>();
@@ -146,19 +138,17 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			lastEnd = 0L;
 			utteranceValue = null;
 			uid = null;
-			featureValues = new HashMap<>();
-			featureSpanStart = new HashMap<>();
-			overallSequence = new ArrayList<>();
 			init();
 		}
 		
 		private void init() {
 			SgsTEIImporterProperties props = (SgsTEIImporterProperties) getProperties();
-			DIPL = props.getDiplName();
-			NORM = props.getNormName();
-			SYN = props.getSynSegName();
-			PAUSE = props.getPauseName();
+			diplNameBase = props.getDiplName();
+			normNameBase = props.getNormName();
+			synNameBase = props.getSynSegName();
+			pauseNameBase = props.getPauseName();
 			fallbackName = props.getFallbackAnnotationName();
+			featureReader = new FeatureReader(builder, props.ignoreUnknownFeatures());
 		}
 		
 		@Override
@@ -176,7 +166,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				if (pauseValue == null) {
 					pauseValue = attributes.getValue(ATT_DURATION);
 				}
-				token2text.put(builder.registerToken(null, speaker, PAUSE), pauseValue);
+				token2text.put(builder.registerToken(null, speaker, pauseNameBase), pauseValue);
 			}
 			else if (TAG_U.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				utterance(attributes);
@@ -258,7 +248,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_SHIFT.equals(localName) && READ_MODE.TEXT.equals(mode)) {
 				String feature = attributes.getValue(ATT_FEATURE);				
 				if (feature != null) {
-					feature(feature, attributes.getValue(ATT_NEW));
+					featureReader.readFeature(feature, attributes.getValue(ATT_NEW));
 				}
 			}
 			else if (TAG_WHEN.equals(localName) && READ_MODE.TEXT.equals(mode)) {
@@ -291,25 +281,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				annotationName = null;
 			}
 			stack.push(localName);
-		}
-		
-		private void finishFeatures() {
-			for (Entry<String, Integer> f : featureSpanStart.entrySet()) {
-				buildFeature(f.getKey(), featureValues.get(f.getKey()), overallSequence.subList(f.getValue(), overallSequence.size()));
-			}
-		}
-		
-		private void buildFeature(String feature, String value, List<String> tokenIds) {
-			String spanId = builder.registerSpan(null, tokenIds);
-			builder.registerAnnotation(spanId, feature, value, isSpeakerSensitive());
-		}
-		
-		private void feature(String feature, String value) {
-			if (featureSpanStart.containsKey(feature)) {
-				buildFeature(feature, featureValues.get(feature), overallSequence.subList(featureSpanStart.get(feature), overallSequence.size()));
-			}
-			featureSpanStart.put(feature, overallSequence.size());
-			featureValues.put(feature, value);
 		}
 		
 		private void utterance(Attributes attributes) {
@@ -386,29 +357,29 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			boolean pause = !dipl && !norm;
 			String emptyId = checkForEmpty(id);
 			if (emptyId != null) {
-				registerToken(emptyId, speaker, SYN, EMPTY_VALUE, timestep);
+				registerToken(emptyId, speaker, synNameBase, EMPTY_VALUE, timestep);
 				sequence.add(timestep);
 				timestep = new HashMap<>();
 			}
 			if (pause) {
-				registerToken(null, speaker, PAUSE, value, timestep);
+				registerToken(null, speaker, pauseNameBase, value, timestep);
 			} else {
 				String normValue = textBuffer.clear(0);
 				if (dipl) {
-					registerToken(null, speaker, DIPL, textBuffer.clear(1), timestep);
+					featureReader.readId( registerToken(null, speaker, diplNameBase, textBuffer.clear(1), timestep) );
 				}
 				if (norm) {
-					registerToken(id, speaker, NORM, normValue, timestep);
+					registerToken(id, speaker, normNameBase, normValue, timestep);
 				}
 				if (id != null && comesWith.containsKey(id)) {					
-					String qName = builder.getQName(speaker, SYN);
+					String qName = builder.getQName(speaker, synNameBase);
 					if (!timestep.containsKey(qName)) {
 						timestep.put(qName, new ArrayList<String>());
 					}
 					List<String> synchronousIds = timestep.get(qName);
 					boolean useAnnotation = comesWith.get(id).size() > 1;
 					for (String synTokenId : comesWith.get(id)) {
-						String regId = builder.registerToken(synTokenId, speaker, SYN);
+						String regId = builder.registerToken(synTokenId, speaker, synNameBase);
 						{
 							/* this little section influences the naming of syntactic SUBtokens */
 							if (!useAnnotation) {
@@ -422,17 +393,11 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 						}
 						synchronousIds.add(regId);
 					}
-					add2Sequences(synchronousIds);
+					utteranceTokens.addAll(synchronousIds);
 				}
 			}
 			sequence.add(timestep);
 			overlap = false;			
-		}
-		
-		/** This method enqueues token ids to collecting variables */
-		private void add2Sequences(List<String> ids) {
-			utteranceTokens.addAll(ids);
-			overallSequence.addAll(ids);
 		}
 		
 		/** 
@@ -457,7 +422,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 		 * @param text
 		 * @param timestep
 		 */
-		private void registerToken(String id, String speaker, String level, String text, Map<String, List<String>> timestep) {
+		private String registerToken(String id, String speaker, String level, String text, Map<String, List<String>> timestep) {
 			String id_ = builder.registerToken(id, speaker, level);
 			token2text.put(id_, text);
 			String qName = builder.getQName(speaker, level);
@@ -465,6 +430,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				timestep.put(qName, new ArrayList<String>());
 			}
 			timestep.get(qName).add(id_);
+			return id_;
 		}
 		
 		@Override
@@ -525,8 +491,8 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 				getDocument().createMetaAnnotation(null, TAG_TITLE, textBuffer.clear(1));
 			}
 			else if (TAG_TEI.equals(localName)) {
+				featureReader.flush();
 				builder.setGlobalEvaluationMap(token2text);
-				finishFeatures();
 				builder.build(sequence);
 			}
 		}

@@ -7,13 +7,16 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
 import org.corpus_tools.salt.common.SDocumentGraph;
+import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.util.DataSourceSequence;
+import org.corpus_tools.salt.util.Difference;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
 import org.junit.Test;
@@ -96,8 +99,11 @@ public class SgsTEIImporterTest {
 		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
 		getFixture().mapSDocument();
 		
-		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
-		assertEquals(0, goalGraph.findDiffs(producedGraph).size());
+		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();		
+		Set<Difference> diffSet = goalGraph.findDiffs(producedGraph);
+		assertEquals(diffSet.toString(), 0, diffSet.size());
+		diffSet = producedGraph.findDiffs(goalGraph);
+		assertEquals(diffSet.toString(), 0, diffSet.size());
 	}
 	
 	@Test

@@ -13,6 +13,8 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	private static final String PROP_SYN_NAME = "syn.name";	
 	/** This property determines the fallback annotation, when more than one syntactic token overlap one token on norm level. Default is "lemma". */
 	private static final String PROP_SYN_FALLBACK_ANNO = "syn.fallback.anno";
+	/** This property defines how to behave in case an unknown feature is observed. Given the property is true, the unknown feature will be ignored, if false an error will be raised. */
+	private static final String PROP_IGNORE_UNKNOWN_FEATURES = "ignore.unknown.features";
 	
 	public SgsTEIImporterProperties() {
 		addProperty(new PepperModuleProperty<String>(PROP_DIPL_NAME, String.class, "This property determines the diplomatic layer's name.", "dipl", false));
@@ -20,6 +22,7 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 		addProperty(new PepperModuleProperty<String>(PROP_PAUSE_NAME, String.class, "This property determines the pause layer's name.", "pause", false));
 		addProperty(new PepperModuleProperty<String>(PROP_SYN_NAME, String.class, "This property determines the syntactic segmentation's name.", "syn", false));
 		addProperty(new PepperModuleProperty<String>(PROP_SYN_FALLBACK_ANNO, String.class, "This property determines the fallback annotation, when more than one syntactic token overlap one token on norm level. Default is \"lemma\".", "lemma", false));
+		addProperty(new PepperModuleProperty<Boolean>(PROP_IGNORE_UNKNOWN_FEATURES, Boolean.class, "This property defines how to behave in case an unknown feature is observed. Given the property is true, the unknown feature will be ignored, if false an error will be raised.", false, false));
 	}
 	
 	/**
@@ -60,5 +63,14 @@ public class SgsTEIImporterProperties extends PepperModuleProperties {
 	 */
 	public String getFallbackAnnotationName() {
 		return (String) getProperty(PROP_SYN_FALLBACK_ANNO).getValue();
+	}
+	
+	/**
+	 * This method determines whether or not to ignore unknown features observed
+	 * while reading the tokenization.
+	 * @return
+	 */
+	public boolean ignoreUnknownFeatures() {
+		return (Boolean) getProperty(PROP_IGNORE_UNKNOWN_FEATURES).getValue();
 	}
 }

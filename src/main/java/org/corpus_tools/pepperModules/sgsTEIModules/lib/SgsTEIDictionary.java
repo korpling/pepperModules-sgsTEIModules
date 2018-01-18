@@ -1,4 +1,4 @@
-package org.corpus_tools.pepperModules.sgsTEIModules;
+package org.corpus_tools.pepperModules.sgsTEIModules.lib;
 
 public interface SgsTEIDictionary {
 	/* Name spaces */
@@ -61,8 +61,8 @@ public interface SgsTEIDictionary {
 	/* Namespace uris */
 	public static final String URI_NS_XML = "http://www.tei-c.org/ns/1.0";
 	public static final String URI_NS_SO = "http://standoff.proposal";
-	/* features */
-	public static final String FEAT_TEMPO = "tempo";
-	public static final String[] FEAT_TEMPO_VALUES = {"normal", "slow", "fast"};
-	public static final int FEAT_TEMPO_DEFAULT_INDEX = 0;	
+	/* features */	
+	public static final String[] FEAT_NAMES = {"tempo",};
+	public static final String[][] FEAT_VALUES = {{"normal", "slow", "fast"},};
+	public static final int[] FEAT_DEFAULT_INDICES = {0,}; 	
 }
