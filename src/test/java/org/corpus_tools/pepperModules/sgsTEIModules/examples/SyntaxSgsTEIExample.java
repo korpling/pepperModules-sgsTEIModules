@@ -16,14 +16,14 @@ import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.util.DataSourceSequence;
 
-public class SyntaxSgsTEIExample extends BasicSgsTEIExample {
-	private static final String XML_EXAMPLE_FILE = "example_morphology_syntax.xml";
-	public SyntaxSgsTEIExample() {
-		this(XML_EXAMPLE_FILE, null);
-	}
-	
+public class SyntaxSgsTEIExample extends MorphosyntaxSgsTEIExample {
+	private static final String XML_EXAMPLE_FILE = "example_morphology_syntax.xml";		
 	protected SyntaxSgsTEIExample(String xmlExampleFile, String saltExampleFile) {
 		super(xmlExampleFile, saltExampleFile);
+	}
+	
+	public SyntaxSgsTEIExample() {
+		this(XML_EXAMPLE_FILE, null);
 	}
 	
 	@Override
@@ -58,7 +58,7 @@ public class SyntaxSgsTEIExample extends BasicSgsTEIExample {
 		return spoMap;
 	}
 	
-	private static final Predicate<SToken> IS_SYNTACTIC_TOKEN = new Predicate<SToken>() {
+	protected static final Predicate<SToken> IS_SYNTACTIC_TOKEN = new Predicate<SToken>() {
 		@Override
 		public boolean test(SToken t) {
 			SRelation<?, ?> txtRel = t.getOutRelations().stream().filter(IS_TEXTUAL_RELATION).findFirst().get();

@@ -38,7 +38,7 @@ public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampl
 	private SDocumentGraph salt;
 	private String xml;
 		
-	public AbstractSgsTEIExample(String xmlExampleFile, String saltExampleFile) {
+	protected AbstractSgsTEIExample(String xmlExampleFile, String saltExampleFile) {
 		FILE_NAMES = new HashMap<>();
 		FILE_NAMES.put(String.class, xmlExampleFile);
 		FILE_NAMES.put(SDocumentGraph.class, saltExampleFile);

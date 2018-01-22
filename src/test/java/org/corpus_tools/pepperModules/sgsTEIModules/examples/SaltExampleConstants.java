@@ -336,4 +336,35 @@ public interface SaltExampleConstants {
 	public static final int[][][] TREES = {TREE_S92, TREE_JER};
 	public static final String[][] TREE_LABELS = {TREE_LABELS_S92, TREE_LABELS_JER};
 	public static final int[][][] SPELLOUT = {SPELLOUT_S92, SPELLOUT_JER};
+	/* reference */
+	/** each entry is a tuple of time coordinates */
+	public static final int[][] REFEX_SPANS = {
+			{18, 27}, //cadavre ... 4e étage
+			{28, 29}, //c'
+			{37, 46}, //{à} {le} autres, {à} {le} gens en général
+			{20, 21} //on
+	};
+	/** Each entry is an array of indices of the REFEX_SPANS array */
+	public static final int[][] DISCOURSE_ENTITIES = {
+			{0, 1},
+			{2},
+			{3}
+	};
+	public static final String[] DISCOURSE_ANNO_NAMES = {
+			"label", "animacy", "specificity", "naturalGender", "cardinality"
+	};
+	public static final String[][] DISCOURSE_ANNO_VALUES = {
+			{"VICTIM", "human", "specific", "male", "1"},
+			{"PEOPLE", "human", "nonspecific", null, null},
+			{"WE", "human", "nonspecific", null, null}
+	};
+	/** each entry is a tuple (source-index, target-index) where indices are indices in 
+	 * the discourse entity array 
+	 */
+	public static final int[][] REF_LINKS = {
+			{1, 2}	
+	};
+	public static final String[] REF_LINK_TYPES = {
+			"subset"
+	};
 }

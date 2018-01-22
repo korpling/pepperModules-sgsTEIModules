@@ -12,7 +12,8 @@ import java.util.Set;
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.AbstractSgsTEIExample;
-import org.corpus_tools.pepperModules.sgsTEIModules.examples.BasicSgsTEIExample;
+import org.corpus_tools.pepperModules.sgsTEIModules.examples.MorphosyntaxSgsTEIExample;
+import org.corpus_tools.pepperModules.sgsTEIModules.examples.ReferenceSgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SyntaxSgsTEIExample;
 import org.corpus_tools.salt.common.SDocumentGraph;
@@ -65,7 +66,7 @@ public class SgsTEIImporterTest {
 	
 	@Test
 	public void testPrimaryData() {
-		SgsTEIExample exampleBuilder = new BasicSgsTEIExample(); 
+		SgsTEIExample exampleBuilder = new MorphosyntaxSgsTEIExample(); 
 		SDocumentGraph goalGraph = exampleBuilder.getSaltGraph();
 		File resourceDir = new File(PepperTestUtil.getTestResources());
 		File example = new File(resourceDir, exampleBuilder.getFileNames().get(String.class));
@@ -95,27 +96,24 @@ public class SgsTEIImporterTest {
 	
 	@Test
 	public void testMorphosyntax() {
-		SgsTEIExample exampleBuilder = new BasicSgsTEIExample(); 
-		SDocumentGraph goalGraph = exampleBuilder.getSaltGraph();
-		File resourceDir = new File(PepperTestUtil.getTestResources());
-		File example = new File(resourceDir, exampleBuilder.getFileNames().get(String.class));
-		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
-		getFixture().mapSDocument();
-		
-		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();		
-		Set<Difference> diffSet = goalGraph.findDiffs(producedGraph);
-		assertEquals(diffSet.toString(), 0, diffSet.size());
-		diffSet = producedGraph.findDiffs(goalGraph);
-		assertEquals(diffSet.toString(), 0, diffSet.size());
+		testExample(new MorphosyntaxSgsTEIExample());
 	}
 	
 	@Test
 	public void testSyntax() {
-		SgsTEIExample exampleBuilder = new SyntaxSgsTEIExample();
-		SDocumentGraph goalGraph = exampleBuilder.getSaltGraph();
+		testExample(new SyntaxSgsTEIExample());
+	}
+	
+	@Test
+	public void testReference() {
+		testExample(new ReferenceSgsTEIExample());
+	}
+	
+	private void testExample(SgsTEIExample example) {
+		SDocumentGraph goalGraph = example.getSaltGraph();
 		File resourceDir = new File(PepperTestUtil.getTestResources());
-		File example = new File(resourceDir, exampleBuilder.getFileNames().get(String.class));
-		getFixture().setResourceURI(URI.createFileURI(example.getAbsolutePath()));
+		File exampleFile = new File(resourceDir, example.getFileNames().get(String.class));
+		getFixture().setResourceURI(URI.createFileURI(exampleFile.getAbsolutePath()));
 		getFixture().mapSDocument();
 
 		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
@@ -123,15 +121,5 @@ public class SgsTEIImporterTest {
 		assertEquals(diffSet.toString(), 0, diffSet.size());
 		diffSet = producedGraph.findDiffs(goalGraph);
 		assertEquals(diffSet.toString(), 0, diffSet.size());
-	}
-	
-	@Test
-	public void testReference() {
-		fail();
-	}
-	
-	@Test
-	public void testMetaData() {
-		fail();
 	}
 }
