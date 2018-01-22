@@ -1,4 +1,4 @@
-package org.corpus_tools.pepperModules.sgsTEIModules;
+package org.corpus_tools.pepperModules.sgsTEIModules.examples;
 
 public interface SaltExampleConstants {
 	/* names */
@@ -199,4 +199,141 @@ public interface SaltExampleConstants {
 	public static final String[][] SPAN_VALUES = {
 			{"slow", "normal", "slow", "normal", "slow", "normal", "slow", "normal"}
 	};
+	/* syntax */
+	/** each entry in the array represents one terminal syntactical token 
+	 * (start-time, end-time, post-order of dominating head)
+	 * */
+	public static final int[][] SPELLOUT_JER = {
+			{2, 3, 3},//je				
+			{3, 4, 5},//viens			
+			{4, 5, 8},//{à~propos~de}	
+			{5, 6, 11},//{le}			
+			{18, 19, 13},//cadavre		
+			{19, 20, 16},//qu'			
+			{20, 21, 18},//on			
+			{21, 22, 20},//a			
+			{22, 23, 22},//retrouvé		
+			{23, 24, 25},//{à}			
+			{24, 25, 28},//{le}			
+			{25, 26, 30},//quatrième	
+			{26, 27, 32}//étage		
+	};
+	/** each entry in the array represents one terminal syntactical token 
+	 * (start-time, end-time, post-order of dominating head)
+	 * */
+	public static final int[][] SPELLOUT_S92 = {
+			{28, 29, 3},//c'			
+			{29, 30, 5},//était		
+			{31, 32, 8},//quelqu'un	
+			{32, 33, 11},//qui			
+			{33, 34, 13},//s'			
+			{34, 35, 15},//intéressait	
+			{36, 37, 17},//beaucoup		
+			{37, 38, 20},//{à}			
+			{38, 39, 22},//{le}			
+			{39, 40, 24},//autres		
+			{40, 41, 39},//∅			
+			{42, 43, 29},//{à}			
+			{43, 44, 32},//{le}			
+			{44, 45, 34},//gens			
+			{45, 46, 36}//en~géneral	
+	};
+	/** each SStructure is represented by its pre- and postorder */
+	public static final int[][] TREE_JER = {
+			{0, 39},
+			{1, 38},
+			{2, 3},
+			{4, 5},
+			{6, 37},
+			{7, 8},
+			{9, 36},
+			{10, 11},
+			{12, 13},
+			{14, 35},
+			{15, 16},
+			{17, 18},
+			{19, 20},
+			{21, 22},
+			{23, 34},
+			{24, 25},
+			{26, 33},
+			{27, 28},
+			{29, 30},
+			{31, 32}
+	};
+	public static final String[] TREE_LABELS_JER = {
+		":ROOT",
+		"root:VP",
+		"suj:PRN",
+		"head:V",
+		"mod:PP",
+		"head:P",
+		"obj:NP",
+		"det:D",
+		"head:N",
+		"mod_rel:VP",
+		"obj:PRN",
+		"suj:PRN",
+		"aux_tps:V",
+		"head:V",
+		"mod:PP",
+		"head:P",
+		"obj:NP",
+		"det:D",
+		"mod:A",
+		"head:N"
+	};
+	public static final int[][] TREE_S92 = {
+			{0, 45},
+			{1, 44},
+			{2, 3},
+			{4, 5},
+			{6, 43},
+			{7, 8},
+			{9, 42},
+			{10, 11},
+			{12, 13},
+			{14, 15},
+			{16, 17},
+			{18, 41},
+			{19, 20},
+			{21, 22},
+			{23, 24},
+			{25, 40},
+			{26, 39},
+			{27, 38},
+			{28, 29},
+			{30, 37},
+			{31, 32},
+			{33, 34},
+			{35, 36}
+	};
+	public static final String[] TREE_LABELS_S92 = {
+		":ROOT",
+		"root:VP",
+		"suj:PRN",
+		"head:V",
+		"ats:PRNP",
+		"head:PRN",
+		"mod_rel:VP",
+		"suj:PRN",
+		"aff:PRN",
+		"head:V",
+		"mod:ADV",
+		"p_obj:PP",
+		"head:P",
+		"det:D",
+		"obj:Q",
+		"coord:COORDP",
+		"head:COORD",
+		"dep_coord:PP",
+		"head:P",
+		"obj:NP",
+		"det:D",
+		"head:N",
+		"mod:ADV"
+	};
+	public static final int[][][] TREES = {TREE_S92, TREE_JER};
+	public static final String[][] TREE_LABELS = {TREE_LABELS_S92, TREE_LABELS_JER};
+	public static final int[][][] SPELLOUT = {SPELLOUT_S92, SPELLOUT_JER};
 }

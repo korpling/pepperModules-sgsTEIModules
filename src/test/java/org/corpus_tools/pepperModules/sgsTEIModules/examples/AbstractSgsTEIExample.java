@@ -1,4 +1,4 @@
-package org.corpus_tools.pepperModules.sgsTEIModules;
+package org.corpus_tools.pepperModules.sgsTEIModules.examples;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,29 +31,21 @@ import org.slf4j.LoggerFactory;
  * @author klotzmaz
  *
  */
-public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants{
+public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampleConstants{
 	private static final String F_ERR_READ_XML = "An error occured reading %s.";
-	private final Logger logger = LoggerFactory.getLogger(SgsTEIExampleBuilder.class);
-	private static SgsTEIExampleBuilder instance;
+	private final Logger logger = LoggerFactory.getLogger(AbstractSgsTEIExample.class);
 	private final Map<Class<?>, String> FILE_NAMES;
 	private SDocumentGraph salt;
 	private String xml;
-	
-	private SgsTEIExampleBuilder() {
+		
+	public AbstractSgsTEIExample(String xmlExampleFile, String saltExampleFile) {
 		FILE_NAMES = new HashMap<>();
-		FILE_NAMES.put(String.class, "example_morphology.xml");
-		instance = this;
-	}
-	
-	public static SgsTEIExampleBuilder getInstance() {
-		if (instance == null) {
-			instance = new SgsTEIExampleBuilder();
-		}
-		return instance;
+		FILE_NAMES.put(String.class, xmlExampleFile);
+		FILE_NAMES.put(SDocumentGraph.class, saltExampleFile);
 	}
 
 	@Override
-	public SDocumentGraph getSaltGraph() {
+	public final SDocumentGraph getSaltGraph() {
 		if (salt == null) {
 			salt = SaltFactory.createSDocumentGraph();
 			SaltFactory.createSDocument().setDocumentGraph(salt);
@@ -63,7 +55,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		return salt;
 	}
 	
-	private void createSaltGraph() {
+	protected void createSaltGraph() {
 		SDocumentGraph graph = salt;
 		STextualDS ds = createTextualDS(graph, SPEAKER_JER, DIPL, DIPL_JER);
 		createTokens(ds, DIPL_JER_INDICES, null, null);		
@@ -95,7 +87,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		createSpans(graph);
 	}
 	
-	private void createSpans(SDocumentGraph graph) {
+	private final void createSpans(SDocumentGraph graph) {
 		STimeline timeline = graph.getTimeline();
 		for (int i = 0; i < SPANS.length; i++) {
 			int[][] spanGroup = SPANS[i];
@@ -110,30 +102,32 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		}
 	}
 	
-	private List<SToken> getFilteredTokens(List<SToken> unfiltered) {
-		return unfiltered.stream().filter(predicate).collect(Collectors.<SToken>toList());
+	private final List<SToken> getFilteredTokens(List<SToken> unfiltered) {
+		return unfiltered.stream().filter(isDiplToken).collect(Collectors.<SToken>toList());
 	}
 	
-	private Predicate<SToken> predicate = new Predicate<SToken>() {		
+	private static final Predicate<SToken> isDiplToken = new Predicate<SToken>() {		
 		@Override
 		public boolean test(SToken t) {
-			SRelation rel = t.getOutRelations().stream().filter(new Predicate<SRelation>() {
-				@Override
-				public boolean test(SRelation rel) {
-					return rel instanceof STextualRelation;
-				}
-			}).findFirst().get();
+			SRelation rel = t.getOutRelations().stream().filter(IS_TEXTUAL_RELATION).findFirst().get();
 			return ((STextualDS) rel.getTarget()).getName().endsWith("_dipl");
 		}
 	};
 	
-	private STextualDS createTextualDS(SDocumentGraph graph, String speaker, String name, String text) {
+	public static final Predicate<SRelation> IS_TEXTUAL_RELATION = new Predicate<SRelation>() {
+		@Override
+		public boolean test(SRelation rel) {
+			return rel instanceof STextualRelation;
+		}
+	};
+	
+	private final STextualDS createTextualDS(SDocumentGraph graph, String speaker, String name, String text) {
 		STextualDS ds = graph.createTextualDS(text);
 		ds.setName( String.join("_", speaker, name) );
 		return ds;
 	}
 	
-	private void createTokens(STextualDS ds, int[][] indices, String[][] annotations, String[] annotationNames) {
+	private final void createTokens(STextualDS ds, int[][] indices, String[][] annotations, String[] annotationNames) {
 		SDocumentGraph graph = ds.getGraph();
 		STimeline timeline = graph.getTimeline();
 		SToken sToken = null;
@@ -157,11 +151,11 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		}
 	}
 	
-	private void createAnnotation(SNode sNode, String name, String value) {
+	private final void createAnnotation(SNode sNode, String name, String value) {
 		sNode.createAnnotation(null, name, value);
 	}
 
-	private void createTimelineRelation(STimeline timeline, SToken sToken, int start, int end) {
+	private final void createTimelineRelation(STimeline timeline, SToken sToken, int start, int end) {
 		timeline.increasePointOfTime(end - start);
 		STimelineRelation rel = SaltFactory.createSTimelineRelation();
 		rel.setStart(start);
@@ -171,7 +165,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 		rel.setGraph( sToken.getGraph() );
 	}
 	
-	private void createOrderRelation(SToken from, SToken to, String name) {
+	private final void createOrderRelation(SToken from, SToken to, String name) {
 		SOrderRelation oRel = SaltFactory.createSOrderRelation();
 		oRel.setSource(from);
 		oRel.setTarget(to);
@@ -180,7 +174,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 	}
 
 	@Override
-	public String getXML() {
+	public final String getXML() {
 		if (this.xml == null) {
 			StringBuilder xmlBuilder = new StringBuilder();		
 			String path = getFileNames().get(String.class);
@@ -199,9 +193,7 @@ public class SgsTEIExampleBuilder implements SgsTEIExample, SaltExampleConstants
 	}
 
 	@Override
-	public Map<Class<?>, String> getFileNames() {
+	public final Map<Class<?>, String> getFileNames() {
 		return FILE_NAMES;
 	}
-	
-	
 }

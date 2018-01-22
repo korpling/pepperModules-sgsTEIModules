@@ -1,4 +1,4 @@
-package org.corpus_tools.pepperModules.sgsTEIModules;
+package org.corpus_tools.pepperModules.sgsTEIModules.examples;
 
 import java.util.Map;
 
