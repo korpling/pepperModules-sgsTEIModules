@@ -16,10 +16,14 @@ import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.util.DataSourceSequence;
 
-public class SyntaxSgsTEIExample extends AbstractSgsTEIExample {
+public class SyntaxSgsTEIExample extends BasicSgsTEIExample {
 	private static final String XML_EXAMPLE_FILE = "example_morphology_syntax.xml";
 	public SyntaxSgsTEIExample() {
-		super(XML_EXAMPLE_FILE, null);
+		this(XML_EXAMPLE_FILE, null);
+	}
+	
+	protected SyntaxSgsTEIExample(String xmlExampleFile, String saltExampleFile) {
+		super(xmlExampleFile, saltExampleFile);
 	}
 	
 	@Override
@@ -39,7 +43,6 @@ public class SyntaxSgsTEIExample extends AbstractSgsTEIExample {
 		for (int[] order : nodeOrder) {
 			orderMap.put(order[0], order[1]);
 		}
-		System.out.println(orderMap);
 		createChildren(null, 0, orderMap, createSpelloutMap(spellout), Arrays.stream(labels).iterator());
 	}
 	
@@ -72,7 +75,6 @@ public class SyntaxSgsTEIExample extends AbstractSgsTEIExample {
 			getSaltGraph().createRelation(parent, structure, SALT_TYPE.SDOMINANCE_RELATION, String.join("=", "func", values[0]));
 		}
 		structure.createAnnotation(null, "cat", values[1]);
-		System.out.println("PRE-ORDER:" + preorder);
 		int postorder = orderMap.get(preorder);
 		for (int o = preorder + 1; o < postorder; ) {
 			o = createChildren(structure, o, orderMap, spelloutMap, labels) + 1;

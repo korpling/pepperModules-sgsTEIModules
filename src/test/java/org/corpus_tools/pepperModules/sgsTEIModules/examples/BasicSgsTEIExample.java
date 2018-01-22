@@ -9,6 +9,10 @@ package org.corpus_tools.pepperModules.sgsTEIModules.examples;
 public class BasicSgsTEIExample extends AbstractSgsTEIExample {
 	private static final String XML_EXAMPLE_FILE = "example_morphology.xml";
 	public BasicSgsTEIExample() {
-		super(XML_EXAMPLE_FILE, null);		
-	}	
+		this(XML_EXAMPLE_FILE, null);		
+	}
+	
+	protected BasicSgsTEIExample(String xmlExampleFile, String saltExampleFile) {
+		super(xmlExampleFile, saltExampleFile);
+	}
 }
