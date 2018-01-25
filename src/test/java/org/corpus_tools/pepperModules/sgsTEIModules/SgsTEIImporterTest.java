@@ -2,26 +2,28 @@ package org.corpus_tools.pepperModules.sgsTEIModules;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
-import org.corpus_tools.pepperModules.sgsTEIModules.examples.AbstractSgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.MorphosyntaxSgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.ReferenceSgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SyntaxSgsTEIExample;
+import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
-import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.common.SaltProject;
+import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.corpus_tools.salt.util.Difference;
+import org.corpus_tools.salt.util.SaltUtil;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,6 +109,59 @@ public class SgsTEIImporterTest {
 	@Test
 	public void testReference() {
 		testExample(new ReferenceSgsTEIExample());
+	}
+	
+	@Test
+	public void testDebug() {
+//		SgsTEIExample example = new ReferenceSgsTEIExample();
+//		SaltFactory f;
+//		SDocumentGraph goalGraph = example.getSaltGraph();
+//		File resourceDir = new File(PepperTestUtil.getTestResources());
+//		File exampleFile = new File(resourceDir, example.getFileNames().get(String.class));
+//		getFixture().setResourceURI(URI.createFileURI(exampleFile.getAbsolutePath()));
+//		getFixture().mapSDocument();
+//
+//		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
+//		Set<String> goal = new HashSet<>();
+//		for (SSpan span : goalGraph.getSpans()) {
+//			goal.add(goalGraph.getText(span) + " " + span.getAnnotations().size());
+//		}
+//		Set<String> produced = new HashSet<>();
+//		for (SSpan span : producedGraph.getSpans()) {
+//			produced.add(producedGraph.getText(span) + " " + span.getAnnotations().size());
+//		}
+//		System.out.println(Sets.difference(goal, produced).toString() + "\tgoal" + (goal.size() > produced.size()? ">" : "<") + "produced");
+//		System.out.println(Sets.symmetricDifference(goal, produced));
+//		System.out.println(" ");
+//		for (SSpan span : goalGraph.getSpans()) {
+//			System.out.println(goalGraph.getText(span) + " " + span.getAnnotations());
+//		}
+		debuggableTest(new ReferenceSgsTEIExample());
+	}
+	
+	private void debuggableTest(SgsTEIExample example) {
+		SDocumentGraph goalGraph = example.getSaltGraph();
+		File resourceDir = new File(PepperTestUtil.getTestResources());
+		File exampleFile = new File(resourceDir, example.getFileNames().get(String.class));
+		getFixture().setResourceURI(URI.createFileURI(exampleFile.getAbsolutePath()));
+		getFixture().mapSDocument();
+
+		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();		
+		Consumer<Difference> display = new Consumer<Difference>() {
+			@Override
+			public void accept(Difference t) {
+				if (t.templateObject != null) {
+					System.out.println(((SDocumentGraph) ((SNode) t.templateObject).getGraph()).getText((SNode) t.templateObject));
+				} else {
+					System.out.println("NULL");
+				}
+				System.out.println(((SDocumentGraph) ((SNode) t.otherObject).getGraph()).getText((SNode) t.otherObject));
+			}
+		};
+		producedGraph.findDiffs(goalGraph).stream().forEach(display);
+		SaltProject project = SaltFactory.createSaltProject();
+		project.addCorpusGraph(goalGraph.getDocument().getGraph());
+		SaltUtil.saveSaltProject(project, URI.createFileURI("/home/klotzmaz/pepper/test/"));
 	}
 	
 	private void testExample(SgsTEIExample example) {

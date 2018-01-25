@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
@@ -55,13 +54,13 @@ public class GraphBuilder {
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
 	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {
-			BUILD_STEP.TOKEN,
+			BUILD_STEP.TOKEN,			 
+			BUILD_STEP.ANNOTATION,
 			BUILD_STEP.TIME,
 			BUILD_STEP.UTTERANCES,
 			BUILD_STEP.SYNTAX_NODE, 
-			BUILD_STEP.SYNTAX_REL, 
-			BUILD_STEP.REFERENCE_REFEX, 
-			BUILD_STEP.ANNOTATION, 
+			BUILD_STEP.SYNTAX_REL,
+			BUILD_STEP.REFERENCE_REFEX,
 			BUILD_STEP.REFERENCE_DE, 
 			BUILD_STEP.REFERENCE_REL, 
 			BUILD_STEP.FURTHER_SPANS
@@ -71,7 +70,7 @@ public class GraphBuilder {
 	private enum BUILD_STEP {
 		TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS, UTTERANCES, TIME
 	}
-	/** the graphs timeline */
+	/** the graph's timeline */
 	private final STimeline tl;
 	
 	public GraphBuilder(PepperMapper pepperMapper) {
@@ -90,7 +89,7 @@ public class GraphBuilder {
 				if (id == null) {
 					//request for new id
 					do {
-						id = Double.toHexString( Math.random() ).substring(4, 13);
+						id = generate();
 					} while (ids.contains(id));
 				} else {
 					if (ids.contains(id)) {
@@ -100,6 +99,10 @@ public class GraphBuilder {
 				}
 				ids.add(id);
 				return id;
+			}
+			
+			private String generate() {
+				return Double.toHexString( Math.random() ).substring(4, 13) + Double.toHexString( Math.random() ).substring(4, 13);
 			}
 		};
 		this.idProvider = new IdProvider(validator);
@@ -135,7 +138,7 @@ public class GraphBuilder {
 			public void build() {
 				/* re-register syntactic node with new id */
 				List<SToken> overlappedTokens = getGraph().getOverlappedTokens( getNode(targetNodeId));
-				registerNode(id, getGraph().createSpan(overlappedTokens) );	
+				registerNode(id, getGraph().createSpan(overlappedTokens) );
 			}
 		};
 	}
@@ -146,25 +149,22 @@ public class GraphBuilder {
 	 * @param instanceIds
 	 */
 	public void registerDiscourseEntity(final String id, final String[] instanceIds) {
-//		System.out.println("Requesting DE: " + id + "=" + String.join(",", instanceIds));
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_DE)) {			
 			@Override
 			public void build() {
-//				System.out.println("Building DE: " + id + "=" + String.join(",", instanceIds));
 				/* current solution: first (mentioned) instance will be used by reflink, the others will be connected via p-rels*/
 				for (int i = 0; i < instanceIds.length; i++) {
 					SNode instance = getNode(instanceIds[i]);
 					for (SAnnotation anno : getAnnotations().get(id)) {
-						addAnnotation(instance, anno);
-//						System.out.println("TYPE " + instance.getId() + " " + getGraph().getText(instance) + " is given annotation " + String.join("=", anno.getQName(), anno.getValue_STEXT()) + " (" + getGraph().containsNode(instance.getId()));
-					} 
+						addAnnotation(instance, anno.getName(), anno.getValue_STEXT());
+					}
 					if (i > 0) {
-						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
+//						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
 						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
 					}
-				}				
-				getAnnotations().remove(id);				
-				registerNode(id, getNode(instanceIds[0]));				
+				}
+				getAnnotations().remove(id);
+				registerNode(id, getNode(instanceIds[0]));
 			}
 		};
 	}
@@ -175,12 +175,13 @@ public class GraphBuilder {
 	 * @param lastMentionId
 	 * @param mentionId
 	 */
-	protected void addDistanceAnnotation(String lastMentionId, String mentionId) {
+	protected void addDistanceAnnotation(String lastMentionId, String mentionId) {		
 		List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(lastMentionId)));
 		SToken lastMention = overlappedTokens.get(overlappedTokens.size() - 1);
 		SToken mention = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(mentionId))).get(0);
 		int val = getSegmentations().get( getSegmentationByTokenId(mention.getId()) ).getDistance(lastMention.getId(), mention.getId());		 
-		addAnnotation(mention, "given", Integer.toString(val));
+//		addAnnotation(mention, "given", Integer.toString(val));
+//		System.out.println("ADD GIVEN ANNOTATION WITH VALUE " + val + " TO " + mentionId);
 	}
 	
 	/**
@@ -280,7 +281,7 @@ public class GraphBuilder {
 			public void build() {
 				SNode source = getNode(sourceId);
 				SNode target = getNode(targetId);
-				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type)).setType(BRIDGING_RELATION);;				
+//				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type)).setType(BRIDGING_RELATION);;				
 			}
 		};
 	}
@@ -621,19 +622,10 @@ public class GraphBuilder {
 		if (getAnnotations().containsKey(nodeId)) {
 			SNode node = getNode(nodeId);
 			for (SAnnotation a : getAnnotations().get(nodeId)) {
-				addAnnotation(node, a);
+				addAnnotation(node, a.getName(), a.getValue_STEXT());
 			}
 			getAnnotations().remove(nodeId);
 		}
-	}
-	
-	/**
-	 * Add annotation to target node.
-	 * @param target
-	 * @param annotation
-	 */
-	private void addAnnotation(SNode target, SAnnotation annotation) {
-		target.addAnnotation(annotation);
 	}
 	
 	/**
@@ -642,11 +634,8 @@ public class GraphBuilder {
 	 * @param name
 	 * @param value
 	 */
-	private void addAnnotation(SNode target, String name, String value) {
-		SAnnotation annotation = SaltFactory.createSAnnotation();
-		annotation.setName(name);
-		annotation.setValue(value);
-		addAnnotation(target, annotation);
+	private void addAnnotation(SNode target, String name, String value) {		
+		target.createAnnotation(null, name, value);
 	}
 	
 	/**
@@ -657,10 +646,11 @@ public class GraphBuilder {
 			SNode node = getNode( e.getKey() );
 			if (node != null) {
 				for (SAnnotation a : e.getValue()) {
-					addAnnotation(node, a);
+					addAnnotation(node, a.getName(), a.getValue_STEXT());
 				}
 			}
 		}
+		getAnnotations().clear();
 	}
 
 	/**
@@ -674,17 +664,12 @@ public class GraphBuilder {
 				buildTime(temporalSequence);
 			}
 		};
-		for (BUILD_STEP step : STEP_QUEUE) {
+		for (BUILD_STEP step : STEP_QUEUE) {			
 			for (BuildingBrick brick : buildQueues.get(step)) {
 				brick.build();
 			}
 		}
 		buildOrderRelations();
 		addRemainingAnnotations();
-		List<String> nodes = new ArrayList<>();
-		for (SNode node : getGraph().getNodes()) {
-			nodes.add( node.getId() );
-		}
-//		System.out.println(String.join(SystemUtils.LINE_SEPARATOR, nodes));
 	}
 }

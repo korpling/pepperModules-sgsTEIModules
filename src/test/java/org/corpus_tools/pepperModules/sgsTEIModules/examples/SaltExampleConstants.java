@@ -339,7 +339,7 @@ public interface SaltExampleConstants {
 	/* reference */
 	/** each entry is a tuple of time coordinates */
 	public static final int[][] REFEX_SPANS = {
-			{18, 27}, //cadavre ... 4e étage
+			{5, 27}, //cadavre ... 4e étage
 			{28, 29}, //c'
 			{37, 46}, //{à} {le} autres, {à} {le} gens en général
 			{20, 21} //on

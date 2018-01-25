@@ -7,11 +7,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.corpus_tools.salt.SaltFactory;
+import org.corpus_tools.salt.common.SDocument;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SOrderRelation;
 import org.corpus_tools.salt.common.SSpan;
@@ -48,7 +49,10 @@ public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampl
 	public final SDocumentGraph getSaltGraph() {
 		if (salt == null) {
 			salt = SaltFactory.createSDocumentGraph();
-			SaltFactory.createSDocument().setDocumentGraph(salt);
+			SDocument document = SaltFactory.createSDocument();
+			document.setName("example");
+			salt.setName("exampleGraph");
+			salt.setDocument(document);
 			salt.createTimeline().increasePointOfTime();
 			createSaltGraph();		
 		}
@@ -96,23 +100,42 @@ public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampl
 			for (int j = 0; j < spanGroup.length; j++) {
 				int[] span = spanGroup[j];
 				List<SToken> spanTokens = graph.getTokensBySequence( new DataSourceSequence<Number>(timeline, span[0], span[1]) );
-				SSpan sSpan = graph.createSpan(getFilteredTokens(spanTokens));
+				List<SToken> filteredTokens = getFilteredTokens(spanTokens);
+				SSpan sSpan = graph.createSpan( filteredTokens );
 				createAnnotation(sSpan, annoName, annoValues[j]);
+				Function<SToken, String> f = new Function<SToken, String>() {					
+					@Override
+					public String apply(SToken t) {
+						return getSaltGraph().getText(t);
+					}
+				};
+				Function<SToken, Boolean> member = new Function<SToken, Boolean>() {
+					@Override
+					public Boolean apply(SToken t) {
+						return getSaltGraph().containsNode(t.getId());
+					}					
+				};
+				System.out.println("mBUILDING EXAMPLE: " + filteredTokens.stream().map(member).collect(Collectors.<Boolean>toList()));
+				System.out.println("0BUILDING EXAMPLE: " + String.join(" ", filteredTokens.stream().map(f).collect(Collectors.<String>toList())));
+				System.out.println("1BUILDING EXAMPLE: <" + getSaltGraph().getText(sSpan) 
+						+ ">" + sSpan.getAnnotations() + String.format("(%d, %d)", filteredTokens.size(), getSaltGraph().getOverlappedTokens(sSpan).size()));
 			}
 		}
 	}
 	
 	private final List<SToken> getFilteredTokens(List<SToken> unfiltered) {
-		return unfiltered.stream().filter(isDiplToken).collect(Collectors.<SToken>toList());
+		return unfiltered.stream().filter(filterTokenByType("dipl")).collect(Collectors.<SToken>toList());
 	}
 	
-	private static final Predicate<SToken> isDiplToken = new Predicate<SToken>() {		
-		@Override
-		public boolean test(SToken t) {
-			SRelation rel = t.getOutRelations().stream().filter(IS_TEXTUAL_RELATION).findFirst().get();
-			return ((STextualDS) rel.getTarget()).getName().endsWith("_dipl");
-		}
-	};
+	protected static final Predicate<SToken> filterTokenByType(final String typeName) {
+		return new Predicate<SToken>() {		
+			@Override
+			public boolean test(SToken t) {
+				SRelation rel = t.getOutRelations().stream().filter(IS_TEXTUAL_RELATION).findFirst().get();
+				return ((STextualDS) rel.getTarget()).getName().endsWith(typeName);
+			}
+		};
+	}
 	
 	public static final Predicate<SRelation> IS_TEXTUAL_RELATION = new Predicate<SRelation>() {
 		@Override
