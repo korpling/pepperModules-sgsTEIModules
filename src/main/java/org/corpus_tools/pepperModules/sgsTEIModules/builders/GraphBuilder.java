@@ -25,6 +25,8 @@ import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.core.SAnnotation;
 import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.core.SRelation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is given all the necessary information to then build the graph.
@@ -34,6 +36,7 @@ import org.corpus_tools.salt.core.SRelation;
  *
  */
 public class GraphBuilder {
+	private static final Logger logger = LoggerFactory.getLogger(GraphBuilder.class);
 	private static final String F_ERR_ID_USED = "ID already in use: %s.";
 	private static final String FUNC_NAME = "func";
 	private static final String REF_TYPE_NAME = "type";
@@ -54,8 +57,7 @@ public class GraphBuilder {
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
 	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {
-			BUILD_STEP.TOKEN,			 
-			BUILD_STEP.ANNOTATION,
+			BUILD_STEP.TOKEN,
 			BUILD_STEP.TIME,
 			BUILD_STEP.UTTERANCES,
 			BUILD_STEP.SYNTAX_NODE, 
@@ -63,12 +65,14 @@ public class GraphBuilder {
 			BUILD_STEP.REFERENCE_REFEX,
 			BUILD_STEP.REFERENCE_DE, 
 			BUILD_STEP.REFERENCE_REL, 
-			BUILD_STEP.FURTHER_SPANS
+			BUILD_STEP.FURTHER_SPANS,			 
+			BUILD_STEP.ANNOTATION
 	};
 	protected static final String BRIDGING_RELATION = "bridging";
+	protected static final String F_WARN_NODE_DOES_NOT_EXIST = "Node %s does not exist, because it was either not mentioned, not built or registered with a wrong id.";
 	/** steps */
 	private enum BUILD_STEP {
-		TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, ANNOTATION, FURTHER_SPANS, UTTERANCES, TIME
+		TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, FURTHER_SPANS, UTTERANCES, TIME, ANNOTATION
 	}
 	/** the graph's timeline */
 	private final STimeline tl;
@@ -94,7 +98,8 @@ public class GraphBuilder {
 				} else {
 					if (ids.contains(id)) {
 						//this should never be the case
-						throw new PepperModuleException(mapper, String.format(F_ERR_ID_USED, id));
+						String errorMessage = String.format(F_ERR_ID_USED, id);
+						logger.error(errorMessage, new PepperModuleException(mapper, errorMessage));
 					}
 				}
 				ids.add(id);
@@ -154,16 +159,14 @@ public class GraphBuilder {
 			public void build() {
 				/* current solution: first (mentioned) instance will be used by reflink, the others will be connected via p-rels*/
 				for (int i = 0; i < instanceIds.length; i++) {
-					SNode instance = getNode(instanceIds[i]);
 					for (SAnnotation anno : getAnnotations().get(id)) {
-						addAnnotation(instance, anno.getName(), anno.getValue_STEXT());
+						registerAnnotation(instanceIds[i], anno.getName(), anno.getValue_STEXT(), false);
 					}
 					if (i > 0) {
 //						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
 						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
 					}
 				}
-				getAnnotations().remove(id);
 				registerNode(id, getNode(instanceIds[0]));
 			}
 		};
@@ -204,18 +207,18 @@ public class GraphBuilder {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {		
 			@Override
 			public void build() {
-				SAnnotation anno = SaltFactory.createSAnnotation();
 				String lookupId = targetId;
 				SNode lookupNode = getNode(lookupId);
 				if (speakerSensitive && !(lookupNode instanceof SToken)) {
 					lookupId = getGraph().getOverlappedTokens(lookupNode).get(0).getId();
 				}
-				anno.setName(speakerSensitive? getQName(getSpeakerByTokenId(lookupId), name) : name);
-				anno.setValue(value);
-				if (!annotations.containsKey(targetId)) {
-					annotations.put(targetId, new HashSet<SAnnotation>());
+				String annoName = speakerSensitive? getQName(getSpeakerByTokenId(lookupId), name) : name;
+				SNode targetNode = getNode(targetId);
+				if (targetNode != null) {
+					targetNode.createAnnotation(null, annoName, value);
+				} else {
+					logger.warn(String.format(F_WARN_NODE_DOES_NOT_EXIST, targetId));
 				}
-				annotations.get(targetId).add(anno);
 			}
 		};
 	}
@@ -637,21 +640,6 @@ public class GraphBuilder {
 	private void addAnnotation(SNode target, String name, String value) {		
 		target.createAnnotation(null, name, value);
 	}
-	
-	/**
-	 * Add all remaining annotations not added during the build process.
-	 */
-	private void addRemainingAnnotations() {
-		for (Entry<String, Set<SAnnotation>> e : getAnnotations().entrySet()) {
-			SNode node = getNode( e.getKey() );
-			if (node != null) {
-				for (SAnnotation a : e.getValue()) {
-					addAnnotation(node, a.getName(), a.getValue_STEXT());
-				}
-			}
-		}
-		getAnnotations().clear();
-	}
 
 	/**
 	 * Main build call. Executes all collected build steps.
@@ -670,6 +658,5 @@ public class GraphBuilder {
 			}
 		}
 		buildOrderRelations();
-		addRemainingAnnotations();
 	}
 }
