@@ -1,12 +1,14 @@
 package org.corpus_tools.pepperModules.sgsTEIModules.builders;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BinaryOperator;
 import java.util.Set;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
@@ -56,7 +58,7 @@ public class GraphBuilder {
 	/** queue of building steps */
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
-	private static final BUILD_STEP[] STEP_QUEUE = new BUILD_STEP[] {
+	private static final BUILD_STEP[] BUILD_QUEUE = new BUILD_STEP[] {
 			BUILD_STEP.TOKEN,
 			BUILD_STEP.TIME,
 			BUILD_STEP.UTTERANCES,
@@ -84,7 +86,7 @@ public class GraphBuilder {
 		this.annotations = new HashMap<>();
 		this.graphNodes = new HashMap<>();
 		this.buildQueues = new HashMap<>();
-		for (BUILD_STEP step : STEP_QUEUE) {
+		for (BUILD_STEP step : BUILD_QUEUE) {
 			buildQueues.put(step, new ArrayList<BuildingBrick>());
 		}
 		IdValidator validator = new IdValidator() {			
@@ -548,20 +550,7 @@ public class GraphBuilder {
 			t += length;
 		}
 	}
-	
-	/**
-	 * This method applies element-wise multiplication to the collection's elements.
-	 * @param c
-	 * @return the product of all elements of c
-	 */
-	private int reduceProduct(Collection<Integer> c) {
-		int r = 1;
-		for (Integer i : c) {
-			r *= i;
-		}
-		return r;
-	}
-	
+		
 	/**
 	 * Returns the maximal number of tokens on a single level for one timestep.
 	 * @param timestep
@@ -572,8 +561,15 @@ public class GraphBuilder {
 		for (Entry<String, List<String>> e : timestep.entrySet()) {
 			lengths.add( e.getValue().size() );
 		}
-		return reduceProduct(lengths);
-	}
+		return lengths.stream().reduce(MULTIPLY).get();
+	}	
+	
+	private static final BinaryOperator<Integer> MULTIPLY = new BinaryOperator<Integer>() {
+		@Override
+		public Integer apply(Integer t, Integer u) {
+			return t * u;
+		}
+	};
 	
 	/**
 	 * Build order relations for each segmentation.
@@ -652,7 +648,7 @@ public class GraphBuilder {
 				buildTime(temporalSequence);
 			}
 		};
-		for (BUILD_STEP step : STEP_QUEUE) {			
+		for (BUILD_STEP step : BUILD_QUEUE) {			
 			for (BuildingBrick brick : buildQueues.get(step)) {
 				brick.build();
 			}
