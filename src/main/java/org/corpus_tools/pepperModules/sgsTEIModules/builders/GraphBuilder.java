@@ -1,15 +1,15 @@
 package org.corpus_tools.pepperModules.sgsTEIModules.builders;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BinaryOperator;
 import java.util.Set;
+import java.util.function.BinaryOperator;
+import java.util.function.Predicate;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
@@ -17,7 +17,7 @@ import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
-import org.corpus_tools.salt.common.SSpan;
+import org.corpus_tools.salt.common.SOrderRelation;
 import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STextualRelation;
@@ -29,6 +29,9 @@ import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.core.SRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * This class is given all the necessary information to then build the graph.
@@ -47,10 +50,8 @@ public class GraphBuilder {
 	private final SDocumentGraph graph;
 	/** maps speaker specific segmentation name to sequence of token ids */
 	private Map<String, Segmentation> segmentations;
-	/** maps the file's analysis id to all annotations listed for this id */
-	private Map<String, Set<SAnnotation>> annotations;
 	/** maps node id (from file) to salt object */
-	private Map<String, SNode> graphNodes;
+	private Multimap<String, SNode> graphNodes;
 	/** id provider */
 	private IdProvider idProvider;
 	/** maps token id to segmentation name for faster processing */
@@ -61,6 +62,7 @@ public class GraphBuilder {
 	private static final BUILD_STEP[] BUILD_QUEUE = new BUILD_STEP[] {
 			BUILD_STEP.TOKEN,
 			BUILD_STEP.TIME,
+			BUILD_STEP.ORDER,
 			BUILD_STEP.UTTERANCES,
 			BUILD_STEP.SYNTAX_NODE, 
 			BUILD_STEP.SYNTAX_REL,
@@ -74,7 +76,7 @@ public class GraphBuilder {
 	protected static final String F_WARN_NODE_DOES_NOT_EXIST = "Node %s does not exist, because it was either not mentioned, not built or registered with a wrong id.";
 	/** steps */
 	private enum BUILD_STEP {
-		TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, FURTHER_SPANS, UTTERANCES, TIME, ANNOTATION
+		TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, FURTHER_SPANS, UTTERANCES, TIME, ANNOTATION, ORDER
 	}
 	/** the graph's timeline */
 	private final STimeline tl;
@@ -83,12 +85,17 @@ public class GraphBuilder {
 		this.mapper = pepperMapper;
 		this.graph = mapper.getDocument().getDocumentGraph();
 		this.segmentations = new HashMap<>();
-		this.annotations = new HashMap<>();
-		this.graphNodes = new HashMap<>();
+		this.graphNodes = HashMultimap.<String, SNode>create();
 		this.buildQueues = new HashMap<>();
 		for (BUILD_STEP step : BUILD_QUEUE) {
 			buildQueues.put(step, new ArrayList<BuildingBrick>());
 		}
+		new BuildingBrick(buildQueues.get(BUILD_STEP.ORDER)) {			
+			@Override
+			public void build() {
+				buildOrderRelations();
+			}
+		};
 		IdValidator validator = new IdValidator() {			
 			@Override
 			public String validate(Set<String> ids, String id) {
@@ -144,10 +151,28 @@ public class GraphBuilder {
 			@Override
 			public void build() {
 				/* re-register syntactic node with new id */
-				List<SToken> overlappedTokens = getGraph().getOverlappedTokens( getNode(targetNodeId));
-				registerNode(id, getGraph().createSpan(overlappedTokens) );
+				List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(targetNodeId) ));
+				overlappedTokens = getFullSequence(overlappedTokens.get(0), overlappedTokens.get(overlappedTokens.size() - 1));
+				registerNode(id, getGraph().createSpan( overlappedTokens ));
 			}
 		};
+	}
+	
+	private List<SToken> getFullSequence(SToken startToken, SToken endToken) {
+		List<SToken> fullSequence = new ArrayList<>();
+		SToken tok = startToken;
+		Predicate<SRelation> p = new Predicate<SRelation>() {			
+			@Override
+			public boolean test(SRelation t) {
+				return t instanceof SOrderRelation;
+			}
+		};
+		while (tok != endToken) {
+			fullSequence.add(tok);
+			tok = (SToken) tok.getOutRelations().stream().filter(p).findFirst().get().getTarget();
+		}
+		fullSequence.add(endToken);
+		return fullSequence;
 	}
 	
 	/**
@@ -161,15 +186,12 @@ public class GraphBuilder {
 			public void build() {
 				/* current solution: first (mentioned) instance will be used by reflink, the others will be connected via p-rels*/
 				for (int i = 0; i < instanceIds.length; i++) {
-					for (SAnnotation anno : getAnnotations().get(id)) {
-						registerAnnotation(instanceIds[i], anno.getName(), anno.getValue_STEXT(), false);
-					}
 					if (i > 0) {
 //						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
 						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
 					}
+					registerNode(id, getNode(instanceIds[i]) );					
 				}
-				registerNode(id, getNode(instanceIds[0]));
 			}
 		};
 	}
@@ -186,7 +208,6 @@ public class GraphBuilder {
 		SToken mention = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(mentionId))).get(0);
 		int val = getSegmentations().get( getSegmentationByTokenId(mention.getId()) ).getDistance(lastMention.getId(), mention.getId());		 
 //		addAnnotation(mention, "given", Integer.toString(val));
-//		System.out.println("ADD GIVEN ANNOTATION WITH VALUE " + val + " TO " + mentionId);
 	}
 	
 	/**
@@ -205,32 +226,21 @@ public class GraphBuilder {
 	 * @param value
 	 * @param speakerSensitive
 	 */
-	public void registerAnnotation(final String targetId, final String name, final String value, final boolean speakerSensitive) {
+	public void registerAnnotation(final String targetId, final String name, final String value) {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.ANNOTATION)) {		
 			@Override
 			public void build() {
-				String lookupId = targetId;
-				SNode lookupNode = getNode(lookupId);
-				if (speakerSensitive && !(lookupNode instanceof SToken)) {
-					lookupId = getGraph().getOverlappedTokens(lookupNode).get(0).getId();
-				}
-				String annoName = speakerSensitive? getQName(getSpeakerByTokenId(lookupId), name) : name;
-				SNode targetNode = getNode(targetId);
-				if (targetNode != null) {
-					targetNode.createAnnotation(null, annoName, value);
+				String annoName = name;
+				Collection<SNode> targetNodes = getNodes(targetId);
+				if (targetNodes != null) {
+					for (SNode targetNode : targetNodes) {
+						targetNode.createAnnotation(null, annoName, value);
+					}
 				} else {
 					logger.warn(String.format(F_WARN_NODE_DOES_NOT_EXIST, targetId));
 				}
 			}
 		};
-	}
-	
-	/**
-	 * 
-	 * @return all (so far) collected {@link SAnnotation} objects. The returned object maps target ids to annotations.
-	 */
-	public Map<String, Set<SAnnotation>> getAnnotations() {
-		return annotations;
 	}
 	
 	/**
@@ -307,8 +317,13 @@ public class GraphBuilder {
 	 * @param nodeId
 	 * @return
 	 */
-	protected SNode getNode(String nodeId) {
+	protected Collection<SNode> getNodes(String nodeId) {
 		return graphNodes.get(nodeId);
+	}
+	
+	protected SNode getNode(String nodeId) {
+		Collection<SNode> nodes = graphNodes.get(nodeId);
+		return nodes == null? null : nodes.stream().findFirst().get();
 	}
 	
 	/**
@@ -371,9 +386,7 @@ public class GraphBuilder {
 				for (String tId : idList) {
 					tokens.add( (SToken) getNode(tId) );
 				}
-				SSpan span = getGraph().createSpan(tokens);
-				registerNode(spanId, span);
-				addAnnotations(spanId);
+				registerNode(spanId, getGraph().createSpan(tokens));
 			}
 		};
 		return spanId;
@@ -468,16 +481,6 @@ public class GraphBuilder {
 	 */
 	private String getSegmentationByTokenId(String tokenId) {
 		return tokenId2SegName.get(tokenId);
-	}
-	
-	/**
-	 * Return the speaker of a given token Id.
-	 * WARNING: This method sticks to a certain standard of naming and should be instead implemented more dynamically.
-	 * @param tokenId
-	 * @return
-	 */
-	private String getSpeakerByTokenId(String tokenId) {
-		return getSegmentationByTokenId(tokenId).split("_")[0];
 	}
 	
 	/**
@@ -614,30 +617,6 @@ public class GraphBuilder {
 	}
 	
 	/**
-	 * Add all annotations of a node given by its id.
-	 * @param nodeId
-	 */
-	private void addAnnotations(String nodeId) {
-		if (getAnnotations().containsKey(nodeId)) {
-			SNode node = getNode(nodeId);
-			for (SAnnotation a : getAnnotations().get(nodeId)) {
-				addAnnotation(node, a.getName(), a.getValue_STEXT());
-			}
-			getAnnotations().remove(nodeId);
-		}
-	}
-	
-	/**
-	 * Add {@link SAnnotation} (key, value) to {@link SNode} object.
-	 * @param target
-	 * @param name
-	 * @param value
-	 */
-	private void addAnnotation(SNode target, String name, String value) {		
-		target.createAnnotation(null, name, value);
-	}
-
-	/**
 	 * Main build call. Executes all collected build steps.
 	 * @param temporalSequence
 	 */
@@ -653,6 +632,5 @@ public class GraphBuilder {
 				brick.build();
 			}
 		}
-		buildOrderRelations();
 	}
 }

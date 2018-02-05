@@ -50,8 +50,8 @@ public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampl
 		if (salt == null) {
 			salt = SaltFactory.createSDocumentGraph();
 			SDocument document = SaltFactory.createSDocument();
-			document.setName("example");
-			salt.setName("exampleGraph");
+			document.setId("example");
+			salt.setId("exampleGraph");
 			salt.setDocument(document);
 			salt.createTimeline().increasePointOfTime();
 			createSaltGraph();		
@@ -115,10 +115,6 @@ public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampl
 						return getSaltGraph().containsNode(t.getId());
 					}					
 				};
-				System.out.println("mBUILDING EXAMPLE: " + filteredTokens.stream().map(member).collect(Collectors.<Boolean>toList()));
-				System.out.println("0BUILDING EXAMPLE: " + String.join(" ", filteredTokens.stream().map(f).collect(Collectors.<String>toList())));
-				System.out.println("1BUILDING EXAMPLE: <" + getSaltGraph().getText(sSpan) 
-						+ ">" + sSpan.getAnnotations() + String.format("(%d, %d)", filteredTokens.size(), getSaltGraph().getOverlappedTokens(sSpan).size()));
 			}
 		}
 	}

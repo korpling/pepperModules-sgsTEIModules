@@ -108,7 +108,7 @@ public class FeatureReader implements SgsTEIDictionary {
 		private void flush() {
 			if (!idBuffer.isEmpty()) {
 				String id = getBuilder().registerSpan(null, idBuffer.clear());
-				getBuilder().registerAnnotation(id, getName(), getValue(), false);
+				getBuilder().registerAnnotation(id, getName(), getValue());
 			}
 		}
 		

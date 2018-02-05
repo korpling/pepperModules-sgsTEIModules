@@ -206,7 +206,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_SYMBOL.equals(localName) || TAG_NUMERIC.equals(localName)) {
 				if (TAG_F.equals(stack.peek())) {
 					String annotationValue = attributes.getValue(ATT_VALUE);
-					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue, isSpeakerSensitive());
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue);
 					if (fallbackName.equals(annotationName)) {
 						token2text.put(anaId2targetId.get(currentId), String.format(F_FALLBACK_TEMPLATE, annotationValue));
 					}
@@ -292,9 +292,9 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			utteranceTokens = new ArrayList<>();
 			String translation = attributes.getValue(ATT_TRANS);
 			if (translation != null) {
-				builder.registerAnnotation(uid, NAME_TRANSLATION, translation, isSpeakerSensitive());				
+				builder.registerAnnotation(uid, NAME_TRANSLATION, translation);				
 			}
-			builder.registerAnnotation(uid, ATT_WHO, speaker, isSpeakerSensitive());
+			builder.registerAnnotation(uid, ATT_WHO, speaker);
 		}
 		
 		/* warning: this method should always concatenate, since sometimes several calls are used for text-node (built in multiple steps) */
@@ -331,14 +331,6 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 					code2time.put(k, v + StringUtils.repeat('0', w - we));
 				}
 			}
-		}
-		
-		/**
-		 * Returns the current reader state w.r.t. processing annotations.
-		 * @return
-		 */
-		private boolean isSpeakerSensitive() {
-			return false;
 		}
 		
 		/**
@@ -462,7 +454,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			else if (TAG_STRING.equals(localName)) {				
 				if (TAG_F.equals(stack.peek())) {
 					String annotationValue = textBuffer.clear(0);
-					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue, isSpeakerSensitive());
+					builder.registerAnnotation(anaId2targetId.get(currentId), annotationName, annotationValue);
 					if (fallbackName.equals(annotationName)) {
 						token2text.put(anaId2targetId.get(currentId), String.format(F_FALLBACK_TEMPLATE, annotationValue));
 					}

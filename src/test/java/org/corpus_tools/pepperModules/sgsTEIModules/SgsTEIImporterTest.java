@@ -5,9 +5,12 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
@@ -17,6 +20,7 @@ import org.corpus_tools.pepperModules.sgsTEIModules.examples.SgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SyntaxSgsTEIExample;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
+import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.common.SaltProject;
@@ -27,6 +31,8 @@ import org.corpus_tools.salt.util.SaltUtil;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Sets;
 
 /**
  * This is a dummy implementation of a JUnit test for testing the
@@ -111,31 +117,8 @@ public class SgsTEIImporterTest {
 		testExample(new ReferenceSgsTEIExample());
 	}
 	
-	@Test
+	
 	public void testDebug() {
-//		SgsTEIExample example = new ReferenceSgsTEIExample();
-//		SaltFactory f;
-//		SDocumentGraph goalGraph = example.getSaltGraph();
-//		File resourceDir = new File(PepperTestUtil.getTestResources());
-//		File exampleFile = new File(resourceDir, example.getFileNames().get(String.class));
-//		getFixture().setResourceURI(URI.createFileURI(exampleFile.getAbsolutePath()));
-//		getFixture().mapSDocument();
-//
-//		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
-//		Set<String> goal = new HashSet<>();
-//		for (SSpan span : goalGraph.getSpans()) {
-//			goal.add(goalGraph.getText(span) + " " + span.getAnnotations().size());
-//		}
-//		Set<String> produced = new HashSet<>();
-//		for (SSpan span : producedGraph.getSpans()) {
-//			produced.add(producedGraph.getText(span) + " " + span.getAnnotations().size());
-//		}
-//		System.out.println(Sets.difference(goal, produced).toString() + "\tgoal" + (goal.size() > produced.size()? ">" : "<") + "produced");
-//		System.out.println(Sets.symmetricDifference(goal, produced));
-//		System.out.println(" ");
-//		for (SSpan span : goalGraph.getSpans()) {
-//			System.out.println(goalGraph.getText(span) + " " + span.getAnnotations());
-//		}
 		debuggableTest(new ReferenceSgsTEIExample());
 	}
 	
@@ -151,17 +134,41 @@ public class SgsTEIImporterTest {
 			@Override
 			public void accept(Difference t) {
 				if (t.templateObject != null) {
-					System.out.println(((SDocumentGraph) ((SNode) t.templateObject).getGraph()).getText((SNode) t.templateObject));
+					System.out.println(((SDocumentGraph) ((SNode) t.templateObject).getGraph()).getId() + ":" + ((SDocumentGraph) ((SNode) t.templateObject).getGraph()).getText((SNode) t.templateObject));
 				} else {
 					System.out.println("NULL");
 				}
-				System.out.println(((SDocumentGraph) ((SNode) t.otherObject).getGraph()).getText((SNode) t.otherObject));
+				System.out.println(((SDocumentGraph) ((SNode) t.otherObject).getGraph()).getId() + ":" + ((SDocumentGraph) ((SNode) t.otherObject).getGraph()).getText((SNode) t.otherObject));
 			}
 		};
 		producedGraph.findDiffs(goalGraph).stream().forEach(display);
-		SaltProject project = SaltFactory.createSaltProject();
-		project.addCorpusGraph(goalGraph.getDocument().getGraph());
-		SaltUtil.saveSaltProject(project, URI.createFileURI("/home/klotzmaz/pepper/test/"));
+		System.out.println("TEST: doc#sSpan1 exists:" + producedGraph.getText( producedGraph.getNode("doc#sSpan1") ));
+		System.out.println("----------------------");
+		assertEquals(goalGraph.getSpans().size(), producedGraph.getSpans().size());
+		Function<SNode, String> toText = new Function<SNode, String>() {
+			@Override
+			public String apply(SNode t) {
+				SDocumentGraph graph = (SDocumentGraph) t.getGraph(); 
+				return graph.getText(t);// + String.format(" (%d)", graph.getOverlappedTokens(t).size());
+			}
+		};
+		Set<String> g = new HashSet<>(goalGraph.getSpans().stream().map(toText).collect(Collectors.<String>toList()));
+		Set<String> p = new HashSet<>(producedGraph.getSpans().stream().map(toText).collect(Collectors.<String>toList()));
+		Set<String> onlyInGoal = Sets.difference(g, p);
+		Set<String> onlyInProduced = Sets.difference(p, g);		
+		System.out.println("Only in g: " + onlyInGoal);
+		System.out.println("Only in p: " + onlyInProduced);
+		System.out.println("--- SPAN SUMMARY ---");
+		System.out.println("GOAL:");
+		for (SSpan span : goalGraph.getSpans()) {
+			System.out.println(toText.apply(span) + "=>" + String.join(";", goalGraph.getSortedTokenByText(goalGraph.getOverlappedTokens(span)).stream().map(toText).collect(Collectors.<String>toList())));
+		}
+		System.out.println("PRODUCED:");
+		for (SSpan span : producedGraph.getSpans()) {
+			System.out.println(toText.apply(span) + "=>" + String.join(";", producedGraph.getSortedTokenByText(producedGraph.getOverlappedTokens(span)).stream().map(toText).collect(Collectors.<String>toList())));
+		}
+		assertEquals(true, g.isEmpty());
+		assertEquals(true, p.isEmpty());
 	}
 	
 	private void testExample(SgsTEIExample example) {
