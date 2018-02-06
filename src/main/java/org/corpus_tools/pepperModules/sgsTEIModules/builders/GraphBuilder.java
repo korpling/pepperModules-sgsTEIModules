@@ -74,6 +74,7 @@ public class GraphBuilder {
 	};
 	protected static final String BRIDGING_RELATION = "bridging";
 	protected static final String F_WARN_NODE_DOES_NOT_EXIST = "Node %s does not exist, because it was either not mentioned, not built or registered with a wrong id.";
+	private static final String ANNO_NAME_GIVEN = "given";
 	/** steps */
 	private enum BUILD_STEP {
 		TOKEN, SYNTAX_NODE, SYNTAX_REL, REFERENCE_REFEX, REFERENCE_DE, REFERENCE_REL, FURTHER_SPANS, UTTERANCES, TIME, ANNOTATION, ORDER
@@ -187,7 +188,7 @@ public class GraphBuilder {
 				/* current solution: first (mentioned) instance will be used by reflink, the others will be connected via p-rels*/
 				for (int i = 0; i < instanceIds.length; i++) {
 					if (i > 0) {
-//						addCorefRel(instanceIds[i], instanceIds[i - 1]); //NOTE: points backward to first mention
+						addCorefRel(instanceIds[i], instanceIds[i - 1]); //FIXME NOTE: points backward to first mention, actually to most recent mention was preferred
 						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
 					}
 					registerNode(id, getNode(instanceIds[i]) );					
@@ -206,8 +207,8 @@ public class GraphBuilder {
 		List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(lastMentionId)));
 		SToken lastMention = overlappedTokens.get(overlappedTokens.size() - 1);
 		SToken mention = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(mentionId))).get(0);
-		int val = getSegmentations().get( getSegmentationByTokenId(mention.getId()) ).getDistance(lastMention.getId(), mention.getId());		 
-//		addAnnotation(mention, "given", Integer.toString(val));
+		int val = getSegmentations().get( getSegmentationByTokenId(mention.getId()) ).getDistance(lastMention.getId(), mention.getId());
+		getNode(mentionId).createAnnotation(null, ANNO_NAME_GIVEN, Integer.toString(val));		
 	}
 	
 	/**
@@ -296,7 +297,7 @@ public class GraphBuilder {
 			public void build() {
 				SNode source = getNode(sourceId);
 				SNode target = getNode(targetId);
-//				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type)).setType(BRIDGING_RELATION);;				
+				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));//.setType(BRIDGING_RELATION);				
 			}
 		};
 	}

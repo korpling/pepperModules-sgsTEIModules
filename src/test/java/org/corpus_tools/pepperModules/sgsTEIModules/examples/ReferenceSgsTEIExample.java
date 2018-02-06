@@ -46,13 +46,13 @@ public class ReferenceSgsTEIExample extends SyntaxSgsTEIExample {
 					}
 				}
 				if (k > 0) {
-//					graph.createRelation(refexSpans.get(k), refexSpans.get(k - 1), SALT_TYPE.SPOINTING_RELATION, null).setType("coreference");
+					graph.createRelation(refexSpans.get(k), refexSpans.get(k - 1), SALT_TYPE.SPOINTING_RELATION, null).setType("coreference");
+					refexSpans.get(k).createAnnotation(null, "given", "1"); //FIXME -> hard-coded value
 				}
 			}
 		}
 		for (int i = 0; i < REF_LINKS.length; i++) {
-//			graph.createRelation(refexSpans.get(REF_LINKS[i][1]), refexSpans.get(REF_LINKS[i][0]), SALT_TYPE.SPOINTING_RELATION, String.join("=", "type", REF_LINK_TYPES[i]));
-//			refexSpans.get(REF_LINKS[i][0]).createAnnotation(null, "given", "1"); //FIXME: hard-coded
-		}
+			graph.createRelation(refexSpans.get(DISCOURSE_ENTITIES[REF_LINKS[i][1]][0]), refexSpans.get(DISCOURSE_ENTITIES[REF_LINKS[i][0]][0]), SALT_TYPE.SPOINTING_RELATION, String.join("=", "type", REF_LINK_TYPES[i]));			
+		}		
 	}
 }

@@ -362,7 +362,7 @@ public interface SaltExampleConstants {
 	 * the discourse entity array 
 	 */
 	public static final int[][] REF_LINKS = {
-			{1, 2}	
+			{2, 1}	
 	};
 	public static final String[] REF_LINK_TYPES = {
 			"subset"
