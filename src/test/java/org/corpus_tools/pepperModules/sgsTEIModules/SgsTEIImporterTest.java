@@ -35,16 +35,13 @@ import org.corpus_tools.pepperModules.sgsTEIModules.examples.MorphosyntaxSgsTEIE
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.ReferenceSgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SyntaxSgsTEIExample;
-import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.SToken;
-import org.corpus_tools.salt.common.SaltProject;
 import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.corpus_tools.salt.util.Difference;
-import org.corpus_tools.salt.util.SaltUtil;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
 import org.junit.Test;
