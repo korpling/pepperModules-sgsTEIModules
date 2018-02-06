@@ -1,5 +1,6 @@
 package org.corpus_tools.pepperModules.sgsTEIModules.builders;
 
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -314,7 +315,7 @@ public class GraphBuilder {
 	}
 	
 	/**
-	 *  Returns an {@link SNode} object (if that graph node has already been registered with the given nodeId).
+	 *  Returns a {@link Collection} of all {@link SNode}s associated with an id (if that graph node has already been registered with the given nodeId).
 	 * @param nodeId
 	 * @return
 	 */
@@ -322,6 +323,11 @@ public class GraphBuilder {
 		return graphNodes.get(nodeId);
 	}
 	
+	/**
+	 * Returns the first {@link SNode} associated with an id. Multiple nodes are possible for discourse entities, cf. {@link GraphBuilder#getNodes(String)}.
+	 * @param nodeId
+	 * @return
+	 */
 	protected SNode getNode(String nodeId) {
 		Collection<SNode> nodes = graphNodes.get(nodeId);
 		return nodes == null? null : nodes.stream().findFirst().get();
