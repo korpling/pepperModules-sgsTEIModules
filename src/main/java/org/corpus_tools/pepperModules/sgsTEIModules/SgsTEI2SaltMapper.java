@@ -53,7 +53,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 	 */
 	private class SgsTEIReader extends DefaultHandler2{		
 		/** This constant is used for representing empty tokens on the syntactical token level */
-		private static final String EMPTY_VALUE = "∅";
+		private String emptyValue;
 		/** This string provides the format to explicitly mark when the fallback is used for syntactical tokens */
 		private static final String F_FALLBACK_TEMPLATE = "{%s}";
 		/** The name of the utterance token level (to be prefixed with speaker right now) */
@@ -149,6 +149,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			pauseNameBase = props.getPauseName();
 			fallbackName = props.getFallbackAnnotationName();
 			featureReader = new FeatureReader(builder, props.ignoreUnknownFeatures());
+			emptyValue = props.getEmptyTextValue();
 		}
 		
 		@Override
@@ -349,7 +350,7 @@ public class SgsTEI2SaltMapper extends PepperMapperImpl implements SgsTEIDiction
 			boolean pause = !dipl && !norm;
 			String emptyId = checkForEmpty(id);
 			if (emptyId != null) {
-				registerToken(emptyId, speaker, synNameBase, EMPTY_VALUE, timestep);
+				registerToken(emptyId, speaker, synNameBase, emptyValue, timestep);
 				sequence.add(timestep);
 				timestep = new HashMap<>();
 			}
