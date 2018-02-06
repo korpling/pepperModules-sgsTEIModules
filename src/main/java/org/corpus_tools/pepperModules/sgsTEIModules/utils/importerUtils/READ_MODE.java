@@ -15,7 +15,7 @@
  *
  *
  */
-package org.corpus_tools.pepperModules.sgsTEIModules.lib.importerLib;
+package org.corpus_tools.pepperModules.sgsTEIModules.utils.importerUtils;
 
 import org.corpus_tools.pepperModules.sgsTEIModules.lib.SgsTEIDictionary;
 

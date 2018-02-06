@@ -126,7 +126,9 @@ public class GraphBuilder {
 					if (ids.contains(id)) {
 						//this should never be the case
 						String errorMessage = String.format(F_ERR_ID_USED, id);
-						logger.error(errorMessage, new PepperModuleException(mapper, errorMessage));
+						PepperModuleException e = new PepperModuleException(mapper, errorMessage);
+						logger.error(errorMessage, e);
+						throw e;
 					}
 				}
 				ids.add(id);
