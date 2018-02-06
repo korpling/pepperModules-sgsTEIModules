@@ -105,6 +105,8 @@ model.
 |pause.name		                   |String           | optional          |"pause"      |
 |syn.name		                   |String           | optional          |"syn"        |
 |syn.fallback.anno                 |String           | optional          |"lemma"      |
+|ignore.unknown.features           |Boolean			 | optional			 | false	   |
+|empty.text.value				   |String			 | optional			 |"∅"		   |
 
 
 ### dipl.name
@@ -130,3 +132,11 @@ is not useful. Instead, on real subtokens the fallback annotation will be used a
 
 The single token "à propos du" (see corpus / format documentation) will carry two syntactic subtokens "{à propos de}" and "{le}" derived from their lemma annotation.
 
+### ignore.unknown.features
+
+This property defines how to behave in case an unknown feature is observed. Given the property is true, the unknown feature will be ignored, if false an error will be raised.
+In any case only features will be imported that are known to the importer as defined in `SgsTEIDictionary`.
+
+### empty.text.value
+
+This property defines the text value for empty tokens on the syntactic token level.
