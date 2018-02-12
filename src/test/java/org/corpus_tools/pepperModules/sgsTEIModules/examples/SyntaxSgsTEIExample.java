@@ -82,7 +82,7 @@ public class SyntaxSgsTEIExample extends MorphosyntaxSgsTEIExample {
 	protected static final Predicate<SToken> IS_SYNTACTIC_TOKEN = new Predicate<SToken>() {
 		@Override
 		public boolean test(SToken t) {
-			SRelation<?, ?> txtRel = t.getOutRelations().stream().filter(IS_TEXTUAL_RELATION).findFirst().get();
+			SRelation<?, ?> txtRel = t.getOutRelations().stream().filter(r->r instanceof STextualRelation).findFirst().get();
 			return txtRel != null && ((STextualRelation) txtRel).getTarget().getName().endsWith("_syn");			
 		}
 	};

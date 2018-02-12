@@ -21,18 +21,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BinaryOperator;
-import java.util.function.Predicate;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
-import org.corpus_tools.pepperModules.sgsTEIModules.builders.utils.InstanceOf;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
@@ -184,15 +181,9 @@ public class GraphBuilder {
 	private List<SToken> getFullSequence(SToken startToken, SToken endToken) {
 		List<SToken> fullSequence = new ArrayList<>();
 		SToken tok = startToken;
-		Predicate<SRelation> p = new Predicate<SRelation>() {			
-			@Override
-			public boolean test(SRelation t) {
-				return t instanceof SOrderRelation;
-			}
-		};
 		while (tok != endToken) {
 			fullSequence.add(tok);
-			tok = (SToken) tok.getOutRelations().stream().filter(p).findFirst().get().getTarget();
+			tok = (SToken) tok.getOutRelations().stream().filter(r->r instanceof SOrderRelation).findFirst().get().getTarget();
 		}
 		fullSequence.add(endToken);
 		return fullSequence;
@@ -331,12 +322,11 @@ public class GraphBuilder {
 	 * @return
 	 */
 	private SNode getClosest(SNode source, List<SNode> targets) {
-		Predicate<SRelation> p = new InstanceOf<>(STimelineRelation.class);
-		int time = ((STimelineRelation) getGraph().getSortedTokenByText( getGraph().getOverlappedTokens(source) ).get(0).getOutRelations().stream().filter(p).findFirst().get()).getStart();
+		int time = ((STimelineRelation) getGraph().getSortedTokenByText( getGraph().getOverlappedTokens(source) ).get(0).getOutRelations().stream().filter(r->r instanceof STimelineRelation).findFirst().get()).getStart();
 		int t = 0;
 		int i = 0;
 		while (t < time && i < targets.size()) {
-			t = ((STimelineRelation) getGraph().getSortedTokenByText( getGraph().getOverlappedTokens(targets.get(i++)) ).get(0).getOutRelations().stream().filter(p).findFirst().get()).getStart();			
+			t = ((STimelineRelation) getGraph().getSortedTokenByText( getGraph().getOverlappedTokens(targets.get(i++)) ).get(0).getOutRelations().stream().filter(r->r instanceof STimelineRelation).findFirst().get()).getStart();			
 		}
 		return targets.get(i - 1);
 	}
@@ -608,7 +598,7 @@ public class GraphBuilder {
 		for (Entry<String, List<String>> e : timestep.entrySet()) {
 			lengths.add( e.getValue().size() );
 		}
-		return lengths.stream().reduce(MULTIPLY).get();
+		return lengths.stream().reduce(MULTIPLY).get();		
 	}	
 	
 	private static final BinaryOperator<Integer> MULTIPLY = new BinaryOperator<Integer>() {

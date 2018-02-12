@@ -132,18 +132,11 @@ public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampl
 		return new Predicate<SToken>() {		
 			@Override
 			public boolean test(SToken t) {
-				SRelation rel = t.getOutRelations().stream().filter(IS_TEXTUAL_RELATION).findFirst().get();
+				SRelation rel = t.getOutRelations().stream().filter(r->r instanceof STextualRelation).findFirst().get();
 				return ((STextualDS) rel.getTarget()).getName().endsWith(typeName);
 			}
 		};
 	}
-	
-	public static final Predicate<SRelation> IS_TEXTUAL_RELATION = new Predicate<SRelation>() {
-		@Override
-		public boolean test(SRelation rel) {
-			return rel instanceof STextualRelation;
-		}
-	};
 	
 	private final STextualDS createTextualDS(SDocumentGraph graph, String speaker, String name, String text) {
 		STextualDS ds = graph.createTextualDS(text);
