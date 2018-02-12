@@ -74,7 +74,7 @@ public class GraphBuilder {
 	/** queue of building steps */
 	private Map<BUILD_STEP, Collection<BuildingBrick>> buildQueues;
 	/** step queue */
-	private static final BUILD_STEP[] BUILD_QUEUE = new BUILD_STEP[] {
+	private static final BUILD_STEP[] BUILD_ORDER = new BUILD_STEP[] {
 			BUILD_STEP.TOKEN,
 			BUILD_STEP.TIME,
 			BUILD_STEP.ORDER,
@@ -103,7 +103,7 @@ public class GraphBuilder {
 		this.segmentations = new HashMap<>();
 		this.graphNodes = HashMultimap.<String, SNode>create();
 		this.buildQueues = new HashMap<>();
-		for (BUILD_STEP step : BUILD_QUEUE) {
+		for (BUILD_STEP step : BUILD_ORDER) {
 			buildQueues.put(step, new ArrayList<BuildingBrick>());
 		}
 		new BuildingBrick(buildQueues.get(BUILD_STEP.ORDER)) {			
@@ -216,7 +216,7 @@ public class GraphBuilder {
 	 * @param lastMentionId
 	 * @param mentionId
 	 */
-	protected void addDistanceAnnotation(String lastMentionId, String mentionId) {		
+	private void addDistanceAnnotation(String lastMentionId, String mentionId) {		
 		List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(lastMentionId)));
 		SToken lastMention = overlappedTokens.get(overlappedTokens.size() - 1);
 		SToken mention = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(mentionId))).get(0);
@@ -229,7 +229,7 @@ public class GraphBuilder {
 	 * @param fromId
 	 * @param toId
 	 */
-	protected void addCorefRel(String fromId, String toId) {
+	private void addCorefRel(String fromId, String toId) {
 		getGraph().createRelation(getNode(fromId), getNode(toId), SALT_TYPE.SPOINTING_RELATION, null).setType("coreference");
 	}
 	
@@ -336,7 +336,7 @@ public class GraphBuilder {
 	 * @param id
 	 * @param sNode
 	 */
-	protected void registerNode(String id, SNode sNode) {
+	private void registerNode(String id, SNode sNode) {
 		sNode.setGraph( getGraph() );
 		graphNodes.put(id, sNode);
 	}
@@ -346,7 +346,7 @@ public class GraphBuilder {
 	 * @param nodeId
 	 * @return
 	 */
-	protected Collection<SNode> getNodes(String nodeId) {
+	private Collection<SNode> getNodes(String nodeId) {
 		return graphNodes.get(nodeId);
 	}
 	
@@ -355,7 +355,7 @@ public class GraphBuilder {
 	 * @param nodeId
 	 * @return
 	 */
-	protected SNode getNode(String nodeId) {
+	private SNode getNode(String nodeId) {
 		Collection<SNode> nodes = graphNodes.get(nodeId);
 		return nodes == null? null : nodes.stream().findFirst().get();
 	}
@@ -499,7 +499,7 @@ public class GraphBuilder {
 	 * @param segName
 	 * @param tokenId
 	 */
-	protected void addSegment(String segName, String tokenId) {
+	private void addSegment(String segName, String tokenId) {
 		tokenId2SegName.put(tokenId, segName);
 		if (!getSegmentations().containsKey(segName)) {
 			registerSegmentation(segName, " ");
@@ -520,7 +520,7 @@ public class GraphBuilder {
 	 * Returns all known segmentations.
 	 * @return
 	 */
-	protected Map<String, Segmentation> getSegmentations() {
+	private Map<String, Segmentation> getSegmentations() {
 		return segmentations;
 	}
 	
@@ -532,7 +532,7 @@ public class GraphBuilder {
 	 * @param endIndex
 	 * @return
 	 */
-	protected STextualRelation addTextualRelation(SToken sToken, STextualDS ds, int startIndex, int endIndex) {
+	private STextualRelation addTextualRelation(SToken sToken, STextualDS ds, int startIndex, int endIndex) {
 		STextualRelation rel = SaltFactory.createSTextualRelation();		
 		rel.setStart(startIndex);
 		rel.setEnd(endIndex);
@@ -549,7 +549,7 @@ public class GraphBuilder {
 	 * @param to
 	 * @return
 	 */
-	protected STimelineRelation addTimelineRelation(SToken sToken, int from, int to) {
+	private STimelineRelation addTimelineRelation(SToken sToken, int from, int to) {
 		if (getTimeline().getEnd() < to) {
 			getTimeline().increasePointOfTime(to - getTimeline().getEnd());
 		}
@@ -566,7 +566,7 @@ public class GraphBuilder {
 	 * This method creates the timeline relations
 	 * @param temporalSequence temporal information (sequence of map name -> tokenIds)
 	 */
-	protected void buildTime(List<Map<String, List<String>>> temporalSequence) {
+	private void buildTime(List<Map<String, List<String>>> temporalSequence) {
 		if (temporalSequence == null || temporalSequence.isEmpty()) {
 			throw new PepperModuleDataException(this.mapper, ERR_NO_TEMPORAL_INFO);
 		}
@@ -651,7 +651,7 @@ public class GraphBuilder {
 				buildTime(temporalSequence);
 			}
 		};
-		for (BUILD_STEP step : BUILD_QUEUE) {			
+		for (BUILD_STEP step : BUILD_ORDER) {			
 			for (BuildingBrick brick : buildQueues.get(step)) {
 				brick.build();
 			}
