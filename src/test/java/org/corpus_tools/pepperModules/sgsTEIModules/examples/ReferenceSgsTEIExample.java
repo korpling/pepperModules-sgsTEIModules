@@ -67,7 +67,7 @@ public class ReferenceSgsTEIExample extends SyntaxSgsTEIExample {
 				}
 				if (k > 0) {
 					graph.createRelation(refexSpans.get(k), refexSpans.get(k - 1), SALT_TYPE.SPOINTING_RELATION, null).setType("coreference");
-					if (DISCOURSE_GIVEN[i] != null) {
+					if (i < DISCOURSE_GIVEN.length && DISCOURSE_GIVEN[i] != null) {
 						refexSpans.get(k).createAnnotation(null, "given", DISCOURSE_GIVEN[i][k - 1]);
 					}
 				}
