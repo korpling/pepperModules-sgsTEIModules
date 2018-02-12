@@ -120,18 +120,6 @@ public abstract class AbstractSgsTEIExample implements SgsTEIExample, SaltExampl
 				List<SToken> filteredTokens = getFilteredTokens(spanTokens);
 				SSpan sSpan = graph.createSpan( filteredTokens );
 				createAnnotation(sSpan, annoName, annoValues[j]);
-				Function<SToken, String> f = new Function<SToken, String>() {					
-					@Override
-					public String apply(SToken t) {
-						return getSaltGraph().getText(t);
-					}
-				};
-				Function<SToken, Boolean> member = new Function<SToken, Boolean>() {
-					@Override
-					public Boolean apply(SToken t) {
-						return getSaltGraph().containsNode(t.getId());
-					}					
-				};
 			}
 		}
 	}
