@@ -23,10 +23,12 @@ import java.util.stream.Collectors;
 
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.common.SDocumentGraph;
+import org.corpus_tools.salt.common.SOrderRelation;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.core.SNode;
 import org.corpus_tools.salt.util.DataSourceSequence;
 
 public class ReferenceSgsTEIExample extends SyntaxSgsTEIExample {
@@ -65,7 +67,9 @@ public class ReferenceSgsTEIExample extends SyntaxSgsTEIExample {
 				}
 				if (k > 0) {
 					graph.createRelation(refexSpans.get(k), refexSpans.get(k - 1), SALT_TYPE.SPOINTING_RELATION, null).setType("coreference");
-					refexSpans.get(k).createAnnotation(null, "given", "1"); //FIXME -> hard-coded value
+					if (DISCOURSE_GIVEN[i] != null) {
+						refexSpans.get(k).createAnnotation(null, "given", DISCOURSE_GIVEN[i][k - 1]);
+					}
 				}
 			}
 		}

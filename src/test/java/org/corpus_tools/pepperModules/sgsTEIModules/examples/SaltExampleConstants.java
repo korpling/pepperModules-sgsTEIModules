@@ -375,6 +375,9 @@ public interface SaltExampleConstants {
 			{"PEOPLE", "human", "nonspecific", null, null},
 			{"WE", "human", "nonspecific", null, null}
 	};
+	public static final String[][] DISCOURSE_GIVEN = {
+			{"1",}, null, null	
+	};
 	/** each entry is a tuple (source-index, target-index) where indices are indices in 
 	 * the discourse entity array 
 	 */

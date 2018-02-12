@@ -200,7 +200,7 @@ public class GraphBuilder {
 				/* current solution: first (mentioned) instance will be used by reflink, the others will be connected via p-rels*/
 				for (int i = 0; i < instanceIds.length; i++) {
 					if (i > 0) {
-						addCorefRel(instanceIds[i], instanceIds[i - 1]); //FIXME NOTE: points backward to first mention, actually to most recent mention was preferred
+						addCorefRel(instanceIds[i], instanceIds[i - 1]);
 						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
 					}
 					registerNode(id, getNode(instanceIds[i]) );
