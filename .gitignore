@@ -5,3 +5,8 @@ target/
 .project
 .settings
 target/
+src/test/resources/interv48.xml
+src/test/resources/persian_example.xml
+src/test/resources/syntax-and-ref-12-08.xml
+src/test/resources/syntax-and-ref-12-10.xml
+src/test/resources/syntax-and-ref-12-11.xml
