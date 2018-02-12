@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.BinaryOperator;
 
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
@@ -605,9 +604,7 @@ public class GraphBuilder {
 	 * Build order relations for each segmentation.
 	 */
 	private void buildOrderRelations() {
-		for (String name : segmentations.keySet()) {
-			buildOrderRelations(name);
-		}
+		segmentations.keySet().stream().forEach(this::buildOrderRelations);
 	}
 	
 	/**
@@ -658,6 +655,6 @@ public class GraphBuilder {
 			for (BuildingBrick brick : buildQueues.get(step)) {
 				brick.build();
 			}
-		}
+		}		
 	}
 }
