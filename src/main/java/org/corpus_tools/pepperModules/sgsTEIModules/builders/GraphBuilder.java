@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,6 +32,7 @@ import java.util.function.Predicate;
 import org.corpus_tools.pepper.modules.PepperMapper;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleException;
+import org.corpus_tools.pepperModules.sgsTEIModules.builders.utils.InstanceOf;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.SaltFactory;
 import org.corpus_tools.salt.common.SDocumentGraph;
@@ -174,6 +176,7 @@ public class GraphBuilder {
 				List<SToken> overlappedTokens = getGraph().getSortedTokenByText( getGraph().getOverlappedTokens( getNode(targetNodeId) ));
 				overlappedTokens = getFullSequence(overlappedTokens.get(0), overlappedTokens.get(overlappedTokens.size() - 1));
 				registerNode(id, getGraph().createSpan( overlappedTokens ));
+				registerNode(BRIDGING_RELATION.concat(id), getNode(targetNodeId));
 			}
 		};
 	}
@@ -210,7 +213,8 @@ public class GraphBuilder {
 						addCorefRel(instanceIds[i], instanceIds[i - 1]); //FIXME NOTE: points backward to first mention, actually to most recent mention was preferred
 						addDistanceAnnotation(instanceIds[i - 1], instanceIds[i]);
 					}
-					registerNode(id, getNode(instanceIds[i]) );					
+					registerNode(id, getNode(instanceIds[i]) );
+					registerNode(BRIDGING_RELATION.concat(id), getNode( BRIDGING_RELATION.concat(instanceIds[i]) ));
 				}
 			}
 		};
@@ -314,11 +318,27 @@ public class GraphBuilder {
 		new BuildingBrick(buildQueues.get(BUILD_STEP.REFERENCE_REL)) {			
 			@Override
 			public void build() {
-				SNode source = getNode(sourceId);
-				SNode target = getNode(targetId);
-				getGraph().createRelation(source, target, SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type));//.setType(BRIDGING_RELATION);				
+				SNode source = getNode( BRIDGING_RELATION.concat(sourceId) );
+				getGraph().createRelation(source, getClosest(source, new ArrayList<>(getNodes( BRIDGING_RELATION.concat(targetId) ))), SALT_TYPE.SPOINTING_RELATION, String.join("=", REF_TYPE_NAME, type)).setType(BRIDGING_RELATION);				
 			}
 		};
+	}
+	
+	/** 
+	 * This method looks for the closest preceding target node w.r.t. the source node.
+	 * @param source
+	 * @param targets
+	 * @return
+	 */
+	private SNode getClosest(SNode source, List<SNode> targets) {
+		Predicate<SRelation> p = new InstanceOf<>(STimelineRelation.class);
+		int time = ((STimelineRelation) getGraph().getSortedTokenByText( getGraph().getOverlappedTokens(source) ).get(0).getOutRelations().stream().filter(p).findFirst().get()).getStart();
+		int t = 0;
+		int i = 0;
+		while (t < time && i < targets.size()) {
+			t = ((STimelineRelation) getGraph().getSortedTokenByText( getGraph().getOverlappedTokens(targets.get(i++)) ).get(0).getOutRelations().stream().filter(p).findFirst().get()).getStart();			
+		}
+		return targets.get(i - 1);
 	}
 	
 	/**
@@ -391,8 +411,7 @@ public class GraphBuilder {
 	 * @param delimiter
 	 */
 	private void registerSegmentation(String segmentationName, String delimiter) {
-		Segmentation seg = new Segmentation(segmentationName, delimiter);
-		getSegmentations().put(segmentationName, seg);
+		getSegmentations().put(segmentationName, new Segmentation(segmentationName, delimiter));
 	}
 	
 	/**

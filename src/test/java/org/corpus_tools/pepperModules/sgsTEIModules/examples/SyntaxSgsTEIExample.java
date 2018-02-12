@@ -17,9 +17,11 @@
  */
 package org.corpus_tools.pepperModules.sgsTEIModules.examples;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -34,9 +36,11 @@ import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.util.DataSourceSequence;
 
 public class SyntaxSgsTEIExample extends MorphosyntaxSgsTEIExample {
-	private static final String XML_EXAMPLE_FILE = "example_morphology_syntax.xml";		
+	private static final String XML_EXAMPLE_FILE = "example_morphology_syntax.xml";
+	private List<SStructure> structures;
 	protected SyntaxSgsTEIExample(String xmlExampleFile, String saltExampleFile) {
 		super(xmlExampleFile, saltExampleFile);
+		structures = new ArrayList<>();
 	}
 	
 	public SyntaxSgsTEIExample() {
@@ -86,6 +90,7 @@ public class SyntaxSgsTEIExample extends MorphosyntaxSgsTEIExample {
 
 	private int createChildren(SStructure parent, int preorder, Map<Integer, Integer> orderMap, Map<Integer, SToken> spelloutMap, Iterator<String> labels) {
 		SStructure structure = SaltFactory.createSStructure();
+		structures.add(structure);
 		structure.setGraph( getSaltGraph() ); 
 		String[] values = labels.next().split(":");
 		if (parent != null) {
@@ -102,4 +107,7 @@ public class SyntaxSgsTEIExample extends MorphosyntaxSgsTEIExample {
 		return orderMap.get(preorder);
 	}
 	
+	protected List<SStructure> getStructures() {
+		return structures;
+	}
 }

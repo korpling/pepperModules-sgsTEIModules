@@ -22,12 +22,9 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.corpus_tools.pepper.testFramework.PepperImporterTest;
 import org.corpus_tools.pepper.testFramework.PepperTestUtil;
@@ -36,17 +33,15 @@ import org.corpus_tools.pepperModules.sgsTEIModules.examples.ReferenceSgsTEIExam
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SgsTEIExample;
 import org.corpus_tools.pepperModules.sgsTEIModules.examples.SyntaxSgsTEIExample;
 import org.corpus_tools.salt.common.SDocumentGraph;
-import org.corpus_tools.salt.common.SSpan;
+import org.corpus_tools.salt.common.SPointingRelation;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.SToken;
-import org.corpus_tools.salt.core.SNode;
+import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.corpus_tools.salt.util.Difference;
 import org.eclipse.emf.common.util.URI;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.collect.Sets;
 
 /**
  * This is a dummy implementation of a JUnit test for testing the
@@ -139,9 +134,9 @@ public class SgsTEIImporterTest {
 		getFixture().mapSDocument();
 
 		SDocumentGraph producedGraph = getFixture().getDocument().getDocumentGraph();
-		Set<Difference> diffSet = goalGraph.findDiffs(producedGraph);
-		assertEquals(diffSet.toString(), 0, diffSet.size());
-		diffSet = producedGraph.findDiffs(goalGraph);
-		assertEquals(diffSet.toString(), 0, diffSet.size());
+		Set<Difference> diffSet = goalGraph.findDiffs(producedGraph);		
+		assertEquals(diffSet.toString(), 0, diffSet.size());		
+		diffSet = producedGraph.findDiffs(goalGraph);		
+		assertEquals(diffSet.toString(), 0, diffSet.size());		
 	}
 }

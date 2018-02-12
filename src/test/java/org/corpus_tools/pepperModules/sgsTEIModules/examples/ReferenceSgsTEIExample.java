@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.corpus_tools.salt.SALT_TYPE;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SSpan;
+import org.corpus_tools.salt.common.SStructure;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.util.DataSourceSequence;
@@ -69,7 +70,11 @@ public class ReferenceSgsTEIExample extends SyntaxSgsTEIExample {
 			}
 		}
 		for (int i = 0; i < REF_LINKS.length; i++) {
-			graph.createRelation(refexSpans.get(DISCOURSE_ENTITIES[REF_LINKS[i][1]][0]), refexSpans.get(DISCOURSE_ENTITIES[REF_LINKS[i][0]][0]), SALT_TYPE.SPOINTING_RELATION, String.join("=", "type", REF_LINK_TYPES[i]));			
-		}		
+			int[] link = REF_LINKS[i];
+			String label = REF_LINK_TYPES[i];
+			SStructure from = getStructures().get(link[0]);
+			SStructure to = getStructures().get(link[1]);
+			graph.createRelation(from, to, SALT_TYPE.SPOINTING_RELATION, String.join("=", "type", label)).setType("bridging");;
+		}
 	}
 }
