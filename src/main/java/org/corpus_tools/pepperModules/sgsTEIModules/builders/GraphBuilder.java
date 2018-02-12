@@ -598,15 +598,8 @@ public class GraphBuilder {
 		for (Entry<String, List<String>> e : timestep.entrySet()) {
 			lengths.add( e.getValue().size() );
 		}
-		return lengths.stream().reduce(MULTIPLY).get();		
-	}	
-	
-	private static final BinaryOperator<Integer> MULTIPLY = new BinaryOperator<Integer>() {
-		@Override
-		public Integer apply(Integer t, Integer u) {
-			return t * u;
-		}
-	};
+		return lengths.stream().reduce((a, b)->a*b).get();		
+	}
 	
 	/**
 	 * Build order relations for each segmentation.
